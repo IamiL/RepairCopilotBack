@@ -66,7 +66,7 @@ func StartChatHandler(
 
 			body := bytes.NewBufferString(data.Encode())
 
-			req, err := http.NewRequest("POST", "http://94.241.142.172:8000/start_dialog", body)
+			req, err := http.NewRequest("POST", "http://localhost:8000/start_dialog", body)
 			if err != nil {
 				fmt.Printf("Ошибка при создании запроса: %v\n", err)
 				return
