@@ -143,6 +143,11 @@ func StartChatHandler(
 				ch <- string(body)
 			} else {
 				fmt.Printf("Код ответа: %d\n", resp.StatusCode)
+				var validationErr ValidationError
+				if err := json.Unmarshal(body, &validationErr); err != nil {
+					fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+				}
+				fmt.Println(validationErr)
 				//var validationErr ValidationError
 				//if err := json.Unmarshal(resp.Body, &validationErr); err != nil {
 				//	fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
