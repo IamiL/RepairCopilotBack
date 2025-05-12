@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log/slog"
 	"math/rand"
 	"net/http"
@@ -26,6 +27,22 @@ type Message struct {
 type MessagesStorage struct {
 	Storage map[string][]Message
 	Mu      sync.RWMutex
+}
+
+type ValidationError struct {
+	Detail []struct {
+		Loc  []string `json:"loc"`
+		Msg  string   `json:"msg"`
+		Type string   `json:"type"`
+	} `json:"detail"`
+}
+
+func (e ValidationError) Error() string {
+	var msgs []string
+	for _, detail := range e.Detail {
+		msgs = append(msgs, fmt.Sprintf("%s: %s (location: %v)", detail.Type, detail.Msg, detail.Loc))
+	}
+	return fmt.Sprintf("Validation error: %v", msgs)
 }
 
 type StartChatResponse struct {
@@ -57,31 +74,58 @@ func StartChatHandler(
 		}
 
 		log.Info(`Сгенерирован id чата - `, chatID)
+		//num, err := strconv.Atoi(chatID) // Преобразование строки в целое число
+		//if err != nil {
+		//	fmt.Println("Ошибка:", err)
+		//	return
+		//}
 
 		restCh := make(chan string)
 
 		go func(ch chan string) {
-			data := url.Values{}
-			data.Set("user_id", chatID)
+			//data := url.Values{}
+			//data.Set("user_id", chatID)
+			//
+			//body := bytes.NewBufferString(data.Encode())
+			//
+			//req, err := http.NewRequest("POST", "http://localhost:8000/start_dialog", body)
+			//if err != nil {
+			//	fmt.Printf("Ошибка при создании запроса: %v\n", err)
+			//	return
+			//}
+			//
+			//client := &http.Client{}
+			//resp, err := client.Do(req)
+			//if err != nil {
+			//	fmt.Printf("Ошибка при выполнении запроса: %v\n", err)
+			//	return
+			//}
+			//defer resp.Body.Close()
 
-			body := bytes.NewBufferString(data.Encode())
+			baseURL := "http://localhost:8000/start_dialog"
+			params := url.Values{}
+			params.Add("user_id", chatID)
 
-			req, err := http.NewRequest("POST", "http://localhost:8000/start_dialog", body)
+			resp, err := http.Post(fmt.Sprintf("%s?%s", baseURL, params.Encode()), "application/json", nil)
 			if err != nil {
-				fmt.Printf("Ошибка при создании запроса: %v\n", err)
-				return
-			}
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				fmt.Printf("Ошибка при выполнении запроса: %v\n", err)
-				return
+				fmt.Println(fmt.Errorf("request failed: %v", err))
 			}
 			defer resp.Body.Close()
 
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				fmt.Println(fmt.Errorf("failed to read response: %v", err))
+			}
+			if resp.StatusCode == http.StatusUnprocessableEntity { // 422
+				var validationErr ValidationError
+				if err := json.Unmarshal(body, &validationErr); err != nil {
+					fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+				}
+				fmt.Println(validationErr)
+			}
+
 			if resp.StatusCode == http.StatusOK {
-				buf := make([]byte, 1024) // Размер буфера
+				buf := make([]byte, 100000) // Размер буфера
 				var body []byte
 				for {
 					n, err := resp.Body.Read(buf)
@@ -99,6 +143,11 @@ func StartChatHandler(
 				ch <- string(body)
 			} else {
 				fmt.Printf("Код ответа: %d\n", resp.StatusCode)
+				//var validationErr ValidationError
+				//if err := json.Unmarshal(resp.Body, &validationErr); err != nil {
+				//	fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+				//}
+				//return "", validationErr
 			}
 		}(restCh)
 
