@@ -29,7 +29,9 @@ func New(
 ) *App {
 	router := http.NewServeMux()
 
-	Storage := httpHandler.MessagesStorage{}
+	Storage := httpHandler.MessagesStorage{
+		Storage: make(map[string][]httpHandler.Message),
+	}
 
 	router.HandleFunc("POST /api/chat", httpHandler.StartChatHandler(log, &Storage))
 	router.HandleFunc("DELETE /api/chat", httpHandler.EndChatHandler(log, &Storage))
