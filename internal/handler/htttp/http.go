@@ -182,7 +182,7 @@ func StartChatHandler(
 
 		token, err := jwtToken.New(
 			chatID,
-			time.Duration(1000000000),
+			time.Hour*300,
 			JWTSecret.Secret(),
 		)
 		if err != nil {
