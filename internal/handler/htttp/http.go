@@ -376,7 +376,7 @@ type ClientRequestBody struct {
 }
 
 type NewMessageHandlerReq struct {
-	Body string `json:"body"`
+	Body string `json:"message"`
 }
 
 func NewMessageHandler(
