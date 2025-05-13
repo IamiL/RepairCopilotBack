@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	//"repairCopilotBot/internal/JWTsecret"
+	"repairCopilotBot/internal/JWTsecret"
 	httpHandler "repairCopilotBot/internal/handler/htttp"
 	"repairCopilotBot/internal/pkg/logger/sl"
 	"strconv"
@@ -34,19 +34,19 @@ func New(
 		Storage: make(map[string][]httpHandler.Message),
 	}
 
-	//secretStorage := JWTsecret.NewJWTSecret([]byte("secret"))
+	secretStorage := JWTsecret.NewJWTSecret([]byte("secret"))
 
-	secret := []byte(`j12sdJASLHDgfvsd`)
+	//secret := []byte(`j12sdJASLHDgfvsd`)
 
-	router.HandleFunc("POST /api/chat", httpHandler.StartChatHandler(log, &Storage, secret))
-	router.HandleFunc("DELETE /api/chat", httpHandler.EndChatHandler(log, &Storage, secret))
-	router.HandleFunc("POST /api/message", httpHandler.NewMessageHandler(log, &Storage, secret, `/api/message`))
-	router.HandleFunc("GET /api/message", httpHandler.GetMessangesHandler(log, &Storage, secret))
+	router.HandleFunc("POST /api/chat", httpHandler.StartChatHandler(log, &Storage, secretStorage))
+	router.HandleFunc("DELETE /api/chat", httpHandler.EndChatHandler(log, &Storage, secretStorage))
+	router.HandleFunc("POST /api/message", httpHandler.NewMessageHandler(log, &Storage, secretStorage, `/api/message`))
+	router.HandleFunc("GET /api/message", httpHandler.GetMessangesHandler(log, &Storage, secretStorage))
 
-	router.HandleFunc("POST /chat", httpHandler.StartChatHandler(log, &Storage, secret))
-	router.HandleFunc("DELETE /chat", httpHandler.EndChatHandler(log, &Storage, secret))
-	router.HandleFunc("POST /message", httpHandler.NewMessageHandler(log, &Storage, secret, `/message`))
-	router.HandleFunc("GET /message", httpHandler.GetMessangesHandler(log, &Storage, secret))
+	router.HandleFunc("POST /chat", httpHandler.StartChatHandler(log, &Storage, secretStorage))
+	router.HandleFunc("DELETE /chat", httpHandler.EndChatHandler(log, &Storage, secretStorage))
+	router.HandleFunc("POST /message", httpHandler.NewMessageHandler(log, &Storage, secretStorage, `/message`))
+	router.HandleFunc("GET /message", httpHandler.GetMessangesHandler(log, &Storage, secretStorage))
 	srv := &http.Server{
 		Addr:    ":" + strconv.Itoa(config.Port),
 		Handler: router,

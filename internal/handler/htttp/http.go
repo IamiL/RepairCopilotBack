@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"repairCopilotBot/internal/JWTsecret"
 	http_api "repairCopilotBot/internal/pkg/http-api"
 	jwtToken "repairCopilotBot/internal/pkg/jwt"
 	"repairCopilotBot/internal/pkg/logger/sl"
@@ -51,7 +52,7 @@ type StartChatResponse struct {
 func StartChatHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
-	JWTSecret []byte,
+	JWTSecret *JWTsecret.JWTSecret,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -182,7 +183,7 @@ func StartChatHandler(
 		token, err := jwtToken.New(
 			chatID,
 			time.Duration(1000000000),
-			JWTSecret,
+			JWTSecret.Secret(),
 		)
 		if err != nil {
 			log.Error("failed to generate token", sl.Err(err))
@@ -215,7 +216,7 @@ type MessagesResp struct {
 func GetMessangesHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
-	JWTSecret []byte,
+	JWTSecret *JWTsecret.JWTSecret,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -230,7 +231,7 @@ func GetMessangesHandler(
 
 		accessToken := token.Value
 
-		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret)
+		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret.Secret())
 		if err != nil {
 			log.Debug("Error verify token", "error", err)
 			http_api.HandleError(w, http.StatusUnauthorized, "Unauthorized")
@@ -269,7 +270,7 @@ type ResponseMessage struct {
 func EndChatHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
-	JWTSecret []byte,
+	JWTSecret *JWTsecret.JWTSecret,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -283,7 +284,7 @@ func EndChatHandler(
 
 		accessToken := token.Value
 
-		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret)
+		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret.Secret())
 		if err != nil {
 			log.Debug("Error verify token", "error", err)
 			http_api.HandleError(w, http.StatusUnauthorized, "Unauthorized")
@@ -381,7 +382,7 @@ type NewMessageHandlerReq struct {
 func NewMessageHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
-	JWTSecret []byte,
+	JWTSecret *JWTsecret.JWTSecret,
 	path string,
 ) func(
 	w http.ResponseWriter, r *http.Request,
@@ -397,7 +398,7 @@ func NewMessageHandler(
 
 		accessToken := token.Value
 
-		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret)
+		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret.Secret())
 		if err != nil {
 			log.Debug("Error verify token", "error", err)
 			http_api.HandleError(w, http.StatusUnauthorized, "Unauthorized")
