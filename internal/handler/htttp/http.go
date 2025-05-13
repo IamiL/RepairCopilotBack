@@ -126,10 +126,10 @@ func StartChatHandler(
 			}
 
 			if resp.StatusCode == http.StatusOK {
-				respMsgBody, err := io.ReadAll(resp.Body)
-				if err != nil {
-					fmt.Println(fmt.Errorf("failed to read response: %v", err))
-				}
+				//respMsgBody, err := io.ReadAll(resp.Body)
+				//if err != nil {
+				//	fmt.Println(fmt.Errorf("failed to read response: %v", err))
+				//}
 
 				//buf := make([]byte, 100000) // Размер буфера
 				//var body []byte
@@ -144,9 +144,9 @@ func StartChatHandler(
 				//	}
 				//	body = append(body, buf[:n]...) // Добавляем прочитанные данные в body
 				//}
-				fmt.Printf("Тело ответа:\n%s\n", string(respMsgBody))
+				fmt.Printf("Тело ответа:\n%s\n", string(body))
 
-				ch <- string(respMsgBody)
+				ch <- string(body)
 			} else {
 				fmt.Printf("Код ответа: %d\n", resp.StatusCode)
 				var validationErr ValidationError
@@ -438,19 +438,24 @@ func NewMessageHandler(
 			defer resp.Body.Close()
 
 			if resp.StatusCode == http.StatusOK {
-				buf := make([]byte, 1024) // Размер буфера
-				var body []byte
-				for {
-					n, err := resp.Body.Read(buf)
-					if err == io.EOF {
-						break // Конец ответа
-					}
-					if err != nil {
-						fmt.Printf("Ошибка чтения: %v\n", err)
-						return
-					}
-					body = append(body, buf[:n]...) // Добавляем прочитанные данные в body
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					fmt.Println(fmt.Errorf("failed to read response: %v", err))
 				}
+
+				//buf := make([]byte, 1024) // Размер буфера
+				//var body []byte
+				//for {
+				//	n, err := resp.Body.Read(buf)
+				//	if err == io.EOF {
+				//		break // Конец ответа
+				//	}
+				//	if err != nil {
+				//		fmt.Printf("Ошибка чтения: %v\n", err)
+				//		return
+				//	}
+				//	body = append(body, buf[:n]...) // Добавляем прочитанные данные в body
+				//}
 				fmt.Printf("Тело ответа:\n%s\n", body)
 
 				ch <- string(body)
