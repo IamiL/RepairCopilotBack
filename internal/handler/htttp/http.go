@@ -277,6 +277,10 @@ type ResponseMessage struct {
 	Time time.Time `json:"time"`
 }
 
+type ClientResponseEndChatBody struct {
+	Message string `json:"summary"`
+}
+
 func EndChatHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
@@ -350,7 +354,7 @@ func EndChatHandler(
 			if resp.StatusCode == http.StatusOK {
 				fmt.Printf("Тело ответа:\n%s\n", string(body))
 
-				var response ClientResponseBody
+				var response ClientResponseEndChatBody
 				if err := json.Unmarshal(body, &response); err != nil {
 					fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
 				}
