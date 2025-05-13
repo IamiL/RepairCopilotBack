@@ -146,7 +146,7 @@ func StartChatHandler(
 				//}
 				fmt.Printf("Тело ответа:\n%s\n", string(body))
 
-				ch <- string(body)
+				ch <- "Опишите вашу проблему."
 			} else {
 				fmt.Printf("Код ответа: %d\n", resp.StatusCode)
 				var validationErr ValidationError
@@ -375,6 +375,10 @@ type ClientRequestBody struct {
 	Message string `json:"message"`
 }
 
+type ClientResponseBody struct {
+	Message string `json:"response"`
+}
+
 type NewMessageHandlerReq struct {
 	Body string `json:"message"`
 }
@@ -442,23 +446,14 @@ func NewMessageHandler(
 				if err != nil {
 					fmt.Println(fmt.Errorf("failed to read response: %v", err))
 				}
+				var response ClientResponseBody
+				if err := json.Unmarshal(body, &response); err != nil {
+					fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+				}
+				fmt.Println(response)
+				fmt.Printf("Тело ответа:\n%s\n", response.Message)
 
-				//buf := make([]byte, 1024) // Размер буфера
-				//var body []byte
-				//for {
-				//	n, err := resp.Body.Read(buf)
-				//	if err == io.EOF {
-				//		break // Конец ответа
-				//	}
-				//	if err != nil {
-				//		fmt.Printf("Ошибка чтения: %v\n", err)
-				//		return
-				//	}
-				//	body = append(body, buf[:n]...) // Добавляем прочитанные данные в body
-				//}
-				fmt.Printf("Тело ответа:\n%s\n", body)
-
-				ch <- string(body)
+				ch <- string(response.Message)
 			} else {
 				fmt.Printf("Код ответа: %d\n", resp.StatusCode)
 			}
