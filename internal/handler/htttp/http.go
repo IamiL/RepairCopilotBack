@@ -182,7 +182,7 @@ func StartChatHandler(
 		token, err := jwtToken.New(
 			chatID,
 			time.Duration(1000000000),
-			[]byte("dkgfv&37trfds"),
+			JWTSecret,
 		)
 		if err != nil {
 			log.Error("failed to generate token", sl.Err(err))
@@ -230,7 +230,7 @@ func GetMessangesHandler(
 
 		accessToken := token.Value
 
-		chatId, err := jwtToken.VerifyToken(accessToken, []byte("dkgfv&37trfds"))
+		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret)
 		if err != nil {
 			log.Debug("Error verify token", "error", err)
 			http_api.HandleError(w, http.StatusUnauthorized, "Unauthorized")
@@ -283,7 +283,7 @@ func EndChatHandler(
 
 		accessToken := token.Value
 
-		chatId, err := jwtToken.VerifyToken(accessToken, []byte("dkgfv&37trfds"))
+		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret)
 		if err != nil {
 			log.Debug("Error verify token", "error", err)
 			http_api.HandleError(w, http.StatusUnauthorized, "Unauthorized")
