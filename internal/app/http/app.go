@@ -33,15 +33,17 @@ func New(
 		Storage: make(map[string][]httpHandler.Message),
 	}
 
-	router.HandleFunc("POST /api/chat", httpHandler.StartChatHandler(log, &Storage))
-	router.HandleFunc("DELETE /api/chat", httpHandler.EndChatHandler(log, &Storage))
-	router.HandleFunc("POST /api/message", httpHandler.NewMessageHandler(log, &Storage))
-	router.HandleFunc("GET /api/message", httpHandler.GetMessangesHandler(log, &Storage))
+	secret := []byte(`j12sdJASLHDgfvsd`)
 
-	router.HandleFunc("POST /chat", httpHandler.StartChatHandler(log, &Storage))
-	router.HandleFunc("DELETE /chat", httpHandler.EndChatHandler(log, &Storage))
-	router.HandleFunc("POST /message", httpHandler.NewMessageHandler(log, &Storage))
-	router.HandleFunc("GET /message", httpHandler.GetMessangesHandler(log, &Storage))
+	router.HandleFunc("POST /api/chat", httpHandler.StartChatHandler(log, &Storage, secret))
+	router.HandleFunc("DELETE /api/chat", httpHandler.EndChatHandler(log, &Storage, secret))
+	router.HandleFunc("POST /api/message", httpHandler.NewMessageHandler(log, &Storage, secret, '/api/message'))
+	router.HandleFunc("GET /api/message", httpHandler.GetMessangesHandler(log, &Storage, secret))
+
+	router.HandleFunc("POST /chat", httpHandler.StartChatHandler(log, &Storage, secret))
+	router.HandleFunc("DELETE /chat", httpHandler.EndChatHandler(log, &Storage, secret))
+	router.HandleFunc("POST /message", httpHandler.NewMessageHandler(log, &Storage, secret, '/message'))
+	router.HandleFunc("GET /message", httpHandler.GetMessangesHandler(log, &Storage, secret))
 	srv := &http.Server{
 		Addr:    ":" + strconv.Itoa(config.Port),
 		Handler: router,

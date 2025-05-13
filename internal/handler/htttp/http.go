@@ -51,6 +51,7 @@ type StartChatResponse struct {
 func StartChatHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
+	JWTSecret []byte,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -214,6 +215,7 @@ type MessagesResp struct {
 func GetMessangesHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
+	JWTSecret []byte,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -267,6 +269,7 @@ type ResponseMessage struct {
 func EndChatHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
+	JWTSecret []byte,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -378,10 +381,13 @@ type NewMessageHandlerReq struct {
 func NewMessageHandler(
 	log *slog.Logger,
 	messages *MessagesStorage,
+	JWTSecret []byte,
+	path string,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("New request: ", path)
 		token, err := r.Cookie("access_token")
 		if err != nil {
 			log.Debug("Error getting token", "error", err)
@@ -391,7 +397,7 @@ func NewMessageHandler(
 
 		accessToken := token.Value
 
-		chatId, err := jwtToken.VerifyToken(accessToken, []byte("dkgfv&37trfds"))
+		chatId, err := jwtToken.VerifyToken(accessToken, JWTSecret)
 		if err != nil {
 			log.Debug("Error verify token", "error", err)
 			http_api.HandleError(w, http.StatusUnauthorized, "Unauthorized")

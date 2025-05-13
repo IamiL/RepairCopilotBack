@@ -29,13 +29,6 @@ func New(
 }
 
 func VerifyToken(tokenString string, secret []byte) (string, error) {
-	// Parse the token with the secret key
-	//token, err := jwt.Parse(
-	//	tokenString, func(token *jwt.Token) (interface{}, error) {
-	//		return secret, nil
-	//	},
-	//)
-
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(
 		tokenString, claims, func(token *jwt.Token) (interface{}, error) {
