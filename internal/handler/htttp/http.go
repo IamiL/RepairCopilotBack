@@ -110,6 +110,10 @@ func StartChatHandler(
 			resp, err := http.Post(fmt.Sprintf("%s?%s", baseURL, params.Encode()), "application/json", nil)
 			if err != nil {
 				fmt.Println(fmt.Errorf("request failed: %v", err))
+
+				ch <- "Сервер недоступен."
+
+				return
 			}
 			defer resp.Body.Close()
 
@@ -221,13 +225,16 @@ func GetMessangesHandler(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(`запрос /api/message`)
+		fmt.Println(`запрос /api/message на получение сообщений`)
+
 		token, err := r.Cookie("access_token")
 		if err != nil {
 			log.Debug("Error getting token", "error", err)
 			http_api.HandleError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
+
+		fmt.Println("токен был найден")
 
 		accessToken := token.Value
 
@@ -238,11 +245,14 @@ func GetMessangesHandler(
 			return
 		}
 
+		fmt.Println("chatId - ", chatId)
+
 		messages.Mu.RLock()
 		defer messages.Mu.RUnlock()
 
 		value, exists := messages.Storage[chatId]
 		if exists {
+			fmt.Println("сообщения присутствуют, количество сообщений - ", len(messages.Storage[chatId]))
 			if err := json.NewEncoder(w).Encode(
 				MessagesResp{
 					Messages: value,
@@ -300,43 +310,60 @@ func EndChatHandler(
 		restCh := make(chan string)
 
 		go func(ch chan string) {
-			data := url.Values{}
-			data.Set("user_id", chatId)
+			baseURL := "http://localhost:8000/end_dialog"
+			params := url.Values{}
+			params.Add("user_id", chatId)
 
-			body := bytes.NewBufferString(data.Encode())
-
-			req, err := http.NewRequest("POST", "http://localhost:8000/end_dialog", body)
+			resp, err := http.Post(fmt.Sprintf("%s?%s", baseURL, params.Encode()), "application/json", nil)
 			if err != nil {
-				fmt.Printf("Ошибка при создании запроса: %v\n", err)
-				return
-			}
+				fmt.Println(fmt.Errorf("request failed: %v", err))
 
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				fmt.Printf("Ошибка при выполнении запроса: %v\n", err)
+				ch <- "Сервер недоступен."
+
 				return
 			}
 			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				fmt.Println(fmt.Errorf("failed to read response: %v", err))
+			}
+
+			//data := url.Values{}
+			//data.Set("user_id", chatId)
+			//
+			//body := bytes.NewBufferString(data.Encode())
+			//
+			//req, err := http.NewRequest("POST", "http://localhost:8000/end_dialog", body)
+			//if err != nil {
+			//	fmt.Printf("Ошибка при создании запроса: %v\n", err)
+			//	return
+			//}
+
+			//client := &http.Client{}
+			//resp, err := client.Do(req)
+			//if err != nil {
+			//	fmt.Printf("Ошибка при выполнении запроса: %v\n", err)
+			//	return
+			//}
+			//defer resp.Body.Close()
 
 			if resp.StatusCode == http.StatusOK {
-				buf := make([]byte, 1024) // Размер буфера
-				var body []byte
-				for {
-					n, err := resp.Body.Read(buf)
-					if err == io.EOF {
-						break // Конец ответа
-					}
-					if err != nil {
-						fmt.Printf("Ошибка чтения: %v\n", err)
-						return
-					}
-					body = append(body, buf[:n]...) // Добавляем прочитанные данные в body
-				}
-				fmt.Printf("Тело ответа:\n%s\n", body)
+				fmt.Printf("Тело ответа:\n%s\n", string(body))
 
-				ch <- string(body)
+				var response ClientResponseBody
+				if err := json.Unmarshal(body, &response); err != nil {
+					fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+				}
+				fmt.Println(response)
+				fmt.Printf("Тело ответа:\n%s\n", response.Message)
+
+				ch <- response.Message
 			} else {
+				var validationErr ValidationError
+				if err := json.Unmarshal(body, &validationErr); err != nil {
+					fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+				}
+				fmt.Println(validationErr)
 				fmt.Printf("Код ответа: %d\n", resp.StatusCode)
 			}
 		}(restCh)
@@ -453,7 +480,7 @@ func NewMessageHandler(
 				fmt.Println(response)
 				fmt.Printf("Тело ответа:\n%s\n", response.Message)
 
-				ch <- string(response.Message)
+				ch <- response.Message
 			} else {
 				fmt.Printf("Код ответа: %d\n", resp.StatusCode)
 			}
