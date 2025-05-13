@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"repairCopilotBot/internal/JWTsecret"
+	//"repairCopilotBot/internal/JWTsecret"
 	httpHandler "repairCopilotBot/internal/handler/htttp"
 	"repairCopilotBot/internal/pkg/logger/sl"
 	"strconv"
@@ -34,7 +34,7 @@ func New(
 		Storage: make(map[string][]httpHandler.Message),
 	}
 
-	secretStorage := JWTsecret.NewJWTSecret([]byte("secret"))
+	//secretStorage := JWTsecret.NewJWTSecret([]byte("secret"))
 
 	secret := []byte(`j12sdJASLHDgfvsd`)
 
