@@ -38,11 +38,13 @@ func VerifyToken(tokenString string, secret []byte) (string, error) {
 
 	// Check for verification errors
 	if err != nil {
+		fmt.Println("error in jwt.ParseWithClaims(...): ", err.Error())
 		return "", err
 	}
 
 	// Check if the token is valid
 	if !token.Valid {
+		fmt.Println("jwt.ParseWithClaims(...) сказал что токен не валидный")
 		return "", fmt.Errorf("invalid token")
 	}
 
