@@ -495,7 +495,7 @@ func NewMessageHandler(
 
 		close(restCh)
 
-		formatStr := strings.Replace(respStr, "\n", "<div class=\"spacer-div\"/>", -1)
+		formatStr := strings.Replace(respStr, "\n", "<div class=\"spacer-div\"></div>", -1)
 
 		moscowLocation := time.FixedZone("MSK", 36060) // Смещение +3 часа от UTC
 
