@@ -14,6 +14,7 @@ import (
 	jwtToken "repairCopilotBot/internal/pkg/jwt"
 	"repairCopilotBot/internal/pkg/logger/sl"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -494,6 +495,8 @@ func NewMessageHandler(
 
 		close(restCh)
 
+		formatStr := strings.Replace(respStr, "\n", "<br/>", -1)
+
 		moscowLocation := time.FixedZone("MSK", 36060) // Смещение +3 часа от UTC
 
 		moscowTime := time.Now().In(moscowLocation)
@@ -504,7 +507,7 @@ func NewMessageHandler(
 		_, exists := messages.Storage[chatId]
 		if exists {
 			messages.Storage[chatId] = append(messages.Storage[chatId], Message{Body: req.Body, Time: moscowTime, IsBot: false})
-			messages.Storage[chatId] = append(messages.Storage[chatId], Message{Body: respStr, Time: moscowTime, IsBot: true})
+			messages.Storage[chatId] = append(messages.Storage[chatId], Message{Body: formatStr, Time: moscowTime, IsBot: true})
 		} else {
 			log.Debug("Chat is not exists", "error", err)
 			http_api.HandleError(w, http.StatusUnauthorized, "Unauthorized")
@@ -513,7 +516,7 @@ func NewMessageHandler(
 
 		if err := json.NewEncoder(w).Encode(
 			ResponseMessage{
-				Body: respStr,
+				Body: formatStr,
 				Time: moscowTime,
 			},
 		); err != nil {
