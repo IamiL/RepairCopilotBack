@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+const startMessage = "🔹 1. Чётко формулируйте проблему<div class=\"spacer-div\"></div><pre>❌ «Не работает линия»<div class=\"spacer-div\"></div>✅ «Линия остановилась после резки, был щелчок»</pre><div class=\"spacer-div\"></div><div class=\"spacer-div\"></div>🔹 2. Отвечайте развёрнуто<div class=\"spacer-div\"></div><pre>❌ «Проверили»✅ «Проводка в норме, окислов нет, разъёмы целы»</pre><div class=\"spacer-div\"></div><div class=\"spacer-div\"></div>🔹 3. Делитесь наблюдениями<div class=\"spacer-div\"></div>Шум, запах, свет — даже мелочи могут помочь найти причину<div class=\"spacer-div\"></div><pre>❌  «Ну просто встал и всё»<div class=\"spacer-div\"></div>✅ «Перед остановкой появился резкий запах гари»</pre>"
+
 type Message struct {
 	Body  string    `json:"body"`
 	Time  time.Time `json:"time"`
@@ -151,7 +153,7 @@ func StartChatHandler(
 				//}
 				fmt.Printf("Тело ответа:\n%s\n", string(body))
 
-				ch <- "Опишите вашу проблему."
+				ch <- startMessage
 			} else {
 				fmt.Printf("Код ответа: %d\n", resp.StatusCode)
 				var validationErr ValidationError

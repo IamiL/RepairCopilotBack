@@ -17,6 +17,7 @@ const (
 )
 
 func main() {
+
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
