@@ -1,7 +1,7 @@
 package app
 
 import (
-	"log/slog"
+	"golang.org/x/exp/slog"
 	httpApp "repairCopilotBot/internal/app/http"
 	"time"
 )

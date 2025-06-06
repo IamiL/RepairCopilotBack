@@ -3,9 +3,9 @@ package slogpretty
 import (
 	"context"
 	"encoding/json"
+	"golang.org/x/exp/slog"
 	"io"
 	stdLog "log"
-	"log/slog"
 
 	"github.com/fatih/color"
 )

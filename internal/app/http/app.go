@@ -2,7 +2,7 @@ package httpApp
 
 import (
 	"context"
-	"log/slog"
+	"golang.org/x/exp/slog"
 	"net/http"
 	"os"
 	"repairCopilotBot/internal/JWTsecret"

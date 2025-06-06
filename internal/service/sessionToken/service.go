@@ -2,7 +2,7 @@ package sessionTokenService
 
 import (
 	"github.com/google/uuid"
-	"log/slog"
+	"golang.org/x/exp/slog"
 )
 
 type SessionTokenService struct {
