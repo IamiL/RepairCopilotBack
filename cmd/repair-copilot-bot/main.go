@@ -1,7 +1,7 @@
 package main
 
 import (
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"os"
 	"os/signal"
 	"repairCopilotBot/internal/app"
