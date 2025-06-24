@@ -15,7 +15,7 @@ services:
       - "-c"
       - "maintenance_work_mem=512MB"
       - "-c"
-      - "random_page_cost=1.1"
+      - "random_page_cost=1.txt.1.txt"
       - "-c"
       - "temp_file_limit=10GB"
       - "-c"
@@ -52,7 +52,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '1.txt'
           memory: 4G
     networks:
       - repair-copilot-bot-postgres
@@ -62,7 +62,7 @@ services:
     image: dpage/pgadmin4:7.2
     environment:
       PGADMIN_DEFAULT_EMAIL: "iamil50113@gmail.com"
-      PGADMIN_DEFAULT_PASSWORD: "1"
+      PGADMIN_DEFAULT_PASSWORD: "1.txt"
       PGADMIN_CONFIG_SERVER_MODE: "False"
     volumes:
       - repair-copilot-bot-pgadmin-data:/var/lib/pgadmin

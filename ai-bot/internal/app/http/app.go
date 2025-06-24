@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"repairCopilotBot/internal/JWTsecret"
-	httpHandler "repairCopilotBot/internal/handler/htttp"
-	"repairCopilotBot/internal/pkg/logger/sl"
+	"repairCopilotBot/ai-bot/internal/JWTsecret"
+	"repairCopilotBot/ai-bot/internal/handler/htttp"
+	"repairCopilotBot/ai-bot/internal/pkg/logger/sl"
 	"strconv"
 	"time"
 )

@@ -2,10 +2,9 @@ package config
 
 import (
 	"flag"
-	"os"
-	httpApp "repairCopilotBot/internal/app/http"
-
 	"github.com/ilyakaznacheev/cleanenv"
+	"os"
+	"repairCopilotBot/ai-bot/internal/app/http"
 )
 
 type Config struct {

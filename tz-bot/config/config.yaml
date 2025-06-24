@@ -1,0 +1,13 @@
+env: "local"
+app:
+  token_ttl: 300h
+http_server:
+  port: 8001
+  timeout: 4s
+llm_client:
+ url: http://localhost:9000/analyze
+word_parser_client:
+  url: http://localhost:8002/convert
+tg_client:
+  token: 7550143505:AAFsjHU8x90K8KbTAIPhpMZzF0HUGIGEX3g
+  chat_id: -1002549996890

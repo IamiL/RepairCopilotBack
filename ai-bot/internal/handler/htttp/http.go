@@ -9,17 +9,17 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"repairCopilotBot/internal/JWTsecret"
-	http_api "repairCopilotBot/internal/pkg/http-api"
-	jwtToken "repairCopilotBot/internal/pkg/jwt"
-	"repairCopilotBot/internal/pkg/logger/sl"
+	"repairCopilotBot/ai-bot/internal/JWTsecret"
+	"repairCopilotBot/ai-bot/internal/pkg/http-api"
+	"repairCopilotBot/ai-bot/internal/pkg/jwt"
+	"repairCopilotBot/ai-bot/internal/pkg/logger/sl"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
-const startMessage = "🔹 1. Чётко формулируйте проблему<div class=\"spacer-div\"></div><pre>❌ «Не работает линия»<div class=\"spacer-div\"></div>✅ «Линия остановилась после резки, был щелчок»</pre><div class=\"spacer-div\"></div><div class=\"spacer-div\"></div>🔹 2. Отвечайте развёрнуто<div class=\"spacer-div\"></div><pre>❌ «Проверили»<div class=\"spacer-div\"></div>✅ «Проводка в норме, окислов нет, разъёмы целы»</pre><div class=\"spacer-div\"></div><div class=\"spacer-div\"></div>🔹 3. Делитесь наблюдениями<div class=\"spacer-div\"></div>Шум, запах, свет — даже мелочи могут помочь найти причину<div class=\"spacer-div\"></div><pre>❌  «Ну просто встал и всё»<div class=\"spacer-div\"></div>✅ «Перед остановкой появился резкий запах гари»</pre>"
+const startMessage = "🔹 1.txt. Чётко формулируйте проблему<div class=\"spacer-div\"></div><pre>❌ «Не работает линия»<div class=\"spacer-div\"></div>✅ «Линия остановилась после резки, был щелчок»</pre><div class=\"spacer-div\"></div><div class=\"spacer-div\"></div>🔹 2. Отвечайте развёрнуто<div class=\"spacer-div\"></div><pre>❌ «Проверили»<div class=\"spacer-div\"></div>✅ «Проводка в норме, окислов нет, разъёмы целы»</pre><div class=\"spacer-div\"></div><div class=\"spacer-div\"></div>🔹 3. Делитесь наблюдениями<div class=\"spacer-div\"></div>Шум, запах, свет — даже мелочи могут помочь найти причину<div class=\"spacer-div\"></div><pre>❌  «Ну просто встал и всё»<div class=\"spacer-div\"></div>✅ «Перед остановкой появился резкий запах гари»</pre>"
 
 type Message struct {
 	Body  string    `json:"body"`

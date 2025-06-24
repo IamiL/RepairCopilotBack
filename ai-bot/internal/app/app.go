@@ -2,7 +2,7 @@ package app
 
 import (
 	"log/slog"
-	httpApp "repairCopilotBot/internal/app/http"
+	"repairCopilotBot/ai-bot/internal/app/http"
 	"time"
 )
 

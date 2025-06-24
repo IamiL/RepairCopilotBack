@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"repairCopilotBot/internal/app"
-	"repairCopilotBot/internal/config"
-	"repairCopilotBot/internal/pkg/logger/handlers/slogpretty"
+	"repairCopilotBot/ai-bot/internal/app"
+	"repairCopilotBot/ai-bot/internal/config"
+	"repairCopilotBot/ai-bot/internal/pkg/logger/handlers/slogpretty"
 	"syscall"
 )
 
