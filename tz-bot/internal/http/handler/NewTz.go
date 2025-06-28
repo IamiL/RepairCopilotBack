@@ -1,15 +1,29 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"repairCopilotBot/tz-bot/internal/service/tz"
 	tz_llm_client "repairCopilotBot/tz-bot/package/llm"
 	tg_client "repairCopilotBot/tz-bot/package/tg"
 	word_parser_client "repairCopilotBot/tz-bot/package/word-parser"
 	"strings"
 )
+
+type NewTzResponse struct {
+	Text string               `json:"text"`
+	Err  []NewTzErrorResponse `json:"errors"`
+}
+
+type NewTzErrorResponse struct {
+	Id    int    `json:"id"`
+	Title string `json:"title"`
+	Text  string `json:"text"`
+	Type  string `json:"type"`
+}
 
 func NewTzHandler(
 	log *slog.Logger,
@@ -54,7 +68,7 @@ func NewTzHandler(
 
 		log.Info("отправляем запрос к llm")
 
-		writeStringToFile(response.Text, "1.txt")
+		//writeStringToFile(response.Text, "1.txt")
 
 		result, err := llmClient.Analyze(response.Text)
 		if err != nil {
@@ -68,6 +82,44 @@ func NewTzHandler(
 		tgMessages := tg_client.FormatForTelegram(result)
 
 		err = tgClient.SendMessage(tgMessages)
+
+		textToWeb := response.Text
+
+		errorsResp := make([]NewTzErrorResponse, 0, 100)
+
+		errorId := 0
+
+		for _, tzError := range result.Errors {
+			for _, finding := range tzError.Findings {
+				if len(finding.Quote) < 4 {
+					continue
+				}
+
+				textToWeb = tz.HighlightPhraseIgnoreCase(textToWeb, finding.Quote, errorId)
+
+				errorsResp = append(errorsResp, NewTzErrorResponse{
+					Id:    errorId,
+					Title: tzError.Code + " " + finding.Advice,
+					Text:  tzError.Title,
+					Type:  "error",
+				})
+
+				errorId++
+			}
+		}
+
+		textToWeb = tz.FixHTMLTags(textToWeb)
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(
+			NewTzResponse{
+				Text: textToWeb,
+				Err:  errorsResp,
+			},
+		); err != nil {
+			log.Error("ошибка закодирования ответа json в http resp")
+		}
+
 		if err != nil {
 			log.Error("Error: \n", err)
 		}
