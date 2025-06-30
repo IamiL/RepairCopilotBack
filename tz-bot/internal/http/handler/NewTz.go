@@ -99,8 +99,8 @@ func NewTzHandler(
 
 				errorsResp_temp = append(errorsResp_temp, NewTzErrorResponse{
 					Id:    errorId,
-					Title: tzError.Code + " " + finding.Advice,
-					Text:  tzError.Title,
+					Title: tzError.Code + " " + tzError.Title,
+					Text:  finding.Advice,
 					Type:  "error",
 				})
 
