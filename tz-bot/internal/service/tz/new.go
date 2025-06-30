@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -30,7 +31,7 @@ func HighlightPhraseIgnoreCase(text, phrase string, id int) string {
 		// Извлекаем оригинальную фразу с сохранением регистра
 		originalPhrase := result[index : index+len(phrase)]
 		escapedPhrase := html.EscapeString(originalPhrase)
-		highlightedPhrase := fmt.Sprintf(`<span data-error="%d" class="error-text">%s</span>`, id, escapedPhrase)
+		highlightedPhrase := fmt.Sprintf(`<span error-id="%d">%s</span>`, id, escapedPhrase)
 
 		// Заменяем найденную фразу
 		result = result[:index] + highlightedPhrase + result[index+len(phrase):]
@@ -66,4 +67,40 @@ func FixHTMLTags(input string) string {
 	result = closeTagRegex.ReplaceAllString(result, "</p>")
 
 	return result
+}
+
+// extractErrorIds извлекает все error-id из span тегов в тексте
+func ExtractErrorIds(text string) []string {
+	// Регулярное выражение для поиска <span error-id="...">
+	// Поддерживает пробелы вокруг атрибутов и другие атрибуты
+	re := regexp.MustCompile(`<span[^>]*\berror-id="([^"]+)"[^>]*>`)
+
+	// Найти все совпадения с группами захвата
+	matches := re.FindAllStringSubmatch(text, -1)
+
+	// Извлечь значения id из групп захвата
+	var ids []string
+	for _, match := range matches {
+		if len(match) > 1 {
+			ids = append(ids, match[1])
+		}
+	}
+
+	return ids
+}
+
+// StringsToInts преобразует массив строк в массив int
+// Возвращает ошибку, если какая-то строка не является числом
+func StringsToInts(strings []string) ([]int, error) {
+	ints := make([]int, len(strings))
+
+	for i, str := range strings {
+		num, err := strconv.Atoi(str)
+		if err != nil {
+			return nil, fmt.Errorf("не удалось преобразовать '%s' в число: %v", str, err)
+		}
+		ints[i] = num
+	}
+
+	return ints, nil
 }

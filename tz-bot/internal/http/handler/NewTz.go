@@ -21,7 +21,7 @@ type NewTzResponse struct {
 type NewTzErrorResponse struct {
 	Id    int    `json:"id"`
 	Title string `json:"title"`
-	Text  string `json:"text"`
+	Text  string `json:"description"`
 	Type  string `json:"type"`
 }
 
@@ -85,7 +85,7 @@ func NewTzHandler(
 
 		textToWeb := response.Text
 
-		errorsResp := make([]NewTzErrorResponse, 0, 100)
+		errorsResp_temp := make([]NewTzErrorResponse, 0, 100)
 
 		errorId := 0
 
@@ -97,7 +97,7 @@ func NewTzHandler(
 
 				textToWeb = tz.HighlightPhraseIgnoreCase(textToWeb, finding.Quote, errorId)
 
-				errorsResp = append(errorsResp, NewTzErrorResponse{
+				errorsResp_temp = append(errorsResp_temp, NewTzErrorResponse{
 					Id:    errorId,
 					Title: tzError.Code + " " + finding.Advice,
 					Text:  tzError.Title,
@@ -110,11 +110,32 @@ func NewTzHandler(
 
 		textToWeb = tz.FixHTMLTags(textToWeb)
 
+		log.Info("ТЕКСТ НА ФРОНТ:")
+		log.Info(textToWeb)
+		log.Info("КОНЕЦ ТЕКСТА НА ФРОНТ")
+
+		ids_temp := tz.ExtractErrorIds(textToWeb)
+
+		ids, err := tz.StringsToInts(ids_temp)
+		if err != nil {
+			log.Error("ошибка преобразования массива ids_string в ids_int")
+		}
+
+		errorsResponse := SortByIdOrderFiltered(errorsResp_temp, ids)
+
+		log.Info("ОШИБКИ НА ФРОНТ")
+		for _, er := range errorsResponse {
+			fmt.Println("errId: ", er.Id)
+			fmt.Println("errTitle: ", er.Title)
+			fmt.Println("_________________________________________________")
+		}
+		log.Info("КОНЕЦ ОШИБОК НА ФРОНТ")
+
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(
 			NewTzResponse{
 				Text: textToWeb,
-				Err:  errorsResp,
+				Err:  errorsResponse,
 			},
 		); err != nil {
 			log.Error("ошибка закодирования ответа json в http resp")
@@ -144,4 +165,24 @@ func writeStringToFile(content string, filename string) error {
 	}
 
 	return nil
+}
+
+// SortByIdOrderFiltered - альтернативная версия, которая возвращает только те элементы,
+// ID которых есть во втором массиве, в точном порядке
+func SortByIdOrderFiltered(responses []NewTzErrorResponse, idOrder []int) []NewTzErrorResponse {
+	// Создаем map для быстрого поиска структур по ID
+	idToResponse := make(map[int]NewTzErrorResponse)
+	for _, response := range responses {
+		idToResponse[response.Id] = response
+	}
+
+	// Создаем результирующий массив в нужном порядке
+	var result []NewTzErrorResponse
+	for _, id := range idOrder {
+		if response, exists := idToResponse[id]; exists {
+			result = append(result, response)
+		}
+	}
+
+	return result
 }
