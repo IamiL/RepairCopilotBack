@@ -113,6 +113,7 @@ func corsMiddleware(log *slog.Logger, next http.Handler) http.Handler {
 				"http://timuroid.ru":        true,
 				"www.timuroid.ru":           true,
 				"http://www.timuroid.ru":    true,
+				"http://timuroid.ru/":       true,
 			}
 
 			// Устанавливаем CORS заголовки только для разрешенных origins
