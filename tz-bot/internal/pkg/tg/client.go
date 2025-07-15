@@ -1,6 +1,7 @@
 package tg_client
 
 import (
+	"bytes"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
@@ -205,4 +206,23 @@ func formatLargeError(index int, err *tz_llm_client.Error, maxLength int) []stri
 	}
 
 	return messages
+}
+
+func (c *Client) SendFile(fileData []byte, filename string) error {
+	reader := bytes.NewReader(fileData)
+	
+	file := tgbotapi.FileReader{
+		Name:   filename,
+		Reader: reader,
+	}
+	
+	document := tgbotapi.NewDocument(c.chatId, file)
+	
+	_, err := c.bot.Send(document)
+	if err != nil {
+		log.Printf("ошибка отправки файла в тг: %v", err)
+		return err
+	}
+	
+	return nil
 }

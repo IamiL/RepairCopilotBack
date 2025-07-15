@@ -33,7 +33,7 @@ func New(
 	router := http.NewServeMux()
 
 	router.HandleFunc(
-		"POST /api/v1/tz",
+		"POST /tz",
 		handler.NewTzHandler(log, tzBotClient),
 	)
 

@@ -177,7 +177,16 @@ A:
 
 	log.Info("успешно сохранён файл в s3")
 
-	return htmlTextResp, errorsResponse, errorsMissingResponse, "", nil
+	log.Info("отправка файла в телеграм")
+	err = tz.tgClient.SendFile(file, filename)
+	if err != nil {
+		log.Error("ошибка отправки файла в телеграм: ", sl.Err(err))
+		tz.tgClient.SendMessage(fmt.Sprintf("Ошибка отправки файла в телеграм: %v", err))
+	} else {
+		log.Info("файл успешно отправлен в телеграм")
+	}
+
+	return htmlTextResp, errorsResponse, errorsMissingResponse, fileId.String(), nil
 
 }
 
