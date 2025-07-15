@@ -4,24 +4,18 @@ import (
 	"flag"
 	"github.com/ilyakaznacheev/cleanenv"
 	"os"
-	"repairCopilotBot/tz-bot/internal/app"
-	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
-	httpapp "repairCopilotBot/tz-bot/internal/app/http"
-	"repairCopilotBot/tz-bot/internal/pkg/llm"
-	"repairCopilotBot/tz-bot/internal/pkg/tg"
-	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
-	"repairCopilotBot/tz-bot/internal/repository/s3minio"
+	"repairCopilotBot/api-gateway-service/internal/app"
+	httpapp "repairCopilotBot/api-gateway-service/internal/app/http"
+	"repairCopilotBot/api-gateway-service/internal/pkg/tg"
+	"repairCopilotBot/tz-bot/client"
 )
 
 type Config struct {
-	Env        string                    `yaml:"env" env-default:"local"`
-	App        app.Config                `yaml:"app"`
-	HTTP       httpapp.Config            `yaml:"http_server"`
-	GRPC       grpcapp.Config            `yaml:"grpc_server"`
-	Llm        tz_llm_client.Config      `yaml:"llm_client"`
-	Tg         tg_client.Config          `yaml:"tg_client"`
-	WordParser word_parser_client.Config `yaml:"word_parser_client"`
-	S3minio    s3minio.Config            `yaml:"s3minio"`
+	Env          string           `yaml:"env" env-default:"local"`
+	App          app.Config       `yaml:"app"`
+	HTTP         httpapp.Config   `yaml:"http_server"`
+	Tg           tg_client.Config `yaml:"tg_client"`
+	TzBotService client.Config    `yaml:"tz_bot_service"`
 }
 
 func MustLoad() *Config {

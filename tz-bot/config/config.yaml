@@ -4,10 +4,18 @@ app:
 http_server:
   port: 8001
   timeout: 4s
+grpc_server:
+  port: localhost:8087
 llm_client:
  url: http://localhost:9000/analyze
 word_parser_client:
-  url: http://localhost:8002/convert
+  url: http://localhost:8002
+s3minio:
+  host: localhost
+  port: 9000
+  accessKey: minioadmin
+  secretKey: minioadmin
 tg_client:
   token: 7550143505:AAFsjHU8x90K8KbTAIPhpMZzF0HUGIGEX3g
+#  token: 7071475834:AAE3-DmHqbFa1nkXRlhCCry4Dm2EvQJq1Kk
   chat_id: -1002549996890

@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"repairCopilotBot/tz-bot/internal/app"
-	"repairCopilotBot/tz-bot/internal/config"
-	"repairCopilotBot/tz-bot/internal/pkg/logger/handlers/slogpretty"
+	"repairCopilotBot/api-gateway-service/internal/app"
+	"repairCopilotBot/api-gateway-service/internal/config"
+	"repairCopilotBot/api-gateway-service/internal/pkg/logger/handlers/slogpretty"
 	"syscall"
 )
 
@@ -25,14 +25,11 @@ func main() {
 		log,
 		&cfg.App,
 		&cfg.HTTP,
-		&cfg.GRPC,
-		&cfg.Llm,
-		&cfg.WordParser,
 		&cfg.Tg,
-		&cfg.S3minio,
+		&cfg.TzBotService,
 	)
 
-	application.GRPCServer.MustRun()
+	application.HTTPServer.MustRun()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)

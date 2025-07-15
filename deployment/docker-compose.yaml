@@ -1,0 +1,86 @@
+services:
+  llm-service-postgres:
+    container_name: postgres_container_llm_service
+    image: postgres:17.5-alpine3.22
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=50"
+      - "-c"
+      - "shared_buffers=1GB"
+      - "-c"
+      - "effective_cache_size=4GB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=512MB"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "temp_file_limit=10GB"
+      - "-c"
+      - "log_min_duration_statement=200ms"
+      - "-c"
+      - "idle_in_transaction_session_timeout=10s"
+      - "-c"
+      - "lock_timeout=1s"
+      - "-c"
+      - "statement_timeout=60s"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "pg_stat_statements.max=10000"
+      - "-c"
+      - "pg_stat_statements.track=all"
+    environment:
+      POSTGRES_DB: "llm"
+      POSTGRES_USER: "hrrjskze"
+      POSTGRES_PASSWORD: "FNhRJt_eapnjJ4BnzAz9"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+#      - ../../../migrations:/docker-entrypoint-initdb.d
+      - llm-service-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5430:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hrrjskze -d llm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+    networks:
+      - llm-service-postgres
+
+  llm-service-pgadmin:
+    container_name: pgadmin_container_llm_service
+    image: dpage/pgadmin4:9.5
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "timbrass2002@gmail.com"
+      PGADMIN_DEFAULT_PASSWORD: "1"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - llm-service-pgadmin-data:/var/lib/pgadmin
+    ports:
+      - "5051:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - llm-service-postgres
+
+volumes:
+  llm-service-postgres-data:
+  llm-service-pgadmin-data:
+
+networks:
+  llm-service-postgres:
+    driver: bridge

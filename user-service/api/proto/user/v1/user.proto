@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "user/v1";
+
+// UserService определяет сервис для работы с пользователями
+service UserService {
+  // RegisterUser регистрирует нового пользователя
+  rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
+
+  // Login выполняет аутентификацию пользователя
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+// RegisterUserRequest содержит данные для регистрации пользователя
+message RegisterUserRequest {
+  string login = 1;         // Логин пользователя
+  string password = 2;      // Пароль пользователя
+}
+
+// RegisterUserResponse содержит результат регистрации
+message RegisterUserResponse {
+  string user_id = 1;       // UUID зарегистрированного пользователя
+}
+
+// LoginRequest содержит данные для аутентификации
+message LoginRequest {
+  string login = 1;         // Логин пользователя
+  string password = 2;      // Пароль пользователя
+}
+
+// LoginResponse содержит результат аутентификации
+message LoginResponse {
+  string user_id = 1;       // UUID аутентифицированного пользователя
+}

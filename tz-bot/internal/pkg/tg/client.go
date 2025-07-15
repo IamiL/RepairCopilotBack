@@ -4,7 +4,7 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	tz_llm_client "repairCopilotBot/tz-bot/package/llm"
+	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"strings"
 )
 
@@ -34,18 +34,25 @@ func New(bot *tgbotapi.BotAPI, chatId int64) *Client {
 	}
 }
 
-func (c *Client) SendMessage(messages []string) error {
+func (c *Client) SendMessage(message string) error {
 
+	// Создаем сообщение
+	msg := tgbotapi.NewMessage(c.chatId, message)
+
+	// Отправляем сообщение
+	_, err := c.bot.Send(msg)
+
+	if err != nil {
+		log.Print("ошибка отправки сообщения в тг: %v", err.Error())
+	}
+
+	return nil
+}
+
+func (c *Client) SendMessages(messages []string) error {
 	for _, message := range messages {
 		// Создаем сообщение
-		msg := tgbotapi.NewMessage(c.chatId, message)
-
-		// Отправляем сообщение
-		_, err := c.bot.Send(msg)
-
-		if err != nil {
-			log.Print("ошибка отправки сообщения в тг: %v", err.Error())
-		}
+		c.SendMessage(message)
 	}
 
 	return nil

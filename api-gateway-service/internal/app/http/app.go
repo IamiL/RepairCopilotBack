@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"repairCopilotBot/tz-bot/internal/http/handler"
-	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
-	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
+	"repairCopilotBot/api-gateway-service/internal/http/handler"
+	"repairCopilotBot/api-gateway-service/internal/pkg/logger/sl"
+	"repairCopilotBot/tz-bot/client"
 	"strconv"
 
 	"time"
@@ -28,13 +28,13 @@ type App struct {
 func New(
 	log *slog.Logger,
 	config *Config,
-	tzService *tzservice.Tz,
+	tzBotClient *client.Client,
 ) *App {
 	router := http.NewServeMux()
 
 	router.HandleFunc(
-		"POST /tz",
-		handler.NewTzHandler(log, tzService),
+		"POST /api/v1/tz",
+		handler.NewTzHandler(log, tzBotClient),
 	)
 
 	routerWithCorsHandler := corsMiddleware(log, router)

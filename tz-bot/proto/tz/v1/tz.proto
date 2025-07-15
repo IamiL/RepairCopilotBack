@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package tz.v1;
+
+option go_package = "repairCopilotBot/tz-bot/proto/tz/v1;tzv1";
+
+
+service TzService {
+  rpc CheckTz(CheckTzRequest) returns (CheckTzResponse);
+}
+
+message CheckTzRequest {
+  bytes file = 1;
+  string filename = 2;
+  string request_id = 3;
+}
+
+message CheckTzResponse {
+  string html_text = 1;
+  repeated TzError errors = 2;
+  repeated TzError errors_missing = 3;
+  string fileId = 4;
+}
+
+message TzError {
+  int32 id = 1;
+  string title = 2;
+  string text = 3;
+  string type = 4;
+}
