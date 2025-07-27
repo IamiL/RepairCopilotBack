@@ -33,7 +33,7 @@ func New(
 	router := http.NewServeMux()
 
 	router.HandleFunc(
-		"POST /tz",
+		"POST /api/v1/tz",
 		handler.NewTzHandler(log, tzBotClient),
 	)
 
@@ -106,6 +106,7 @@ func corsMiddleware(log *slog.Logger, next http.Handler) http.Handler {
 				"http://localhost:8002":     true, // Swagger UI
 				"http://localhost:5173":     true,
 				"http://localhost:4173":     true,
+				"http://localhost:3006":     true,
 				"http://timuroid.ru":        true,
 				"www.timuroid.ru":           true,
 				"http://www.timuroid.ru":    true,

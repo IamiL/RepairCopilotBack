@@ -75,6 +75,18 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 
 	log.Info("конвертация word файла в htmlText успешна")
 
+	log.Info("отправка HTML файла в телеграм")
+
+	htmlFileName := strings.TrimSuffix(filename, ".docx") + ".html"
+	htmlFileData := []byte(*htmlText)
+	err = tz.tgClient.SendFile(htmlFileData, htmlFileName)
+	if err != nil {
+		log.Error("ошибка отправки HTML файла в телеграм: ", sl.Err(err))
+		tz.tgClient.SendMessage(fmt.Sprintf("Ошибка отправки HTML файла в телеграм: %v", err))
+	} else {
+		log.Info("HTML файл успешно отправлен в телеграм")
+	}
+
 	result, err := tz.llmClient.Analyze(*htmlText)
 	if err != nil {
 		log.Error("Error: \n", err)

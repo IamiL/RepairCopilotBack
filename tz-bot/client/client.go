@@ -27,9 +27,10 @@ type TzError struct {
 }
 
 type CheckTzResult struct {
-	HtmlText string
-	Errors   []TzError
-	FileId   string
+	HtmlText      string
+	Errors        []TzError
+	ErrorsMissing []TzError
+	FileId        string
 }
 
 func New(ctx context.Context, addr string) (*Client, error) {
@@ -75,12 +76,23 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 		}
 	}
 
+	errorsMissing := make([]TzError, len(resp.ErrorsMissing), len(resp.ErrorsMissing))
+	for i, grpcError := range resp.ErrorsMissing {
+		errorsMissing[i] = TzError{
+			Id:    int(grpcError.Id),
+			Title: grpcError.Title,
+			Text:  grpcError.Text,
+			Type:  grpcError.Type,
+		}
+	}
+
 	fmt.Println("точка 13")
 
 	return &CheckTzResult{
-		HtmlText: resp.HtmlText,
-		Errors:   errors,
-		FileId:   resp.FileId,
+		HtmlText:      resp.HtmlText,
+		Errors:        errors,
+		FileId:        resp.FileId,
+		ErrorsMissing: errorsMissing,
 	}, nil
 }
 

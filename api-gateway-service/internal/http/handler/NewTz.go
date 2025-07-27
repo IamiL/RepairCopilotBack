@@ -13,8 +13,9 @@ import (
 )
 
 type NewTzResponse struct {
-	Text string               `json:"text"`
-	Err  []NewTzErrorResponse `json:"errors"`
+	Text        string               `json:"text"`
+	Err         []NewTzErrorResponse `json:"errors"`
+	ErrsMissing []NewTzErrorResponse `json:"errors_missing"`
 }
 
 type NewTzErrorResponse struct {
@@ -31,12 +32,16 @@ func NewTzHandler(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Info("NewTzHandler started2")
+
 		// Парсим multipart form (максимум 10MB)
 		err := r.ParseMultipartForm(10 << 20)
 		if err != nil {
 			http.Error(w, "Ошибка парсинга формы", http.StatusBadRequest)
 			return
 		}
+
+		log.Info("парсинг multipart успешен")
 
 		// Получаем файл из формы
 		file, header, err := r.FormFile("file")
@@ -72,7 +77,7 @@ func NewTzHandler(
 			return
 		}
 
-		fmt.Println("точка 3")
+		fmt.Println("точка 3-2")
 
 		errorsResp := make([]NewTzErrorResponse, len(checkTzResult.Errors), len(checkTzResult.Errors))
 
@@ -85,11 +90,24 @@ func NewTzHandler(
 			}
 		}
 
+		errorsMissing := make([]NewTzErrorResponse, len(checkTzResult.ErrorsMissing), len(checkTzResult.ErrorsMissing))
+		for i, e := range checkTzResult.ErrorsMissing {
+			errorsMissing[i] = NewTzErrorResponse{
+				Id:    e.Id,
+				Title: e.Title,
+				Text:  e.Text,
+				Type:  e.Type,
+			}
+		}
+
+		log.Info("отдали ошибок в тексте: ", len(errorsResp), ", ошибок по документу: ", len(errorsMissing))
+
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(
 			NewTzResponse{
-				Text: checkTzResult.HtmlText,
-				Err:  errorsResp,
+				Text:        checkTzResult.HtmlText,
+				Err:         errorsResp,
+				ErrsMissing: errorsMissing,
 			},
 		); err != nil {
 			log.Error("ошибка закодирования ответа json в http resp")

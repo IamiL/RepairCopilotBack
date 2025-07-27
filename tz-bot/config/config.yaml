@@ -11,7 +11,7 @@ llm_client:
 word_parser_client:
   url: http://localhost:8002
 s3minio:
-  host: localhost
+  host: http://94.241.142.172
   port: 9000
   accessKey: minioadmin
   secretKey: minioadmin
