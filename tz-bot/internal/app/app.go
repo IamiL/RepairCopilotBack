@@ -45,9 +45,9 @@ func New(
 	tgClient := tg_client.New(tgBot, TgConfig.ChatID)
 
 	s3Conn, err := s3minio.NewConn(s3Config)
-	if err != nil {
-		panic(err)
-	}
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	s3Client := s3minio.New(s3Conn)
 
