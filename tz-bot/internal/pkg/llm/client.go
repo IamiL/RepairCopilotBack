@@ -23,7 +23,8 @@ func New(url string) *Client {
 
 // Request структура для отправки запроса
 type Request struct {
-	HTML string `json:"html"`
+	HTML  string `json:"html"`
+	Model string `json:"model"`
 	//Codes []string `json:"codes"`
 }
 
@@ -143,7 +144,8 @@ func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 func (c *Client) Analyze(doc string) (*SuccessResponse, error) {
 	// Создаем запрос
 	req := Request{
-		HTML: doc,
+		HTML:  doc,
+		Model: "yandexgpt/latest",
 		//Codes: []string{"code1", "code2", "code3"},
 	}
 
