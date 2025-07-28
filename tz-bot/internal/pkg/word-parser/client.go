@@ -51,7 +51,7 @@ func (c *Client) Convert(fileData []byte, filename string) (*string, error) {
 	}
 
 	// Создаём HTTP запрос
-	req, err := http.NewRequest("POST", c.url+"/convert", &buf)
+	req, err := http.NewRequest("POST", c.url+"/convert-with-css", &buf)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания запроса: %v", err)
 	}
