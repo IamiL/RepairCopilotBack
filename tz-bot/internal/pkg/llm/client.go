@@ -74,7 +74,7 @@ type APIResponse struct {
 	Status  int
 }
 
-// MakeHTTPRequest выполняет HTTP запрос к API с повторными попытками
+// MakeHTTPRequest выполняет HTTP запрос к API
 func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 	// Сериализуем запрос в JSON
 	jsonData, err := json.Marshal(req)
@@ -87,30 +87,20 @@ func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 		Timeout: 120 * time.Second,
 	}
 
-	var resp *http.Response
-	maxRetries := 3
-	
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		// Создаем HTTP запрос
-		httpReq, err := http.NewRequest("POST", c.url, bytes.NewBuffer(jsonData))
-		if err != nil {
-			return nil, fmt.Errorf("ошибка создания запроса: %w", err)
-		}
+	// Создаем HTTP запрос
+	httpReq, err := http.NewRequest("POST", c.url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
+	}
 
-		// Устанавливаем заголовки
-		httpReq.Header.Set("Content-Type", "application/json")
-		httpReq.Header.Set("Accept", "application/json")
+	// Устанавливаем заголовки
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
 
-		// Выполняем запрос
-		resp, err = client.Do(httpReq)
-		if err != nil {
-			if attempt == maxRetries-1 {
-				return nil, fmt.Errorf("ошибка выполнения запроса после %d попыток: %w", maxRetries, err)
-			}
-			time.Sleep(time.Duration(attempt+1) * 2 * time.Second)
-			continue
-		}
-		break
+	// Выполняем запрос
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка выполнения запроса: %w", err)
 	}
 	defer resp.Body.Close()
 

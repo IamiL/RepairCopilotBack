@@ -7,7 +7,7 @@ http_server:
 grpc_server:
   port: localhost:8081
 llm_client:
- url: http://94.228.122.106:9000/analyze
+ url: http://localhost:8000/analyze
 word_parser_client:
   url: http://localhost:8082
 s3minio:

@@ -54,7 +54,7 @@ func New(
 	}
 }
 
-func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, requestID uuid.UUID) (string, []TzError, []TzError, string, error) {
+func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, requestID uuid.UUID) (string, string, string, []TzError, []TzError, string, error) {
 	const op = "Tz.CheckTz"
 
 	log := tz.log.With(
@@ -64,13 +64,13 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 
 	log.Info("checking tz")
 
-	htmlText, _, err := tz.wordConverterClient.Convert(file, filename)
+	htmlText, css, err := tz.wordConverterClient.Convert(file, filename)
 	if err != nil {
 		tz.log.Info("Ошибка обработки файла в wordConverterClient: %v\n" + err.Error())
 
 		tz.tgClient.SendMessage("Ошибка обработки файла в wordConverterClient: %v\n" + err.Error())
 
-		return "", []TzError{}, []TzError{}, "", ErrConvertWordFile
+		return "", "", "", []TzError{}, []TzError{}, "", ErrConvertWordFile
 	}
 
 	log.Info("конвертация word файла в htmlText успешна")
@@ -95,13 +95,13 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		tz.tgClient.SendMessage("ИСПРАВИТЬ: от llm пришёл пустой ответ, но код ответа не ошибочный.")
 
 		log.Info("пустой ответ от llm")
-		return "", []TzError{}, []TzError{}, "", ErrLlmAnalyzeFile
+		return "", "", "", []TzError{}, []TzError{}, "", ErrLlmAnalyzeFile
 	}
 	if result.Errors == nil {
 		tz.tgClient.SendMessage("МБ ЧТО-ТО НЕ ТАК: от llm ответ без ошибок, но код ответа не ошибочный")
 
 		log.Info("0 ошибок в ответе от llm")
-		return "", []TzError{}, []TzError{}, "", ErrLlmAnalyzeFile
+		return "", "", "", []TzError{}, []TzError{}, "", ErrLlmAnalyzeFile
 	}
 
 	htmlTextResp := *htmlText
@@ -150,7 +150,7 @@ A:
 	for _, tzError := range result.Errors {
 		for _, finding := range tzError.Findings {
 
-			if finding.Paragraph == "num0000" {
+			if finding.Paragraph == "00000" {
 				errorsMissingResponse = append(errorsMissingResponse, TzError{
 					Id:    errorId,
 					Title: tzError.Code + " " + tzError.Title,
@@ -175,7 +175,7 @@ A:
 	file, err = tz.wordConverterClient.CreateDocumentFromHTML(htmlTextResp, errorsMap)
 	if err != nil {
 		log.Error("ошибка при обращении к  wordConverterClient: %v\n" + err.Error())
-		return "", []TzError{}, []TzError{}, "", ErrGenerateDocxFile
+		return "", "", "", []TzError{}, []TzError{}, "", ErrGenerateDocxFile
 	}
 
 	log.Info("попытка сохранения docx-файла с примечаниями в s3")
@@ -198,7 +198,7 @@ A:
 		log.Info("файл успешно отправлен в телеграм")
 	}
 
-	return htmlTextResp, errorsResponse, errorsMissingResponse, fileId.String(), nil
+	return htmlTextResp, *css, fileId.String(), errorsResponse, errorsMissingResponse, fileId.String(), nil
 
 }
 

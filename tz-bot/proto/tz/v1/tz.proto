@@ -17,9 +17,11 @@ message CheckTzRequest {
 
 message CheckTzResponse {
   string html_text = 1;
-  repeated TzError errors = 2;
-  repeated TzError errors_missing = 3;
-  string fileId = 4;
+  string css = 2;
+  string docId = 3;
+  repeated TzError errors = 4;
+  repeated TzError errors_missing = 5;
+  string fileId = 6;
 }
 
 message TzError {

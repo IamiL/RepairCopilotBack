@@ -14,6 +14,8 @@ import (
 
 type NewTzResponse struct {
 	Text        string               `json:"text"`
+	Css         string               `json:"css"`
+	DocId       string               `json:"doc_id"`
 	Err         []NewTzErrorResponse `json:"errors"`
 	ErrsMissing []NewTzErrorResponse `json:"errors_missing"`
 }
@@ -77,6 +79,8 @@ func NewTzHandler(
 			return
 		}
 
+		css := checkTzResult.Css
+
 		fmt.Println("точка 3-2")
 
 		errorsResp := make([]NewTzErrorResponse, len(checkTzResult.Errors), len(checkTzResult.Errors))
@@ -108,6 +112,8 @@ func NewTzHandler(
 				Text:        checkTzResult.HtmlText,
 				Err:         errorsResp,
 				ErrsMissing: errorsMissing,
+				Css:         css,
+				DocId:       checkTzResult.DocId,
 			},
 		); err != nil {
 			log.Error("ошибка закодирования ответа json в http resp")

@@ -31,6 +31,8 @@ type CheckTzResult struct {
 	Errors        []TzError
 	ErrorsMissing []TzError
 	FileId        string
+	Css           string
+	DocId         string
 }
 
 func New(ctx context.Context, addr string) (*Client, error) {
@@ -93,6 +95,8 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 		Errors:        errors,
 		FileId:        resp.FileId,
 		ErrorsMissing: errorsMissing,
+		Css:           resp.Css,
+		DocId:         resp.DocId,
 	}, nil
 }
 

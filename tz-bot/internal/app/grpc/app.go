@@ -105,7 +105,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		return nil, status.Error(codes.InvalidArgument, "filename cannot be empty")
 	}
 
-	htmlText, errors, errorsMissing, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
+	htmlText, css, docId, errors, errorsMissing, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
 	if err != nil {
 		log.Error("failed to check tz", slog.String("error", err.Error()))
 
@@ -146,5 +146,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		Errors:        grpcErrors,
 		ErrorsMissing: grpcErrorsMissing,
 		FileId:        fileId,
+		Css:           css,
+		DocId:         docId,
 	}, nil
 }

@@ -84,9 +84,11 @@ func (x *CheckTzRequest) GetRequestId() string {
 type CheckTzResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	HtmlText      string                 `protobuf:"bytes,1,opt,name=html_text,json=htmlText,proto3" json:"html_text,omitempty"`
-	Errors        []*TzError             `protobuf:"bytes,2,rep,name=errors,proto3" json:"errors,omitempty"`
-	ErrorsMissing []*TzError             `protobuf:"bytes,3,rep,name=errors_missing,json=errorsMissing,proto3" json:"errors_missing,omitempty"`
-	FileId        string                 `protobuf:"bytes,4,opt,name=fileId,proto3" json:"fileId,omitempty"`
+	Css           string                 `protobuf:"bytes,2,opt,name=css,proto3" json:"css,omitempty"`
+	DocId         string                 `protobuf:"bytes,3,opt,name=docId,proto3" json:"docId,omitempty"`
+	Errors        []*TzError             `protobuf:"bytes,4,rep,name=errors,proto3" json:"errors,omitempty"`
+	ErrorsMissing []*TzError             `protobuf:"bytes,5,rep,name=errors_missing,json=errorsMissing,proto3" json:"errors_missing,omitempty"`
+	FileId        string                 `protobuf:"bytes,6,opt,name=fileId,proto3" json:"fileId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -124,6 +126,20 @@ func (*CheckTzResponse) Descriptor() ([]byte, []int) {
 func (x *CheckTzResponse) GetHtmlText() string {
 	if x != nil {
 		return x.HtmlText
+	}
+	return ""
+}
+
+func (x *CheckTzResponse) GetCss() string {
+	if x != nil {
+		return x.Css
+	}
+	return ""
+}
+
+func (x *CheckTzResponse) GetDocId() string {
+	if x != nil {
+		return x.DocId
 	}
 	return ""
 }
@@ -226,12 +242,14 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x04file\x18\x01 \x01(\fR\x04file\x12\x1a\n" +
 	"\bfilename\x18\x02 \x01(\tR\bfilename\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x03 \x01(\tR\trequestId\"\xa5\x01\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\"\xcd\x01\n" +
 	"\x0fCheckTzResponse\x12\x1b\n" +
-	"\thtml_text\x18\x01 \x01(\tR\bhtmlText\x12&\n" +
-	"\x06errors\x18\x02 \x03(\v2\x0e.tz.v1.TzErrorR\x06errors\x125\n" +
-	"\x0eerrors_missing\x18\x03 \x03(\v2\x0e.tz.v1.TzErrorR\rerrorsMissing\x12\x16\n" +
-	"\x06fileId\x18\x04 \x01(\tR\x06fileId\"W\n" +
+	"\thtml_text\x18\x01 \x01(\tR\bhtmlText\x12\x10\n" +
+	"\x03css\x18\x02 \x01(\tR\x03css\x12\x14\n" +
+	"\x05docId\x18\x03 \x01(\tR\x05docId\x12&\n" +
+	"\x06errors\x18\x04 \x03(\v2\x0e.tz.v1.TzErrorR\x06errors\x125\n" +
+	"\x0eerrors_missing\x18\x05 \x03(\v2\x0e.tz.v1.TzErrorR\rerrorsMissing\x12\x16\n" +
+	"\x06fileId\x18\x06 \x01(\tR\x06fileId\"W\n" +
 	"\aTzError\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
