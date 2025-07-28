@@ -189,6 +189,15 @@ A:
 
 	log.Info("успешно сохранён файл в s3")
 
+	htmlFileData2 := []byte(htmlTextResp)
+	err = tz.tgClient.SendFile(htmlFileData2, "123")
+	if err != nil {
+		log.Error("ошибка отправки HTML файла в телеграм: ", sl.Err(err))
+		tz.tgClient.SendMessage(fmt.Sprintf("Ошибка отправки HTML файла в телеграм: %v", err))
+	} else {
+		log.Info("HTML файл успешно отправлен в телеграм")
+	}
+
 	log.Info("отправка файла в телеграм")
 	err = tz.tgClient.SendFile(file, filename)
 	if err != nil {
@@ -199,7 +208,6 @@ A:
 	}
 
 	return htmlTextResp, *css, fileId.String(), errorsResponse, errorsMissingResponse, fileId.String(), nil
-
 }
 
 // HighlightPhraseIgnoreCase ищет фразу без учета регистра в указанном блоке

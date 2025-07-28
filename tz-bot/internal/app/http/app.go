@@ -40,8 +40,10 @@ func New(
 	routerWithCorsHandler := corsMiddleware(log, router)
 
 	srv := &http.Server{
-		Addr:    ":" + strconv.Itoa(config.Port),
-		Handler: routerWithCorsHandler,
+		Addr:        ":" + strconv.Itoa(config.Port),
+		Handler:     routerWithCorsHandler,
+		IdleTimeout: 600 * time.Second,
+		ReadTimeout: 600 * time.Second,
 	}
 
 	return &App{log: log, httpServer: srv, port: config.Port}
