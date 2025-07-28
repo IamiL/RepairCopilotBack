@@ -5,13 +5,13 @@ http_server:
   port: 8001
   timeout: 4s
 grpc_server:
-  port: localhost:8087
+  port: localhost:8081
 llm_client:
- url: http://localhost:9000/analyze
+ url: http://94.228.122.106:9000/analyze
 word_parser_client:
-  url: http://localhost:8002
+  url: http://localhost:8082
 s3minio:
-  host: http://94.241.142.172
+  host: localhost
   port: 9000
   accessKey: minioadmin
   secretKey: minioadmin
