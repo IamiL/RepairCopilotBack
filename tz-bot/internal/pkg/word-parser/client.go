@@ -26,34 +26,35 @@ type Response struct {
 	Filename string `json:"filename"`
 	Length   int    `json:"length"`
 	Success  bool   `json:"success"`
-	Text     string `json:"text"`
+	Text     string `json:"html"`
+	Css      string `json:"css"`
 }
 
-func (c *Client) Convert(fileData []byte, filename string) (*string, error) {
+func (c *Client) Convert(fileData []byte, filename string) (*string, *string, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
 	part, err := writer.CreateFormFile("file", filename)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка создания form file: %v", err)
+		return nil, nil, fmt.Errorf("ошибка создания form file: %v", err)
 	}
 
 	// Записываем байты файла в поле
 	_, err = part.Write(fileData)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка записи файла: %v", err)
+		return nil, nil, fmt.Errorf("ошибка записи файла: %v", err)
 	}
 
 	// Закрываем writer
 	err = writer.Close()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка закрытия writer: %v", err)
+		return nil, nil, fmt.Errorf("ошибка закрытия writer: %v", err)
 	}
 
 	// Создаём HTTP запрос
-	req, err := http.NewRequest("POST", c.url+"/convert-with-css", &buf)
+	req, err := http.NewRequest("POST", c.url+"/convert-with-pages-and-css", &buf)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка создания запроса: %v", err)
+		return nil, nil, fmt.Errorf("ошибка создания запроса: %v", err)
 	}
 
 	// Устанавливаем правильный Content-Type
@@ -63,24 +64,24 @@ func (c *Client) Convert(fileData []byte, filename string) (*string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка выполнения запроса: %v", err)
+		return nil, nil, fmt.Errorf("ошибка выполнения запроса: %v", err)
 	}
 	defer resp.Body.Close()
 
 	// Читаем ответ
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка чтения ответа: %v", err)
+		return nil, nil, fmt.Errorf("ошибка чтения ответа: %v", err)
 	}
 
 	// Парсим JSON ответ
 	var apiResp Response
 	err = json.Unmarshal(body, &apiResp)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка парсинга JSON: %v", err)
+		return nil, nil, fmt.Errorf("ошибка парсинга JSON: %v", err)
 	}
 
-	return &apiResp.Text, nil
+	return &apiResp.Text, &apiResp.Css, nil
 }
 
 // CreateDocumentRequest представляет структуру запроса для создания документа

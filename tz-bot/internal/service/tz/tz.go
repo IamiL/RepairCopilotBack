@@ -64,7 +64,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 
 	log.Info("checking tz")
 
-	htmlText, err := tz.wordConverterClient.Convert(file, filename)
+	htmlText, _, err := tz.wordConverterClient.Convert(file, filename)
 	if err != nil {
 		tz.log.Info("Ошибка обработки файла в wordConverterClient: %v\n" + err.Error())
 
