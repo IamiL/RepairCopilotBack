@@ -3,7 +3,7 @@ app:
   token_ttl: 300h
 http_server:
   port: 8001
-  timeout: 4s
+  timeout: 600s
 grpc_server:
   port: localhost:8081
 llm_client:

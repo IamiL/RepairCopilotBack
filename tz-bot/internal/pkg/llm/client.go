@@ -85,7 +85,7 @@ func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 
 	// Создаем HTTP клиент с таймаутом
 	client := &http.Client{
-		Timeout: 120 * time.Second,
+		Timeout: 600 * time.Second,
 	}
 
 	// Создаем HTTP запрос

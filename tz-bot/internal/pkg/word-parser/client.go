@@ -115,7 +115,7 @@ func (c *Client) CreateDocumentFromHTML(htmlContent string, comments map[string]
 
 	// Создаем HTTP клиент с таймаутом
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 600 * time.Second,
 	}
 
 	// Формируем URL для запроса
