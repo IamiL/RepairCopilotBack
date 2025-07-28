@@ -144,8 +144,8 @@ func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 func (c *Client) Analyze(doc string) (*SuccessResponse, error) {
 	// Создаем запрос
 	req := Request{
-		HTML:  doc,
-		Model: "yandexgpt/latest",
+		HTML: doc,
+		//Model: "yandexgpt/latest",
 		//Codes: []string{"code1", "code2", "code3"},
 	}
 
