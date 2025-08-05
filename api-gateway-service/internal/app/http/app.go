@@ -7,6 +7,8 @@ import (
 	"os"
 	"repairCopilotBot/api-gateway-service/internal/http/handler"
 	"repairCopilotBot/api-gateway-service/internal/pkg/logger/sl"
+	"repairCopilotBot/api-gateway-service/internal/repository"
+	userserviceclient "repairCopilotBot/user-service/client"
 	"repairCopilotBot/tz-bot/client"
 	"strconv"
 
@@ -29,12 +31,19 @@ func New(
 	log *slog.Logger,
 	config *Config,
 	tzBotClient *client.Client,
+	userServiceClient *userserviceclient.UserClient,
+	sessionRepo *repository.SessionRepository,
 ) *App {
 	router := http.NewServeMux()
 
 	router.HandleFunc(
 		"POST /api/v1/tz",
 		handler.NewTzHandler(log, tzBotClient),
+	)
+
+	router.HandleFunc(
+		"POST /api/v1/users/login",
+		handler.LoginHandler(log, userServiceClient, sessionRepo),
 	)
 
 	routerWithCorsHandler := corsMiddleware(log, router)

@@ -51,8 +51,8 @@ func (c *Client) Convert(fileData []byte, filename string) (*string, *string, er
 		return nil, nil, fmt.Errorf("ошибка закрытия writer: %v", err)
 	}
 
-	// Создаём HTTP запрос
-	req, err := http.NewRequest("POST", c.url+"/convert-with-pages-and-css", &buf)
+	// Создаём HTTP запрос с query параметром format=html
+	req, err := http.NewRequest("POST", c.url+"/api/v1/convert?format=html", &buf)
 	if err != nil {
 		return nil, nil, fmt.Errorf("ошибка создания запроса: %v", err)
 	}

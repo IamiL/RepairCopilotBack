@@ -68,8 +68,16 @@ func (c *UserClient) RegisterUser(ctx context.Context, login, password string) (
 	return resp.UserId, nil
 }
 
+// LoginResponse содержит данные пользователя после аутентификации 
+type LoginResponse struct {
+	UserID   string
+	Login    string
+	IsAdmin1 bool
+	IsAdmin2 bool
+}
+
 // Login выполняет аутентификацию пользователя
-func (c *UserClient) Login(ctx context.Context, login, password string) (string, error) {
+func (c *UserClient) Login(ctx context.Context, login, password string) (*LoginResponse, error) {
 	req := &pb.LoginRequest{
 		Login:    login,
 		Password: password,
@@ -81,17 +89,22 @@ func (c *UserClient) Login(ctx context.Context, login, password string) (string,
 		if st, ok := status.FromError(err); ok {
 			switch st.Code() {
 			case codes.InvalidArgument:
-				return "", fmt.Errorf("invalid input: %s", st.Message())
+				return nil, fmt.Errorf("invalid input: %s", st.Message())
 			case codes.Unauthenticated:
-				return "", fmt.Errorf("invalid credentials")
+				return nil, fmt.Errorf("invalid credentials")
 			case codes.Internal:
-				return "", fmt.Errorf("internal server error")
+				return nil, fmt.Errorf("internal server error")
 			default:
-				return "", fmt.Errorf("authentication failed: %s", st.Message())
+				return nil, fmt.Errorf("authentication failed: %s", st.Message())
 			}
 		}
-		return "", err
+		return nil, err
 	}
 
-	return resp.UserId, nil
+	return &LoginResponse{
+		UserID:   resp.UserId,
+		Login:    login,
+		IsAdmin1: resp.IsAdmin1,
+		IsAdmin2: resp.IsAdmin2,
+	}, nil
 }

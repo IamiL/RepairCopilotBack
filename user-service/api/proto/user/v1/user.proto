@@ -11,6 +11,9 @@ service UserService {
 
   // Login выполняет аутентификацию пользователя
   rpc Login(LoginRequest) returns (LoginResponse);
+
+  // GetLoginById получает логин пользователя по ID
+  rpc GetLoginById(GetLoginByIdRequest) returns (GetLoginByIdResponse);
 }
 
 // RegisterUserRequest содержит данные для регистрации пользователя
@@ -33,4 +36,16 @@ message LoginRequest {
 // LoginResponse содержит результат аутентификации
 message LoginResponse {
   string user_id = 1;       // UUID аутентифицированного пользователя
+  bool  is_admin1 = 2;
+  bool is_admin2 = 3;
+}
+
+// GetLoginByIdRequest содержит ID пользователя для получения логина
+message GetLoginByIdRequest {
+  string user_id = 1;       // UUID пользователя
+}
+
+// GetLoginByIdResponse содержит логин пользователя
+message GetLoginByIdResponse {
+  string login = 1;         // Логин пользователя
 }

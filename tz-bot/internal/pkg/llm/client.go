@@ -23,24 +23,50 @@ func New(url string) *Client {
 
 // Request структура для отправки запроса
 type Request struct {
-	HTML  string `json:"html"`
-	Model string `json:"model"`
+	Markdown string `json:"markdown"`
+	Model    string `json:"model"`
 	//Codes []string `json:"codes"`
 }
 
-// Finding структура для отдельного finding
-type Finding struct {
-	Paragraph string `json:"paragraph"`
-	Quote     string `json:"quote"`
-	Advice    string `json:"advice"`
+// Retrieval структура для извлеченного текста
+type Retrieval struct {
+	Text      string `json:"text"`
+	LineStart int    `json:"line_start"`
+	LineEnd   int    `json:"line_end"`
 }
 
-// Error структура для ошибки в ответе
-type Error struct {
-	Code     string    `json:"code"`
-	Title    string    `json:"title"`
-	Kind     string    `json:"kind"`
-	Findings []Finding `json:"findings"`
+// Process структура для процесса анализа
+type Process struct {
+	Retrieval    []Retrieval `json:"retrieval"`
+	Analysis     string      `json:"analysis"`
+	Critique     string      `json:"critique"`
+	Verification string      `json:"verification"`
+}
+
+// Instance структура для экземпляра ошибки
+type Instance struct {
+	ErrType      string `json:"err_type"`
+	Snippet      string `json:"snippet"`
+	LineStart    *int   `json:"line_start"`
+	LineEnd      *int   `json:"line_end"`
+	SuggestedFix string `json:"suggested_fix"`
+	Rationale    string `json:"rationale"`
+}
+
+// ReportError структура для ошибки в отчете
+type ReportError struct {
+	Code      string     `json:"code"`
+	Process   Process    `json:"process"`
+	Verdict   string     `json:"verdict"`
+	Instances []Instance `json:"instances"`
+}
+
+// Report структура для отчета группы
+type Report struct {
+	GroupId           string        `json:"group_id"`
+	PreliminaryNotes  string        `json:"preliminary_notes"`
+	Errors            []ReportError `json:"errors"`
+	OverallCritique   *string       `json:"overall_critique"`
 }
 
 // Tokens структура для информации о токенах
@@ -52,8 +78,8 @@ type Tokens struct {
 
 // SuccessResponse структура для успешного ответа (200)
 type SuccessResponse struct {
-	Errors []Error `json:"errors"`
-	Tokens Tokens  `json:"tokens"`
+	Reports []Report `json:"reports"`
+	Tokens  Tokens   `json:"tokens"`
 }
 
 // ValidationError структура для ошибки валидации (422)
@@ -122,8 +148,16 @@ func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 		if err := json.Unmarshal(body, &successResp); err != nil {
 			return nil, fmt.Errorf("ошибка парсинга успешного ответа: %w", err)
 		}
-		fmt.Println("количество найденных ошибок: ", len(successResp.Errors))
-		fmt.Println("ошибки в ответе от ллм: ", successResp.Errors)
+		fmt.Printf("количество отчетов: %d\n", len(successResp.Reports))
+		totalErrors := 0
+		for _, report := range successResp.Reports {
+			for _, err := range report.Errors {
+				if err.Verdict == "error_present" {
+					totalErrors++
+				}
+			}
+		}
+		fmt.Printf("общее количество найденных ошибок: %d\n", totalErrors)
 		result.Success = &successResp
 
 	case 422:
@@ -144,7 +178,7 @@ func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 func (c *Client) Analyze(doc string) (*SuccessResponse, error) {
 	// Создаем запрос
 	req := Request{
-		HTML: doc,
+		Markdown: doc,
 		//Model: "yandexgpt/latest",
 		//Codes: []string{"code1", "code2", "code3"},
 	}

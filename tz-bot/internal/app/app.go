@@ -7,6 +7,7 @@ import (
 	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
 	httpapp "repairCopilotBot/tz-bot/internal/app/http"
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
+	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
@@ -30,12 +31,15 @@ func New(
 	grpcConfig *grpcapp.Config,
 	LlmConfig *tz_llm_client.Config,
 	WordParserConfig *word_parser_client.Config,
+	MarkdownServiceConfig *markdown_service_client.Config,
 	TgConfig *tg_client.Config,
 	s3Config *s3minio.Config,
 ) *App {
 	llmClient := tz_llm_client.New(LlmConfig.Url)
 
 	wordParserClient := word_parser_client.New(WordParserConfig.Url)
+
+	markdownClient := markdown_service_client.New(MarkdownServiceConfig.Url)
 
 	tgBot, err := tg_client.NewBot(TgConfig.Token)
 	if err != nil {
@@ -51,7 +55,7 @@ func New(
 
 	s3Client := s3minio.New(s3Conn)
 
-	tzService := tzservice.New(log, wordParserClient, llmClient, tgClient, s3Client)
+	tzService := tzservice.New(log, wordParserClient, markdownClient, llmClient, tgClient, s3Client)
 
 	httpApp := httpapp.New(log, httpConfig, tzService)
 

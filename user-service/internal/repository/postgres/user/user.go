@@ -24,13 +24,17 @@ func (s *Storage) NewUser(
 	uid string,
 	login string,
 	passHash string,
+	isAdmin1 bool,
+	isAdmin2 bool,
 ) error {
 	_, err := s.db.Exec(
 		ctx,
-		"INSERT INTO users(id, login, pass_hash) VALUES($1, $2, $3)",
+		"INSERT INTO users(id, login, pass_hash, is_admin1, is_admin2) VALUES($1, $2, $3, $4, $5)",
 		uid,
 		login,
 		passHash,
+		isAdmin1,
+		isAdmin2,
 	)
 	if err != nil {
 		return err
@@ -42,21 +46,24 @@ func (s *Storage) NewUser(
 func (s *Storage) User(ctx context.Context, login string) (
 	string,
 	string,
+	bool,
+	bool,
 	error,
 ) {
-	query := `SELECT id, pass_hash FROM users WHERE login = $1`
+	query := `SELECT id, pass_hash, is_admin1, is_admin2 FROM users WHERE login = $1`
 
 	var id, passHash string
+	var isAdmin1, isAdmin2 bool
 
-	err := s.db.QueryRow(ctx, query, login).Scan(&id, &passHash)
+	err := s.db.QueryRow(ctx, query, login).Scan(&id, &passHash, &isAdmin1, &isAdmin2)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", "", repo.ErrUserNotFound
+			return "", "", false, false, repo.ErrUserNotFound
 		}
-		return "", "", fmt.Errorf("database error: %w", err)
+		return "", "", false, false, fmt.Errorf("database error: %w", err)
 	}
 
-	return id, passHash, nil
+	return id, passHash, isAdmin1, isAdmin2, nil
 }
 
 func (s *Storage) EditUser(
@@ -64,13 +71,31 @@ func (s *Storage) EditUser(
 	uid string,
 	login string,
 	passHash string,
+	isAdmin1 bool,
+	isAdmin2 bool,
 ) error {
-	query := `UPDATE users SET login = $1, pass_hash = $2 WHERE id = $3`
+	query := `UPDATE users SET login = $1, pass_hash = $2, is_admin1 = $3, is_admin2 = $4 WHERE id = $5`
 
-	_, err := s.db.Exec(ctx, query, login, passHash, uid)
+	_, err := s.db.Exec(ctx, query, login, passHash, isAdmin1, isAdmin2, uid)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Storage) LoginById(ctx context.Context, uid string) (string, error) {
+	query := `SELECT login FROM users WHERE id = $1`
+
+	var login string
+
+	err := s.db.QueryRow(ctx, query, uid).Scan(&login)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", repo.ErrUserNotFound
+		}
+		return "", fmt.Errorf("database error: %w", err)
+	}
+
+	return login, nil
 }

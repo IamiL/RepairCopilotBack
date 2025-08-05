@@ -176,6 +176,8 @@ func (x *LoginRequest) GetPassword() string {
 type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID аутентифицированного пользователя
+	IsAdmin1      bool                   `protobuf:"varint,2,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"`
+	IsAdmin2      bool                   `protobuf:"varint,3,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -217,6 +219,110 @@ func (x *LoginResponse) GetUserId() string {
 	return ""
 }
 
+func (x *LoginResponse) GetIsAdmin1() bool {
+	if x != nil {
+		return x.IsAdmin1
+	}
+	return false
+}
+
+func (x *LoginResponse) GetIsAdmin2() bool {
+	if x != nil {
+		return x.IsAdmin2
+	}
+	return false
+}
+
+// GetLoginByIdRequest содержит ID пользователя для получения логина
+type GetLoginByIdRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID пользователя
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLoginByIdRequest) Reset() {
+	*x = GetLoginByIdRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLoginByIdRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLoginByIdRequest) ProtoMessage() {}
+
+func (x *GetLoginByIdRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLoginByIdRequest.ProtoReflect.Descriptor instead.
+func (*GetLoginByIdRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetLoginByIdRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+// GetLoginByIdResponse содержит логин пользователя
+type GetLoginByIdResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Login         string                 `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"` // Логин пользователя
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLoginByIdResponse) Reset() {
+	*x = GetLoginByIdResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLoginByIdResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLoginByIdResponse) ProtoMessage() {}
+
+func (x *GetLoginByIdResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLoginByIdResponse.ProtoReflect.Descriptor instead.
+func (*GetLoginByIdResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetLoginByIdResponse) GetLogin() string {
+	if x != nil {
+		return x.Login
+	}
+	return ""
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
@@ -229,12 +335,19 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"(\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"b\n" +
 	"\rLoginResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId2\x92\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
+	"\tis_admin1\x18\x02 \x01(\bR\bisAdmin1\x12\x1b\n" +
+	"\tis_admin2\x18\x03 \x01(\bR\bisAdmin2\".\n" +
+	"\x13GetLoginByIdRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\",\n" +
+	"\x14GetLoginByIdResponse\x12\x14\n" +
+	"\x05login\x18\x01 \x01(\tR\x05login2\xdf\x01\n" +
 	"\vUserService\x12K\n" +
 	"\fRegisterUser\x12\x1c.user.v1.RegisterUserRequest\x1a\x1d.user.v1.RegisterUserResponse\x126\n" +
-	"\x05Login\x12\x15.user.v1.LoginRequest\x1a\x16.user.v1.LoginResponseB\tZ\auser/v1b\x06proto3"
+	"\x05Login\x12\x15.user.v1.LoginRequest\x1a\x16.user.v1.LoginResponse\x12K\n" +
+	"\fGetLoginById\x12\x1c.user.v1.GetLoginByIdRequest\x1a\x1d.user.v1.GetLoginByIdResponseB\tZ\auser/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
@@ -248,20 +361,24 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_user_v1_user_proto_rawDescData
 }
 
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_user_v1_user_proto_goTypes = []any{
 	(*RegisterUserRequest)(nil),  // 0: user.v1.RegisterUserRequest
 	(*RegisterUserResponse)(nil), // 1: user.v1.RegisterUserResponse
 	(*LoginRequest)(nil),         // 2: user.v1.LoginRequest
 	(*LoginResponse)(nil),        // 3: user.v1.LoginResponse
+	(*GetLoginByIdRequest)(nil),  // 4: user.v1.GetLoginByIdRequest
+	(*GetLoginByIdResponse)(nil), // 5: user.v1.GetLoginByIdResponse
 }
 var file_user_v1_user_proto_depIdxs = []int32{
 	0, // 0: user.v1.UserService.RegisterUser:input_type -> user.v1.RegisterUserRequest
 	2, // 1: user.v1.UserService.Login:input_type -> user.v1.LoginRequest
-	1, // 2: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	3, // 3: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: user.v1.UserService.GetLoginById:input_type -> user.v1.GetLoginByIdRequest
+	1, // 3: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	3, // 4: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	5, // 5: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -278,7 +395,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

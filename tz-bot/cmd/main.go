@@ -28,6 +28,7 @@ func main() {
 		&cfg.GRPC,
 		&cfg.Llm,
 		&cfg.WordParser,
+		&cfg.MarkdownService,
 		&cfg.Tg,
 		&cfg.S3minio,
 	)

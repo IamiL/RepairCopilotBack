@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
+	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
@@ -20,6 +21,7 @@ import (
 type Tz struct {
 	log                 *slog.Logger
 	wordConverterClient *word_parser_client.Client
+	markdownClient      *markdown_service_client.Client
 	llmClient           *tz_llm_client.Client
 	tgClient            *tg_client.Client
 	s3                  *s3minio.MinioRepository
@@ -41,6 +43,7 @@ type TzError struct {
 func New(
 	log *slog.Logger,
 	wordConverterClient *word_parser_client.Client,
+	markdownClient *markdown_service_client.Client,
 	llmClient *tz_llm_client.Client,
 	tgClient *tg_client.Client,
 	s3 *s3minio.MinioRepository,
@@ -48,6 +51,7 @@ func New(
 	return &Tz{
 		log:                 log,
 		wordConverterClient: wordConverterClient,
+		markdownClient:      markdownClient,
 		llmClient:           llmClient,
 		tgClient:            tgClient,
 		s3:                  s3,
@@ -75,6 +79,18 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 
 	log.Info("конвертация word файла в htmlText успешна")
 
+	log.Info("отправляем HTML в markdown-service для конвертации")
+
+	markdownResponse, err := tz.markdownClient.Convert(*htmlText)
+	if err != nil {
+		log.Error("ошибка конвертации HTML в markdown: ", sl.Err(err))
+		tz.tgClient.SendMessage(fmt.Sprintf("Ошибка конвертации HTML в markdown: %v", err))
+		return "", "", "", []TzError{}, []TzError{}, "", fmt.Errorf("ошибка конвертации HTML в markdown: %w", err)
+	}
+
+	log.Info("конвертация HTML в markdown успешна")
+	log.Info(fmt.Sprintf("получены дополнительные данные: message=%s, mappings_count=%d", markdownResponse.Message, len(markdownResponse.Mappings)))
+
 	log.Info("отправка HTML файла в телеграм")
 
 	htmlFileName := strings.TrimSuffix(filename, ".docx") + ".html"
@@ -87,7 +103,19 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		log.Info("HTML файл успешно отправлен в телеграм")
 	}
 
-	result, err := tz.llmClient.Analyze(*htmlText)
+	log.Info("отправка Markdown файла в телеграм")
+
+	markdownFileName := strings.TrimSuffix(filename, ".docx") + ".md"
+	markdownFileData := []byte(markdownResponse.Markdown)
+	err = tz.tgClient.SendFile(markdownFileData, markdownFileName)
+	if err != nil {
+		log.Error("ошибка отправки Markdown файла в телеграм: ", sl.Err(err))
+		tz.tgClient.SendMessage(fmt.Sprintf("Ошибка отправки Markdown файла в телеграм: %v", err))
+	} else {
+		log.Info("Markdown файл успешно отправлен в телеграм")
+	}
+
+	result, err := tz.llmClient.Analyze(markdownResponse.Markdown)
 	if err != nil {
 		log.Error("Error: \n", err)
 	}
@@ -97,37 +125,15 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		log.Info("пустой ответ от llm")
 		return "", "", "", []TzError{}, []TzError{}, "", ErrLlmAnalyzeFile
 	}
-	if result.Errors == nil {
-		tz.tgClient.SendMessage("МБ ЧТО-ТО НЕ ТАК: от llm ответ без ошибок, но код ответа не ошибочный")
+	if result.Reports == nil || len(result.Reports) == 0 {
+		tz.tgClient.SendMessage("МБ ЧТО-ТО НЕ ТАК: от llm ответ без отчетов, но код ответа не ошибочный")
 
-		log.Info("0 ошибок в ответе от llm")
+		log.Info("0 отчетов в ответе от llm")
 		return "", "", "", []TzError{}, []TzError{}, "", ErrLlmAnalyzeFile
 	}
 
-	htmlTextResp := *htmlText
-
-	errorsRespTemp := make([]TzError, 0, 100)
-
-	errorId := 0
-
-	for _, tzError := range result.Errors {
-		for _, finding := range tzError.Findings {
-			if len(finding.Quote) < 4 {
-				continue
-			}
-
-			htmlTextResp = HighlightPhraseIgnoreCase(htmlTextResp, finding.Quote, errorId, finding.Paragraph)
-
-			errorsRespTemp = append(errorsRespTemp, TzError{
-				Id:    errorId,
-				Title: tzError.Code + " " + tzError.Title,
-				Text:  finding.Advice,
-				Type:  "error",
-			})
-
-			errorId++
-		}
-	}
+	// Обрабатываем ошибки типа invalid с помощью новой функции
+	errorsRespTemp, htmlTextResp, errorId := ProcessInvalidErrors(result.Reports, markdownResponse.Mappings, *htmlText)
 
 	//htmlTextResp = FixHTMLTags(htmlTextResp)
 
@@ -144,23 +150,31 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 
 	errorsResponse := SortByIdOrderFiltered(errorsRespTemp, ids)
 
+	// Обрабатываем ошибки без определенного местоположения (с blockNum = "00000")
 	errorsMissingResponse := make([]TzError, 0, 100)
 
-A:
-	for _, tzError := range result.Errors {
-		for _, finding := range tzError.Findings {
-
-			if finding.Paragraph == "00000" {
-				errorsMissingResponse = append(errorsMissingResponse, TzError{
-					Id:    errorId,
-					Title: tzError.Code + " " + tzError.Title,
-					Text:  finding.Advice,
-					Type:  "error",
-				})
-				continue A
+	for _, report := range result.Reports {
+		for _, tzError := range report.Errors {
+			if tzError.Verdict != "error_present" {
+				continue
 			}
 
-			errorId++
+			for _, instance := range tzError.Instances {
+				if instance.ErrType != "invalid" {
+					continue
+				}
+
+				// Если нет номеров строк или они указывают на отсутствие местоположения
+				if instance.LineStart == nil || instance.LineEnd == nil {
+					errorsMissingResponse = append(errorsMissingResponse, TzError{
+						Id:    errorId,
+						Title: tzError.Code + " " + instance.ErrType,
+						Text:  instance.SuggestedFix + " " + instance.Rationale,
+						Type:  "error",
+					})
+					errorId++
+				}
+			}
 		}
 	}
 
@@ -322,6 +336,127 @@ func StringsToInts(strings []string) ([]int, error) {
 	}
 
 	return ints, nil
+}
+
+// ProcessInvalidErrors обрабатывает ошибки типа invalid из LLM ответа
+// Возвращает обработанные ошибки и обновленный HTML текст с подсветкой
+func ProcessInvalidErrors(reports []tz_llm_client.Report, mappings []markdown_service_client.Mapping, htmlText string) ([]TzError, string, int) {
+	errorsRespTemp := make([]TzError, 0, 100)
+	htmlTextResp := htmlText
+	errorId := 0
+
+	for _, report := range reports {
+		for _, tzError := range report.Errors {
+			if tzError.Verdict != "error_present" {
+				continue
+			}
+
+			for _, instance := range tzError.Instances {
+				if instance.ErrType != "invalid" {
+					continue
+				}
+
+				if len(instance.Snippet) < 4 {
+					continue
+				}
+
+				// Ищем подходящие маппинги по номерам строк
+				var targetMappings []markdown_service_client.Mapping
+				if instance.LineStart != nil && instance.LineEnd != nil {
+					for _, mapping := range mappings {
+						if mapping.MarkdownLineStart <= *instance.LineStart &&
+							mapping.MarkdownLineEnd >= *instance.LineEnd {
+							targetMappings = append(targetMappings, mapping)
+						}
+					}
+				}
+
+				// Если не нашли по номерам строк, используем все маппинги
+				if len(targetMappings) == 0 {
+					targetMappings = mappings
+				}
+
+				// Ищем фразу из snippet в HTML контенте маппингов
+				found := false
+				blockNum := "00000"
+
+				for _, mapping := range targetMappings {
+					if searchPhraseInHTML(instance.Snippet, mapping.HtmlContent) {
+						found = true
+						blockNum = mapping.HtmlElementId
+						break
+					}
+				}
+
+				// Если нашли совпадение, подсвечиваем в HTML
+				if found {
+					htmlTextResp = HighlightPhraseIgnoreCase(htmlTextResp, instance.Snippet, errorId, blockNum)
+				}
+
+				// Добавляем ошибку в результат
+				errorsRespTemp = append(errorsRespTemp, TzError{
+					Id:    errorId,
+					Title: tzError.Code + " " + instance.ErrType,
+					Text:  instance.SuggestedFix + " " + instance.Rationale,
+					Type:  "error",
+				})
+
+				errorId++
+			}
+		}
+	}
+
+	return errorsRespTemp, htmlTextResp, errorId
+}
+
+// searchPhraseInHTML ищет фразу из markdown в HTML контенте
+// Учитывает различия в форматировании между markdown и HTML
+func searchPhraseInHTML(snippet, htmlContent string) bool {
+	if snippet == "" || htmlContent == "" {
+		return false
+	}
+
+	// Приводим к нижнему регистру для поиска без учета регистра
+	lowerSnippet := strings.ToLower(snippet)
+	lowerHTML := strings.ToLower(htmlContent)
+
+	// Удаляем HTML теги из контента для чистого текстового поиска
+	htmlWithoutTags := regexp.MustCompile(`<[^>]*>`).ReplaceAllString(lowerHTML, "")
+
+	// Нормализуем пробелы и знаки препинания
+	normalizeText := func(text string) string {
+		// Заменяем множественные пробелы на один
+		text = regexp.MustCompile(`\s+`).ReplaceAllString(text, " ")
+		// Удаляем некоторые знаки препинания для более гибкого поиска
+		text = regexp.MustCompile(`[,.;:!?""''«»]`).ReplaceAllString(text, "")
+		return strings.TrimSpace(text)
+	}
+
+	normalizedSnippet := normalizeText(lowerSnippet)
+	normalizedHTML := normalizeText(htmlWithoutTags)
+
+	// Пробуем точное совпадение
+	if strings.Contains(normalizedHTML, normalizedSnippet) {
+		return true
+	}
+
+	// Пробуем поиск по словам (если фраза разбита HTML тегами)
+	snippetWords := strings.Fields(normalizedSnippet)
+	if len(snippetWords) > 1 {
+		// Проверяем, что все слова присутствуют в тексте
+		allWordsFound := true
+		for _, word := range snippetWords {
+			if len(word) > 2 && !strings.Contains(normalizedHTML, word) {
+				allWordsFound = false
+				break
+			}
+		}
+		if allWordsFound {
+			return true
+		}
+	}
+
+	return false
 }
 
 // SortByIdOrderFiltered - альтернативная версия, которая возвращает только те элементы,

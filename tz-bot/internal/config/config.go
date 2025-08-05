@@ -8,20 +8,22 @@ import (
 	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
 	httpapp "repairCopilotBot/tz-bot/internal/app/http"
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
+	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 )
 
 type Config struct {
-	Env        string                    `yaml:"env" env-default:"local"`
-	App        app.Config                `yaml:"app"`
-	HTTP       httpapp.Config            `yaml:"http_server"`
-	GRPC       grpcapp.Config            `yaml:"grpc_server"`
-	Llm        tz_llm_client.Config      `yaml:"llm_client"`
-	Tg         tg_client.Config          `yaml:"tg_client"`
-	WordParser word_parser_client.Config `yaml:"word_parser_client"`
-	S3minio    s3minio.Config            `yaml:"s3minio"`
+	Env             string                         `yaml:"env" env-default:"local"`
+	App             app.Config                     `yaml:"app"`
+	HTTP            httpapp.Config                 `yaml:"http_server"`
+	GRPC            grpcapp.Config                 `yaml:"grpc_server"`
+	Llm             tz_llm_client.Config           `yaml:"llm_client"`
+	Tg              tg_client.Config               `yaml:"tg_client"`
+	WordParser      word_parser_client.Config      `yaml:"word_parser_client"`
+	MarkdownService markdown_service_client.Config `yaml:"markdown_service_client"`
+	S3minio         s3minio.Config                 `yaml:"s3minio"`
 }
 
 func MustLoad() *Config {

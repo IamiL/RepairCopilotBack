@@ -27,6 +27,8 @@ func main() {
 		&cfg.HTTP,
 		&cfg.Tg,
 		&cfg.TzBotService,
+		&cfg.Redis,
+		cfg.UserService.Address,
 	)
 
 	application.HTTPServer.MustRun()
