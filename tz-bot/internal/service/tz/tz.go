@@ -617,7 +617,7 @@ func wrapSnippetInSpan(htmlStr, snippet, errID string) (string, error) {
 					Type: html.ElementNode,
 					Data: "span",
 					Attr: []html.Attribute{
-						{Key: "data-error", Val: errID},
+						{Key: "error-id", Val: errID},
 					},
 				}
 				span.AppendChild(&html.Node{Type: html.TextNode, Data: match})
