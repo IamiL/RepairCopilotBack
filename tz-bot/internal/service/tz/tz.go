@@ -193,6 +193,15 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 	var outErrors []OutError
 
 	for _, inst := range instances {
+		if inst.ErrType != "invalid" || strings.TrimSpace(inst.Snippet) == "" {
+			log.Info("Skip highlighting, empty or non-invalid snippet",
+				slog.String("group_id", inst.GroupID),
+				slog.String("code", inst.Code),
+				slog.String("err_type", inst.ErrType),
+			)
+			continue
+		}
+
 		// генерация уникального ID
 		errID := uuid.New().String()
 		outErrors = append(outErrors, OutError{
@@ -228,6 +237,13 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 
 		// Нормализовать сниппет
 		normSnippet := normalize(inst.Snippet)
+		if normSnippet == "" {
+			log.Warn("Normalized snippet is empty, skipping",
+				slog.String("error_id", errID),
+				slog.String("original_snippet", inst.Snippet),
+			)
+			continue
+		}
 
 		// Искать по блокам
 		wrapped := false
@@ -495,6 +511,10 @@ func fuzzyFind(text, pat string) (int, int) {
 
 // injectSpan оборачивает найденный HTML-фрагмент в span с data-error
 func injectSpan(htmlStr, normSnippet string, normIdx int, errID string) string {
+	if normSnippet == "" {
+		return htmlStr
+	}
+
 	spanStart := fmt.Sprintf(`<span data-error="%s">`, errID)
 	spanEnd := `</span>`
 	return strings.Replace(htmlStr, normSnippet, spanStart+normSnippet+spanEnd, 1)
