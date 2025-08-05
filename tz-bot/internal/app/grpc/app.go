@@ -124,9 +124,9 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 	for i, tzError := range errors {
 		grpcErrors[i] = &tzv1.TzError{
 			Id:    tzError.Id,
-			Title: tzError.Title,
-			Text:  tzError.Text,
-			Type:  tzError.Type,
+			Title: sanitizeString(tzError.Title),
+			Text:  sanitizeString(tzError.Text),
+			Type:  sanitizeString(tzError.Type),
 		}
 	}
 
@@ -136,7 +136,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 			Id:    tzErrorMissing.Id,
 			Title: sanitizeString(tzErrorMissing.Title),
 			Text:  sanitizeString(tzErrorMissing.Text),
-			Type:  tzErrorMissing.Type,
+			Type:  sanitizeString(tzErrorMissing.Type),
 		}
 	}
 
