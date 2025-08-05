@@ -2,6 +2,7 @@ package tzservice
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -280,7 +281,12 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 				// Теперь найдём в исходном HTML ту же порцию текста
 				original := extractOriginalSnippet(blk.HtmlContent, blk.NormText, normSnippet, idx)
 				if original != "" {
-					blk.HtmlContent = injectSpanRaw(blk.HtmlContent, original, errID)
+					newHTML, err := wrapSnippetInSpan(blk.HtmlContent, original, errID)
+					if err != nil {
+						log.Error("Failed to wrap snippet", sl.Err(err))
+					} else {
+						blk.HtmlContent = newHTML
+					}
 					log.Info("Wrapped snippet in span", slog.String("error_id", errID),
 						slog.String("html_element_id", blk.HtmlElementId),
 						slog.String("original", original),
@@ -582,6 +588,64 @@ func injectSpanRaw(htmlStr, original, errID string) string {
 	start := fmt.Sprintf(`<span data-error="%s">`, errID)
 	end := `</span>`
 	return strings.Replace(htmlStr, original, start+original+end, 1)
+}
+
+// wrapSnippetInSpan парсит htmlStr, находит в текстовых узлах фразу snippet
+// и оборачивает её в <span data-error="errID">…</span>.
+// Возвращает новый HTML или ошибку.
+func wrapSnippetInSpan(htmlStr, snippet, errID string) (string, error) {
+	// 1) Парсим HTML в дерево
+	doc, err := html.Parse(strings.NewReader(htmlStr))
+	if err != nil {
+		return "", fmt.Errorf("html.Parse: %w", err)
+	}
+
+	// 2) Рекурсивно обходим дерево
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		// Если это текстовый узел и он содержит наш сниппет
+		if n.Type == html.TextNode {
+			idx := strings.Index(n.Data, snippet)
+			if idx >= 0 {
+				// Разбиваем текст на до-, совпадение и после-части
+				before := n.Data[:idx]
+				match := n.Data[idx : idx+len(snippet)]
+				after := n.Data[idx+len(snippet):]
+
+				// Создаём span-узел
+				span := &html.Node{
+					Type: html.ElementNode,
+					Data: "span",
+					Attr: []html.Attribute{
+						{Key: "data-error", Val: errID},
+					},
+				}
+				span.AppendChild(&html.Node{Type: html.TextNode, Data: match})
+
+				// Вставляем: beforeTextNode, span, afterTextNode вместо оригинального n
+				parent := n.Parent
+				parent.InsertBefore(&html.Node{Type: html.TextNode, Data: before}, n)
+				parent.InsertBefore(span, n)
+				parent.InsertBefore(&html.Node{Type: html.TextNode, Data: after}, n)
+				parent.RemoveChild(n)
+
+				// Прекращаем рекурсию для этого узла — snippet только один раз
+				return
+			}
+		}
+		// Иначе идём глубже
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			f(c)
+		}
+	}
+	f(doc)
+
+	// 3) Рендерим обратно в строку
+	var buf bytes.Buffer
+	if err := html.Render(&buf, doc); err != nil {
+		return "", fmt.Errorf("html.Render: %w", err)
+	}
+	return buf.String(), nil
 }
 
 //func FixHTMLTags(input string) string {
