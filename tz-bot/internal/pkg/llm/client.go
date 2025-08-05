@@ -25,58 +25,40 @@ type Request struct {
 	//Codes []string `json:"codes"`
 }
 
-// Retrieval структура для извлеченного текста
-type Retrieval struct {
-	Text      string `json:"text"`
-	LineStart int    `json:"line_start"`
-	LineEnd   int    `json:"line_end"`
+// Структуры для десериализации JSON
+type ReportFile struct {
+	Reports []groupReport `json:"reports"`
 }
 
-// Process структура для процесса анализа
-type Process struct {
-	Retrieval    []Retrieval `json:"retrieval"`
-	Analysis     string      `json:"analysis"`
-	Critique     string      `json:"critique"`
-	Verification string      `json:"verification"`
+type groupReport struct {
+	GroupID string        `json:"group_id"`
+	Errors  []errorReport `json:"errors"`
 }
 
-// Instance структура для экземпляра ошибки
-type Instance struct {
-	ErrType      string `json:"err_type"`
-	Snippet      string `json:"snippet"`
-	LineStart    *int   `json:"line_start"`
-	LineEnd      *int   `json:"line_end"`
-	SuggestedFix string `json:"suggested_fix"`
-	Rationale    string `json:"rationale"`
-}
-
-// ReportError структура для ошибки в отчете
-type ReportError struct {
+type errorReport struct {
 	Code      string     `json:"code"`
-	Process   Process    `json:"process"`
-	Verdict   string     `json:"verdict"`
-	Instances []Instance `json:"instances"`
+	Instances []instance `json:"instances"`
 }
 
-// Report структура для отчета группы
-type Report struct {
-	GroupId          string        `json:"group_id"`
-	PreliminaryNotes string        `json:"preliminary_notes"`
-	Errors           []ReportError `json:"errors"`
-	OverallCritique  *string       `json:"overall_critique"`
+type instance struct {
+	ErrType      string  `json:"err_type"`
+	Snippet      string  `json:"snippet"`
+	LineStart    *int    `json:"line_start"`
+	LineEnd      *int    `json:"line_end"`
+	SuggestedFix *string `json:"suggested_fix"`
+	Rationale    string  `json:"rationale"`
 }
 
-// Tokens структура для информации о токенах
-type Tokens struct {
-	Prompt     int `json:"prompt"`
-	Completion int `json:"completion"`
-	Total      int `json:"total"`
-}
-
-// SuccessResponse структура для успешного ответа (200)
-type SuccessResponse struct {
-	Reports []Report `json:"reports"`
-	Tokens  Tokens   `json:"tokens"`
+// Итоговая структура
+type ErrorInstance struct {
+	GroupID      string
+	Code         string
+	ErrType      string
+	Snippet      string
+	LineStart    *int
+	LineEnd      *int
+	SuggestedFix *string
+	Rationale    string
 }
 
 // ValidationError структура для ошибки валидации (422)
@@ -93,7 +75,7 @@ type ErrorResponse struct {
 
 // APIResponse общая структура ответа
 type APIResponse struct {
-	Success *SuccessResponse
+	Success *ReportFile
 	Error   *ErrorResponse
 	Status  int
 }
@@ -120,28 +102,18 @@ func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 	}
 
 	// Парсим мок-ответ как успешный
-	var successResp SuccessResponse
+	var successResp ReportFile
 	if err := json.Unmarshal(mockBody, &successResp); err != nil {
 		return nil, fmt.Errorf("ошибка парсинга мок-ответа: %w", err)
 	}
 
-	fmt.Printf("MOCK: количество отчетов: %d\n", len(successResp.Reports))
-	totalErrors := 0
-	for _, report := range successResp.Reports {
-		for _, err := range report.Errors {
-			if err.Verdict == "error_present" {
-				totalErrors++
-			}
-		}
-	}
-	fmt.Printf("MOCK: общее количество найденных ошибок: %d\n", totalErrors)
 	result.Success = &successResp
 
 	return result, nil
 }
 
 // Пример использования
-func (c *Client) Analyze(doc string) (*SuccessResponse, error) {
+func (c *Client) Analyze(doc string) (*ReportFile, error) {
 	// Создаем запрос
 	req := Request{
 		Markdown: doc,

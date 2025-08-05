@@ -20,7 +20,7 @@ type Config struct {
 }
 
 type TzError struct {
-	Id    int
+	Id    string
 	Title string
 	Text  string
 	Type  string
@@ -71,7 +71,7 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 	errors := make([]TzError, len(resp.Errors), len(resp.Errors))
 	for i, grpcError := range resp.Errors {
 		errors[i] = TzError{
-			Id:    int(grpcError.Id),
+			Id:    grpcError.Id,
 			Title: grpcError.Title,
 			Text:  grpcError.Text,
 			Type:  grpcError.Type,
@@ -81,7 +81,7 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 	errorsMissing := make([]TzError, len(resp.ErrorsMissing), len(resp.ErrorsMissing))
 	for i, grpcError := range resp.ErrorsMissing {
 		errorsMissing[i] = TzError{
-			Id:    int(grpcError.Id),
+			Id:    grpcError.Id,
 			Title: grpcError.Title,
 			Text:  grpcError.Text,
 			Type:  grpcError.Type,

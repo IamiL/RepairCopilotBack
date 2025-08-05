@@ -167,7 +167,7 @@ func (x *CheckTzResponse) GetFileId() string {
 
 type TzError struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Text          string                 `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
 	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
@@ -205,11 +205,11 @@ func (*TzError) Descriptor() ([]byte, []int) {
 	return file_tz_v1_tz_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *TzError) GetId() int32 {
+func (x *TzError) GetId() string {
 	if x != nil {
 		return x.Id
 	}
-	return 0
+	return ""
 }
 
 func (x *TzError) GetTitle() string {
@@ -251,7 +251,7 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x0eerrors_missing\x18\x05 \x03(\v2\x0e.tz.v1.TzErrorR\rerrorsMissing\x12\x16\n" +
 	"\x06fileId\x18\x06 \x01(\tR\x06fileId\"W\n" +
 	"\aTzError\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x14\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
 	"\x04text\x18\x03 \x01(\tR\x04text\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type2E\n" +

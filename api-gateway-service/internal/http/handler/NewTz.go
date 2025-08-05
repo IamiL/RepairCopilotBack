@@ -21,7 +21,7 @@ type NewTzResponse struct {
 }
 
 type NewTzErrorResponse struct {
-	Id    int    `json:"id"`
+	Id    string `json:"id"`
 	Title string `json:"title"`
 	Text  string `json:"description"`
 	Type  string `json:"type"`
@@ -35,7 +35,7 @@ func NewTzHandler(
 ) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.NewTzHandler"
-		
+
 		log := log.With(slog.String("op", op))
 		log.Info("TZ processing request started")
 
@@ -58,8 +58,8 @@ func NewTzHandler(
 		}
 		defer file.Close()
 
-		log.Info("file received", 
-			slog.String("filename", header.Filename), 
+		log.Info("file received",
+			slog.String("filename", header.Filename),
 			slog.Int64("size", header.Size))
 
 		// Читаем файл в байты
@@ -89,7 +89,7 @@ func NewTzHandler(
 			return
 		}
 
-		log.Info("TZ processing completed successfully", 
+		log.Info("TZ processing completed successfully",
 			slog.Int("errors_count", len(checkTzResult.Errors)),
 			slog.Int("missing_errors_count", len(checkTzResult.ErrorsMissing)),
 			slog.String("doc_id", checkTzResult.DocId))
@@ -124,7 +124,7 @@ func NewTzHandler(
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		
+
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Error("failed to encode response", slog.String("error", err.Error()))
 			return
@@ -156,20 +156,20 @@ func writeStringToFile(content string, filename string) error {
 
 // SortByIdOrderFiltered - альтернативная версия, которая возвращает только те элементы,
 // ID которых есть во втором массиве, в точном порядке
-func SortByIdOrderFiltered(responses []NewTzErrorResponse, idOrder []int) []NewTzErrorResponse {
-	// Создаем map для быстрого поиска структур по ID
-	idToResponse := make(map[int]NewTzErrorResponse)
-	for _, response := range responses {
-		idToResponse[response.Id] = response
-	}
-
-	// Создаем результирующий массив в нужном порядке
-	var result []NewTzErrorResponse
-	for _, id := range idOrder {
-		if response, exists := idToResponse[id]; exists {
-			result = append(result, response)
-		}
-	}
-
-	return result
-}
+//func SortByIdOrderFiltered(responses []NewTzErrorResponse, idOrder []int) []NewTzErrorResponse {
+//	// Создаем map для быстрого поиска структур по ID
+//	idToResponse := make(map[int]NewTzErrorResponse)
+//	for _, response := range responses {
+//		idToResponse[response.Id] = response
+//	}
+//
+//	// Создаем результирующий массив в нужном порядке
+//	var result []NewTzErrorResponse
+//	for _, id := range idOrder {
+//		if response, exists := idToResponse[id]; exists {
+//			result = append(result, response)
+//		}
+//	}
+//
+//	return result
+//}

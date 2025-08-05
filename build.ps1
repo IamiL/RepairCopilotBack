@@ -3,6 +3,12 @@
 
 Write-Host "Starting build process..." -ForegroundColor Green
 
+# Clean up old binary files
+Write-Host "Cleaning up old binary files..." -ForegroundColor Yellow
+Get-ChildItem -Name "api-gateway-app-v*" | Remove-Item -Force -ErrorAction SilentlyContinue
+Get-ChildItem -Name "tz-bot-app-v*" | Remove-Item -Force -ErrorAction SilentlyContinue
+Write-Host "Old binary files cleaned up" -ForegroundColor Green
+
 # Set environment variables for cross-compilation
 $env:GOOS = "linux"
 $env:GOARCH = "amd64"
@@ -41,3 +47,33 @@ Write-Host "Build process completed successfully!" -ForegroundColor Green
 Write-Host "Generated files:" -ForegroundColor Cyan
 Write-Host "  - $apiGatewayBinary (Linux AMD64)" -ForegroundColor White
 Write-Host "  - $tzBotBinary (Linux AMD64)" -ForegroundColor White
+
+# Git operations
+Write-Host "Adding files to git..." -ForegroundColor Yellow
+git add .
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Files added to git successfully" -ForegroundColor Green
+} else {
+    Write-Host "Failed to add files to git" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Committing changes..." -ForegroundColor Yellow
+git commit -m "update"
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Changes committed successfully" -ForegroundColor Green
+} else {
+    Write-Host "Failed to commit changes" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Pushing to remote repository..." -ForegroundColor Yellow
+git push
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Changes pushed successfully" -ForegroundColor Green
+} else {
+    Write-Host "Failed to push changes" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "All operations completed successfully!" -ForegroundColor Green

@@ -26,12 +26,13 @@ type ConvertRequest struct {
 }
 
 type Mapping struct {
-	HtmlElementId      string `json:"html_element_id"`
-	HtmlTag            string `json:"html_tag"`
-	HtmlContent        string `json:"html_content"`
-	MarkdownLineStart  int    `json:"markdown_line_start"`
-	MarkdownLineEnd    int    `json:"markdown_line_end"`
-	MarkdownContent    string `json:"markdown_content"`
+	HtmlElementId     string `json:"html_element_id"`
+	HtmlTag           string `json:"html_tag"`
+	HtmlContent       string `json:"html_content"`
+	MarkdownLineStart int    `json:"markdown_line_start"`
+	MarkdownLineEnd   int    `json:"markdown_line_end"`
+	MarkdownContent   string `json:"markdown_content"`
+	NormText          string
 }
 
 type ConvertResponse struct {
