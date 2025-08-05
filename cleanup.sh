@@ -3,20 +3,22 @@
 
 echo "Removing binary files..."
 
-# Remove api-gateway binary
-if [ -f "api-gateway-app" ]; then
-    rm api-gateway-app
-    echo "✓ Removed api-gateway-app"
+# Remove all versioned api-gateway binaries
+api_gateway_count=$(ls api-gateway-app-v* 2>/dev/null | wc -l)
+if [ "$api_gateway_count" -gt 0 ]; then
+    rm api-gateway-app-v*
+    echo "✓ Removed $api_gateway_count api-gateway binary(ies)"
 else
-    echo "- api-gateway-app not found"
+    echo "- No api-gateway binaries found"
 fi
 
-# Remove tz-bot binary
-if [ -f "tz-bot-app" ]; then
-    rm tz-bot-app
-    echo "✓ Removed tz-bot-app"
+# Remove all versioned tz-bot binaries
+tz_bot_count=$(ls tz-bot-app-v* 2>/dev/null | wc -l)
+if [ "$tz_bot_count" -gt 0 ]; then
+    rm tz-bot-app-v*
+    echo "✓ Removed $tz_bot_count tz-bot binary(ies)"
 else
-    echo "- tz-bot-app not found"
+    echo "- No tz-bot binaries found"
 fi
 
 echo "Cleanup completed!"
