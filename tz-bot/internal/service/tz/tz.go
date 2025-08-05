@@ -203,6 +203,17 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 			Rationale:    inst.Rationale,
 		})
 
+		// логируем начало обработки инстанса
+		log.Info("Processing error instance",
+			slog.String("error_id", errID),
+			slog.String("group_id", inst.GroupID),
+			slog.String("code", inst.Code),
+			slog.String("err_type", inst.ErrType),
+			slog.String("snippet", inst.Snippet),
+			slog.Int("line_start", getInt(inst.LineStart)),
+			slog.Int("line_end", getInt(inst.LineEnd)),
+		)
+
 		// Определить диапазон строк
 		start, end := 1, len(mdLines)
 		if inst.LineStart != nil {
@@ -222,7 +233,17 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		wrapped := false
 		for i := range markdownResponse.Mappings {
 			blk := &markdownResponse.Mappings[i]
+
+			log.Debug("Trying HTML block for snippet",
+				slog.String("html_element_id", blk.HtmlElementId),
+				slog.Int("blk_line_start", blk.MarkdownLineStart),
+				slog.Int("blk_line_end", blk.MarkdownLineEnd),
+			)
+
 			if blk.MarkdownLineStart > end || blk.MarkdownLineEnd < start {
+				log.Debug("Skipping block — вне диапазона строк",
+					slog.String("html_element_id", blk.HtmlElementId),
+				)
 				continue
 			}
 			// Exact match
@@ -230,11 +251,24 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 			method := "exact"
 			if idx == -1 {
 				// fuzzy fallback
-				idx, _ = fuzzyFind(blk.NormText, normSnippet)
+				idx_temp, dist := fuzzyFind(blk.NormText, normSnippet)
+				idx = idx_temp
 				method = "fuzzy"
+				log.Debug("Fuzzy match result",
+					slog.String("html_element_id", blk.HtmlElementId),
+					slog.Int("distance", dist),
+				)
 			}
 			if idx >= 0 {
 				log.Info("[+] Found in %s at pos %d (method=%s)", blk.HtmlElementId, idx, method)
+
+				log.Info("Wrapped snippet in span",
+					slog.String("error_id", errID),
+					slog.String("html_element_id", blk.HtmlElementId),
+					slog.Int("offset", idx),
+					slog.String("match_method", method),
+				)
+
 				blk.HtmlContent = injectSpan(blk.HtmlContent, normSnippet, idx, errID)
 				wrapped = true
 				break
@@ -242,6 +276,13 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		}
 		if !wrapped {
 			log.Info("[-] Not found snippet %q", inst.Snippet)
+		}
+
+		if !wrapped {
+			log.Warn("Snippet not found in any HTML block",
+				slog.String("error_id", errID),
+				slog.String("snippet", inst.Snippet),
+			)
 		}
 	}
 
@@ -457,6 +498,13 @@ func injectSpan(htmlStr, normSnippet string, normIdx int, errID string) string {
 	spanStart := fmt.Sprintf(`<span data-error="%s">`, errID)
 	spanEnd := `</span>`
 	return strings.Replace(htmlStr, normSnippet, spanStart+normSnippet+spanEnd, 1)
+}
+
+func getInt(p *int) int {
+	if p == nil {
+		return 0
+	}
+	return *p
 }
 
 //func FixHTMLTags(input string) string {
