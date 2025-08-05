@@ -9,31 +9,25 @@ $env:GOARCH = "amd64"
 
 # Build api-gateway-service
 Write-Host "Building api-gateway-service..." -ForegroundColor Yellow
-try {
-    go build -o api-gateway-app ./api-gateway-service/cmd/main.go
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ api-gateway-service built successfully" -ForegroundColor Green
-    } else {
-        Write-Host "✗ Failed to build api-gateway-service" -ForegroundColor Red
-        exit 1
-    }
-} catch {
-    Write-Host "✗ Error building api-gateway-service: $_" -ForegroundColor Red
+$buildOutput = go build -o api-gateway-app ./api-gateway-service/cmd/main.go 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✓ api-gateway-service built successfully" -ForegroundColor Green
+} else {
+    Write-Host "✗ Failed to build api-gateway-service" -ForegroundColor Red
+    Write-Host "Build errors:" -ForegroundColor Red
+    Write-Host $buildOutput -ForegroundColor Red
     exit 1
 }
 
 # Build tz-bot
 Write-Host "Building tz-bot..." -ForegroundColor Yellow
-try {
-    go build -o tz-bot-app ./tz-bot/cmd/main.go
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ tz-bot built successfully" -ForegroundColor Green
-    } else {
-        Write-Host "✗ Failed to build tz-bot" -ForegroundColor Red
-        exit 1
-    }
-} catch {
-    Write-Host "✗ Error building tz-bot: $_" -ForegroundColor Red
+$buildOutput = go build -o tz-bot-app ./tz-bot/cmd/main.go 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✓ tz-bot built successfully" -ForegroundColor Green
+} else {
+    Write-Host "✗ Failed to build tz-bot" -ForegroundColor Red
+    Write-Host "Build errors:" -ForegroundColor Red
+    Write-Host $buildOutput -ForegroundColor Red
     exit 1
 }
 

@@ -34,57 +34,67 @@ func NewTzHandler(
 	w http.ResponseWriter, r *http.Request,
 ) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Info("NewTzHandler started2")
+		const op = "handler.NewTzHandler"
+		
+		log := log.With(slog.String("op", op))
+		log.Info("TZ processing request started")
 
 		// Парсим multipart form (максимум 10MB)
 		err := r.ParseMultipartForm(10 << 20)
 		if err != nil {
-			http.Error(w, "Ошибка парсинга формы", http.StatusBadRequest)
+			log.Error("failed to parse multipart form", slog.String("error", err.Error()))
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
 		}
 
-		log.Info("парсинг multipart успешен")
+		log.Debug("multipart form parsed successfully")
 
 		// Получаем файл из формы
 		file, header, err := r.FormFile("file")
 		if err != nil {
-			http.Error(w, "Ошибка получения файла", http.StatusBadRequest)
+			log.Error("failed to get file from form", slog.String("error", err.Error()))
+			http.Error(w, "File not found in request", http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
 
-		log.Info(fmt.Sprintf("Получен файл: %s, размер: %d байт\n", header.Filename, header.Size))
+		log.Info("file received", 
+			slog.String("filename", header.Filename), 
+			slog.Int64("size", header.Size))
 
 		// Читаем файл в байты
 		fileBytes, err := io.ReadAll(file)
 		if err != nil {
-			http.Error(w, "Ошибка чтения файла", http.StatusInternalServerError)
+			log.Error("failed to read file content", slog.String("error", err.Error()))
+			http.Error(w, "Failed to read file", http.StatusInternalServerError)
 			return
 		}
 
 		filename := header.Filename
 
-		fmt.Println("точка 1")
-
 		requestID, err := uuid.NewUUID()
 		if err != nil {
-			http.Error(w, "error creating requestID", http.StatusInternalServerError)
-		}
-
-		fmt.Println("точка 2")
-
-		checkTzResult, err := tzBotClient.CheckTz(r.Context(), fileBytes, filename, requestID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Error("failed to generate request ID", slog.String("error", err.Error()))
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		css := checkTzResult.Css
+		log = log.With(slog.String("requestID", requestID.String()))
+		log.Info("processing TZ file", slog.String("filename", filename))
 
-		fmt.Println("точка 3-2")
+		checkTzResult, err := tzBotClient.CheckTz(r.Context(), fileBytes, filename, requestID)
+		if err != nil {
+			log.Error("TZ processing failed", slog.String("error", err.Error()))
+			http.Error(w, "TZ processing failed", http.StatusInternalServerError)
+			return
+		}
 
-		errorsResp := make([]NewTzErrorResponse, len(checkTzResult.Errors), len(checkTzResult.Errors))
+		log.Info("TZ processing completed successfully", 
+			slog.Int("errors_count", len(checkTzResult.Errors)),
+			slog.Int("missing_errors_count", len(checkTzResult.ErrorsMissing)),
+			slog.String("doc_id", checkTzResult.DocId))
 
+		errorsResp := make([]NewTzErrorResponse, len(checkTzResult.Errors))
 		for i, e := range checkTzResult.Errors {
 			errorsResp[i] = NewTzErrorResponse{
 				Id:    e.Id,
@@ -94,7 +104,7 @@ func NewTzHandler(
 			}
 		}
 
-		errorsMissing := make([]NewTzErrorResponse, len(checkTzResult.ErrorsMissing), len(checkTzResult.ErrorsMissing))
+		errorsMissing := make([]NewTzErrorResponse, len(checkTzResult.ErrorsMissing))
 		for i, e := range checkTzResult.ErrorsMissing {
 			errorsMissing[i] = NewTzErrorResponse{
 				Id:    e.Id,
@@ -104,24 +114,23 @@ func NewTzHandler(
 			}
 		}
 
-		log.Info("отдали ошибок в тексте: ", len(errorsResp), ", ошибок по документу: ", len(errorsMissing))
+		response := NewTzResponse{
+			Text:        checkTzResult.HtmlText,
+			Err:         errorsResp,
+			ErrsMissing: errorsMissing,
+			Css:         checkTzResult.Css,
+			DocId:       checkTzResult.DocId,
+		}
 
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(
-			NewTzResponse{
-				Text:        checkTzResult.HtmlText,
-				Err:         errorsResp,
-				ErrsMissing: errorsMissing,
-				Css:         css,
-				DocId:       checkTzResult.DocId,
-			},
-		); err != nil {
-			log.Error("ошибка закодирования ответа json в http resp")
+		w.WriteHeader(http.StatusOK)
+		
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("failed to encode response", slog.String("error", err.Error()))
+			return
 		}
 
-		if err != nil {
-			log.Error("Error: \n", err)
-		}
+		log.Info("TZ processing request completed successfully")
 	}
 }
 
