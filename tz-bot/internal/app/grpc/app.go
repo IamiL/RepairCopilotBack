@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -133,8 +134,8 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 	for i, tzErrorMissing := range errorsMissing {
 		grpcErrorsMissing[i] = &tzv1.TzError{
 			Id:    tzErrorMissing.Id,
-			Title: tzErrorMissing.Title,
-			Text:  tzErrorMissing.Text,
+			Title: sanitizeString(tzErrorMissing.Title),
+			Text:  sanitizeString(tzErrorMissing.Text),
 			Type:  tzErrorMissing.Type,
 		}
 	}
@@ -142,11 +143,30 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 	log.Info("CheckTz request processed successfully", slog.Int("errors_count", len(errors)))
 
 	return &tzv1.CheckTzResponse{
-		HtmlText:      htmlText,
+		HtmlText:      sanitizeString(htmlText),
 		Errors:        grpcErrors,
 		ErrorsMissing: grpcErrorsMissing,
 		FileId:        fileId,
 		Css:           css,
 		DocId:         docId,
 	}, nil
+}
+
+func sanitizeString(s string) string {
+	if utf8.ValidString(s) {
+		return s
+	}
+	var out []rune
+	for i := 0; i < len(s); {
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if r == utf8.RuneError && size == 1 {
+			// некорректный байт: можете заменить на '\uFFFD' (�) или на пробел
+			out = append(out, ' ')
+			i++
+		} else {
+			out = append(out, r)
+			i += size
+		}
+	}
+	return string(out)
 }
