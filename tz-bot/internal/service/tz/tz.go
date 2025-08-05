@@ -263,31 +263,31 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 				continue
 			}
 			// Exact match
+			// Exact match in normalized text
 			idx := strings.Index(blk.NormText, normSnippet)
-			method := "exact"
+			//method := "exact"
 			if idx == -1 {
 				// fuzzy fallback
 				idx_temp, dist := fuzzyFind(blk.NormText, normSnippet)
 				idx = idx_temp
-				method = "fuzzy"
+				//method = "fuzzy"
 				log.Debug("Fuzzy match result",
 					slog.String("html_element_id", blk.HtmlElementId),
 					slog.Int("distance", dist),
 				)
 			}
 			if idx >= 0 {
-				log.Info("[+] Found in %s at pos %d (method=%s)", blk.HtmlElementId, idx, method)
-
-				log.Info("Wrapped snippet in span",
-					slog.String("error_id", errID),
-					slog.String("html_element_id", blk.HtmlElementId),
-					slog.Int("offset", idx),
-					slog.String("match_method", method),
-				)
-
-				blk.HtmlContent = injectSpan(blk.HtmlContent, normSnippet, idx, errID)
-				wrapped = true
-				break
+				// Теперь найдём в исходном HTML ту же порцию текста
+				original := extractOriginalSnippet(blk.HtmlContent, blk.NormText, normSnippet, idx)
+				if original != "" {
+					blk.HtmlContent = injectSpanRaw(blk.HtmlContent, original, errID)
+					log.Info("Wrapped snippet in span", slog.String("error_id", errID),
+						slog.String("html_element_id", blk.HtmlElementId),
+						slog.String("original", original),
+					)
+					wrapped = true
+					break
+				}
 			}
 		}
 		if !wrapped {
@@ -525,6 +525,63 @@ func getInt(p *int) int {
 		return 0
 	}
 	return *p
+}
+
+// extractOriginalSnippet пытается сопоставить позицию normIdx
+// в blk.NormText с соответствующим куском в blk.HtmlContent.
+// Очень упрощённый вариант: последовательно удаляем теги из html,
+// но запоминаем границы для реконструкции оригинала.
+func extractOriginalSnippet(htmlStr, normText, normSnippet string, normIdx int) string {
+	// Убираем теги, но при этом запоминаем срезы:
+	type seg struct{ text, html string }
+	var segs []seg
+	var bufTxt, bufHtml strings.Builder
+	inTag := false
+	for _, r := range htmlStr {
+		if r == '<' {
+			inTag = true
+			if bufTxt.Len() > 0 {
+				segs = append(segs, seg{bufTxt.String(), bufHtml.String()})
+				bufTxt.Reset()
+				bufHtml.Reset()
+			}
+			bufHtml.WriteRune(r)
+		} else if r == '>' {
+			bufHtml.WriteRune(r)
+			inTag = false
+		} else {
+			bufHtml.WriteRune(r)
+			if !inTag {
+				bufTxt.WriteRune(r)
+			}
+		}
+	}
+	if bufTxt.Len() > 0 {
+		segs = append(segs, seg{bufTxt.String(), bufHtml.String()})
+	}
+	// Теперь проходим по сегментам, копим normText и ищем normIdx
+	acc := 0
+	for _, s := range segs {
+		if acc+len(s.text) < normIdx {
+			acc += len(s.text)
+			continue
+		}
+		// нужный фрагмент начинается в этом сегменте
+		rel := normIdx - acc
+		if rel+len(normSnippet) <= len(s.text) {
+			// оригинал — такой же кусок из html
+			return s.html[rel : rel+len(normSnippet)]
+		}
+		break
+	}
+	return ""
+}
+
+// injectSpanRaw оборачивает именно найденный оригинальный кусок
+func injectSpanRaw(htmlStr, original, errID string) string {
+	start := fmt.Sprintf(`<span data-error="%s">`, errID)
+	end := `</span>`
+	return strings.Replace(htmlStr, original, start+original+end, 1)
 }
 
 //func FixHTMLTags(input string) string {
