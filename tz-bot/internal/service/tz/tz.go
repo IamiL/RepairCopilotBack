@@ -255,11 +255,20 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 	invalidErrorsResponse := make([]TzError, len(outErrors))
 
 	for i := range outErrors {
-		invalidErrorsResponse[i] = TzError{
-			Id:    outErrors[i].ID,
-			Title: outErrors[i].GroupID,
-			Text:  *outErrors[i].SuggestedFix,
-			Type:  outErrors[i].Code,
+		if outErrors[i].SuggestedFix != nil {
+			invalidErrorsResponse[i] = TzError{
+				Id:    outErrors[i].ID,
+				Title: outErrors[i].GroupID,
+				Text:  *outErrors[i].SuggestedFix,
+				Type:  outErrors[i].Code,
+			}
+		} else {
+			invalidErrorsResponse[i] = TzError{
+				Id:    outErrors[i].ID,
+				Title: outErrors[i].GroupID,
+				Text:  " ",
+				Type:  outErrors[i].Code,
+			}
 		}
 	}
 
