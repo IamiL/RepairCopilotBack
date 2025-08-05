@@ -11,7 +11,7 @@ llm_client:
 word_parser_client:
   url: http://localhost:8082
 markdown_service_client:
-  url: http://localhost:8083
+  url: http://localhost:8089
 s3minio:
   host: localhost
   port: 9000
