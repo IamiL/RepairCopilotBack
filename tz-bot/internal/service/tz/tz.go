@@ -178,30 +178,30 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		}
 	}
 
-	log.Info("обращаемся к word-parser-service для преобразования в docx-файл с примечаниями")
+	//log.Info("обращаемся к word-parser-service для преобразования в docx-файл с примечаниями")
 
-	errorsMap := make(map[string]string, len(errorsResponse))
+	//errorsMap := make(map[string]string, len(errorsResponse))
+	//
+	//for _, tzError := range errorsResponse {
+	//	errorsMap[strconv.Itoa(tzError.Id)] = tzError.Title + " " + tzError.Text
+	//}
 
-	for _, tzError := range errorsResponse {
-		errorsMap[strconv.Itoa(tzError.Id)] = tzError.Title + " " + tzError.Text
-	}
+	//file, err = tz.wordConverterClient.CreateDocumentFromHTML(htmlTextResp, errorsMap)
+	//if err != nil {
+	//	log.Error("ошибка при обращении к  wordConverterClient: %v\n" + err.Error())
+	//	return "", "", "", []TzError{}, []TzError{}, "", ErrGenerateDocxFile
+	//}
 
-	file, err = tz.wordConverterClient.CreateDocumentFromHTML(htmlTextResp, errorsMap)
-	if err != nil {
-		log.Error("ошибка при обращении к  wordConverterClient: %v\n" + err.Error())
-		return "", "", "", []TzError{}, []TzError{}, "", ErrGenerateDocxFile
-	}
+	//log.Info("попытка сохранения docx-файла с примечаниями в s3")
 
-	log.Info("попытка сохранения docx-файла с примечаниями в s3")
+	//fileId, _ := uuid.NewUUID()
 
-	fileId, _ := uuid.NewUUID()
+	//err = tz.s3.SaveDocument(ctx, fileId.String(), file)
+	//if err != nil {
+	//	log.Error("Error при сохранении docx-документа в s3: ", sl.Err(err))
+	//}
 
-	err = tz.s3.SaveDocument(ctx, fileId.String(), file)
-	if err != nil {
-		log.Error("Error при сохранении docx-документа в s3: ", sl.Err(err))
-	}
-
-	log.Info("успешно сохранён файл в s3")
+	//log.Info("успешно сохранён файл в s3")
 
 	htmlFileData2 := []byte(htmlTextResp)
 	err = tz.tgClient.SendFile(htmlFileData2, "123")
@@ -221,7 +221,8 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		log.Info("файл успешно отправлен в телеграм")
 	}
 
-	return htmlTextResp, *css, fileId.String(), errorsResponse, errorsMissingResponse, fileId.String(), nil
+	//return htmlTextResp, *css, fileId.String(), errorsResponse, errorsMissingResponse, fileId.String(), nil
+	return htmlTextResp, *css, "123", errorsResponse, errorsMissingResponse, "123", nil
 }
 
 // HighlightPhraseIgnoreCase ищет фразу без учета регистра в указанном блоке
