@@ -82,19 +82,13 @@ func (c *Client) Convert(fileData []byte, filename string) (*string, *string, er
 		return nil, nil, fmt.Errorf("сервер вернул ошибку %d: %s", resp.StatusCode, string(body))
 	}
 
-	// Парсим JSON ответ
-	var apiResp Response
-	err = json.Unmarshal(body, &apiResp)
-	if err != nil {
-		return nil, nil, fmt.Errorf("ошибка парсинга JSON (тело ответа: %s): %v", string(body), err)
-	}
+	// Возвращаем HTML напрямую (word-parser возвращает HTML, а не JSON)
+	htmlContent := string(body)
 
-	// Проверяем флаг успеха в ответе
-	if !apiResp.Success {
-		return nil, nil, fmt.Errorf("сервер сообщил об ошибке в ответе: %+v", apiResp)
-	}
+	// CSS пока возвращаем пустой, так как word-parser возвращает только HTML
+	emptyCss := ""
 
-	return &apiResp.Text, &apiResp.Css, nil
+	return &htmlContent, &emptyCss, nil
 }
 
 // CreateDocumentRequest представляет структуру запроса для создания документа
