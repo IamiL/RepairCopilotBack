@@ -57,11 +57,14 @@ func (c *Client) Convert(fileData []byte, filename string) (*string, *string, er
 		return nil, nil, fmt.Errorf("ошибка создания запроса: %v", err)
 	}
 
-	// Устанавливаем правильный Content-Type
+	// Устанавливаем правильные заголовки
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Accept", "application/json")
 
 	// Выполняем запрос
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("ошибка выполнения запроса: %v", err)
@@ -74,11 +77,21 @@ func (c *Client) Convert(fileData []byte, filename string) (*string, *string, er
 		return nil, nil, fmt.Errorf("ошибка чтения ответа: %v", err)
 	}
 
+	// Проверяем статус код
+	if resp.StatusCode != http.StatusOK {
+		return nil, nil, fmt.Errorf("сервер вернул ошибку %d: %s", resp.StatusCode, string(body))
+	}
+
 	// Парсим JSON ответ
 	var apiResp Response
 	err = json.Unmarshal(body, &apiResp)
 	if err != nil {
-		return nil, nil, fmt.Errorf("ошибка парсинга JSON: %v", err)
+		return nil, nil, fmt.Errorf("ошибка парсинга JSON (тело ответа: %s): %v", string(body), err)
+	}
+
+	// Проверяем флаг успеха в ответе
+	if !apiResp.Success {
+		return nil, nil, fmt.Errorf("сервер сообщил об ошибке в ответе: %+v", apiResp)
 	}
 
 	return &apiResp.Text, &apiResp.Css, nil
