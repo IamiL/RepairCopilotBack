@@ -230,3 +230,36 @@ func detectTopTagName(htmlBlock string) string {
 	}
 	return ""
 }
+
+func quickSubstringMatch(snippet, plainNorm string) (start, end int, ok bool) {
+	s := normalizeText(stripMarkdown(snippet))
+	// немного укоротим шум: выкинем начальный маркер "- " и срежем «…»
+	s = strings.TrimPrefix(s, "- ")
+	s = strings.TrimSuffix(s, " …")
+	s = strings.TrimSuffix(s, "...")
+	if len(s) == 0 {
+		return 0, 0, false
+	}
+	idx := strings.Index(plainNorm, s)
+	if idx >= 0 {
+		return idx, idx + len(s), true
+	}
+	// если длинно, возьмём «ядро» — 60 символов из середины
+	if len([]rune(s)) > 90 {
+		r := []rune(s)
+		mid := len(r) / 2
+		start := mid - 30
+		if start < 0 {
+			start = 0
+		}
+		end := start + 60
+		if end > len(r) {
+			end = len(r)
+		}
+		core := string(r[start:end])
+		if i := strings.Index(plainNorm, core); i >= 0 {
+			return i, i + len(core), true
+		}
+	}
+	return 0, 0, false
+}

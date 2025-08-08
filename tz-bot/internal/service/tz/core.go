@@ -51,7 +51,7 @@ func (tz *Tz) integrateErrors(
 
 	// Для отчёта: строки TSV
 	var reportLines []string
-	reportLines = append(reportLines, "error_id err_type code group line_start line_end candidates chosen_element status reason snippet")
+	reportLines = append(reportLines, "error_id err_type code group line_start line_end candidates chosen_element status reason snippet snippet_norm candidates_preview")
 
 	// небольшие утилиты для отчёта
 	toStr := func(p *int) string {
@@ -71,6 +71,24 @@ func (tz *Tz) integrateErrors(
 		return strings.Join(ids, ",")
 	}
 	addReport := func(id string, inst ErrorInstance, candidates []*blockWork, chosen string, status string, reason string) {
+		normSnippet := normalizeText(stripMarkdown(inst.Snippet))
+		if len([]rune(normSnippet)) > 180 {
+			normSnippet = string([]rune(normSnippet)[:180]) + "…"
+		}
+
+		candPrev := ""
+		if len(candidates) > 0 {
+			previews := make([]string, 0, len(candidates))
+			for _, c := range candidates {
+				prev := c.Plain.PlainNorm
+				if len([]rune(prev)) > 80 {
+					prev = string([]rune(prev)[:80]) + "…"
+				}
+				previews = append(previews, c.Map.ElementID+"::"+prev)
+			}
+			candPrev = strings.Join(previews, " | ")
+		}
+
 		// snippet без перевода строк и усечённый
 		sn := strings.TrimSpace(inst.Snippet)
 		rs := []rune(sn)
@@ -78,17 +96,9 @@ func (tz *Tz) integrateErrors(
 			sn = string(rs[:180]) + "…"
 		}
 		line := strings.Join([]string{
-			id,
-			inst.ErrType,
-			inst.Code,
-			inst.GroupID,
-			toStr(inst.LineStart),
-			toStr(inst.LineEnd),
-			joinIDs(candidates),
-			chosen,
-			status,
-			reason,
-			sn,
+			id, inst.ErrType, inst.Code, inst.GroupID,
+			toStr(inst.LineStart), toStr(inst.LineEnd),
+			joinIDs(candidates), chosen, status, reason, sn, normSnippet, candPrev,
 		}, " ")
 		reportLines = append(reportLines, line)
 	}
@@ -172,6 +182,14 @@ func (tz *Tz) integrateErrors(
 			}
 
 			for _, leaf := range targets {
+				if st, en, ok := quickSubstringMatch(inst.Snippet, leaf.Plain.PlainNorm); ok {
+					m := match{Start: st, End: en, Found: true}
+					if best.host == nil || (m.End-m.Start) > (best.m.End-best.m.Start) {
+						best = pick{host: host, leaf: leaf, m: m}
+					}
+					continue
+				}
+
 				m := findBestMatch(inst.Snippet, leaf.Plain.PlainNorm)
 				if m.Found {
 					// выбираем по максимальному покрытию
