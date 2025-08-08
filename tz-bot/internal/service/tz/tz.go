@@ -332,10 +332,14 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 	if len(audit) > 3999 {
 		messages := tz.splitMessage(audit, 4000)
 		for _, msg := range messages {
-			tz.tgClient.SendMessage(msg)
+			if err := tz.tgClient.SendMessage(msg); err != nil {
+				log.Error("Error: \n", err)
+			}
 		}
 	} else {
-		tz.tgClient.SendMessage(audit)
+		if err := tz.tgClient.SendMessage(audit); err != nil {
+			log.Error("Error: \n", err)
+		}
 	}
 
 	log.Info("аудит: ")
