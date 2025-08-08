@@ -802,27 +802,62 @@ func IntegrateErrorsIntoHTML(
 		found := false
 		spanID := makeStableID(it.GroupID, it.Code, it.ErrType, it.Snippet)
 
-		for _, cand := range cands {
-			frag := cand.HtmlContent
-			// Возможно, этот фрагмент уже меняли
-			if s, ok := updatedFrag[cand.ElementID]; ok {
-				frag = s
-			}
+		cache := newCache()
 
-			ci, root, err := buildConcatIndexFromHTMLPrecise(frag)
+		const maxCandidatesPerError = 100
+		//selectCandidates := func(ls, le *int) []markdown_service_client.Mapping {
+		//	if ls == nil || le == nil {
+		//		// без строк — ограничим N, можно ещё сделать дешёвую эвристику по markdown_content
+		//		if len(mappings) > maxCandidatesPerError { return mappings[:maxCandidatesPerError] }
+		//		return mappings
+		//	}
+		//	L, R := *ls, *le
+		//	var res []markdown_service_client.Mapping
+		//	for _, m := range mappings {
+		//		if !(m.MarkdownEnd < L || m.MarkdownStart > R) {
+		//			res = append(res, m)
+		//			if len(res) >= maxCandidatesPerError { break }
+		//		}
+		//	}
+		//	if len(res) == 0 {
+		//		if len(mappings) > maxCandidatesPerError { return mappings[:maxCandidatesPerError] }
+		//		return mappings
+		//	}
+		//	return res
+		//}
+
+		for _, cand := range cands {
+			//frag := cand.HtmlContent
+			////Возможно, этот фрагмент уже меняли
+			//if s, ok := updatedFrag[cand.ElementID]; ok {
+			//	frag = s
+			//}
+
+			fc, err := cache.getOrBuild(cand)
 			if err != nil {
 				audit = append(audit, AuditLine{
 					GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
 					SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
 					LineStart: it.LineStart, LineEnd: it.LineEnd,
 					ElementID: cand.ElementID, HtmlTag: cand.HtmlTag,
-					Status: "NOT_FOUND",
-					Note:   fmt.Sprintf("parse error: %v", err),
+					Status: "NOT_FOUND", Note: fmt.Sprintf("parse error: %v", err),
 				})
 				continue
 			}
 
-			start, end, ok := findNormalized(ci.NormText, normSnippet)
+			// грубые лимиты на защиту от OOM
+			if l := len([]rune(fc.buildConcatOnce())); l > 2_000_000 {
+				audit = append(audit, AuditLine{
+					GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
+					SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
+					LineStart: it.LineStart, LineEnd: it.LineEnd,
+					ElementID: cand.ElementID, HtmlTag: cand.HtmlTag,
+					Status: "NOT_FOUND", Note: fmt.Sprintf("block too large: %d runes", l),
+				})
+				continue
+			}
+
+			start, end, ok := findInFrag(fc, normSnippet)
 			if !ok {
 				audit = append(audit, AuditLine{
 					GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
@@ -834,15 +869,15 @@ func IntegrateErrorsIntoHTML(
 				continue
 			}
 
-			ok2, newFrag, err := wrapMatchInDOM(root, ci, start, end, spanID)
-			if err != nil || !ok2 {
+			segs := sliceToSegments(fc.chunks, start, end)
+			newFrag, err := wrapInFrag(fc, segs, spanID)
+			if err != nil {
 				audit = append(audit, AuditLine{
 					GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
 					SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
 					LineStart: it.LineStart, LineEnd: it.LineEnd,
 					ElementID: cand.ElementID, HtmlTag: cand.HtmlTag,
-					Status: "NOT_FOUND",
-					Note:   fmt.Sprintf("wrap error: %v", err),
+					Status: "NOT_FOUND", Note: fmt.Sprintf("wrap error: %v", err),
 				})
 				continue
 			}
@@ -856,6 +891,14 @@ func IntegrateErrorsIntoHTML(
 				SuggestedFix: it.SuggestedFix,
 				Rationale:    it.Rationale,
 			})
+			audit = append(audit, AuditLine{
+				GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
+				SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
+				LineStart: it.LineStart, LineEnd: it.LineEnd,
+				ElementID: cand.ElementID, HtmlTag: cand.HtmlTag,
+				Status: "FOUND", Note: fmt.Sprintf("match [%d..%d] in normalized text", start, end),
+			})
+			break
 
 			audit = append(audit, AuditLine{
 				GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
@@ -987,4 +1030,219 @@ func ptrInt(p *int) any {
 		return nil
 	}
 	return *p
+}
+
+// ---- cache per ElementID ----
+type fragCache struct {
+	root   *html.Node
+	chunks []chunk // only text nodes in order
+	// concat of chunks[i].norm used only for Index; build lazily once
+	concatNorm string
+}
+
+type chunk struct {
+	node          *html.Node
+	norm          string
+	cumBeforeRune int // cumulative rune count before this chunk in concatNorm
+}
+
+type cacheStore struct{ m map[string]*fragCache }
+
+func newCache() *cacheStore { return &cacheStore{m: make(map[string]*fragCache)} }
+
+func (cs *cacheStore) getOrBuild(m markdown_service_client.Mapping) (*fragCache, error) {
+	if fc, ok := cs.m[m.ElementID]; ok {
+		return fc, nil
+	}
+	root, err := html.Parse(strings.NewReader(m.HtmlContent))
+	if err != nil {
+		return nil, fmt.Errorf("parse html: %w", err)
+	}
+	var chunks []chunk
+	var runesSoFar int
+	var walk func(*html.Node)
+	walk = func(n *html.Node) {
+		if n.Type == html.TextNode {
+			if s := strings.TrimSpace(n.Data); s != "" {
+				norm := normalizeSnippet(n.Data)
+				if norm != "" {
+					chunks = append(chunks, chunk{
+						node: n, norm: norm, cumBeforeRune: runesSoFar,
+					})
+					runesSoFar += len([]rune(norm))
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+	walk(root)
+	fc := &fragCache{root: root, chunks: chunks}
+	cs.m[m.ElementID] = fc
+	return fc, nil
+}
+
+func (fc *fragCache) buildConcatOnce() string {
+	if fc.concatNorm != "" {
+		return fc.concatNorm
+	}
+	var b strings.Builder
+	for _, ch := range fc.chunks {
+		b.WriteString(ch.norm)
+	}
+	fc.concatNorm = b.String()
+	return fc.concatNorm
+}
+
+// ---- search in a fragment ----
+func findInFrag(fc *fragCache, normSnippet string) (start, end int, ok bool) {
+	h := []rune(fc.buildConcatOnce())
+	n := []rune(normSnippet)
+	if len(n) == 0 || len(n) > len(h) {
+		return 0, 0, false
+	}
+	// naive search; достаточно быстро для норм. длин
+	for i := 0; i+len(n) <= len(h); i++ {
+		match := true
+		for j := range n {
+			if h[i+j] != n[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return i, i + len(n), true
+		}
+	}
+	return 0, 0, false
+}
+
+// ---- convert [start,end) in concat to per-chunk segments ----
+type seg struct {
+	idx              int
+	fromNorm, toNorm int
+} // chunk index + local rune range
+
+func sliceToSegments(chunks []chunk, start, end int) []seg {
+	if start >= end {
+		return nil
+	}
+	// locate first chunk via cumBeforeRune (binary search)
+	loc := func(pos int) int {
+		lo, hi := 0, len(chunks)
+		for lo < hi {
+			m := (lo + hi) >> 1
+			if chunks[m].cumBeforeRune <= pos {
+				lo = m + 1
+			} else {
+				hi = m
+			}
+		}
+		return lo - 1 // last <= pos
+	}
+	i := loc(start)
+	j := loc(end - 1)
+	var out []seg
+	for k := i; k <= j; k++ {
+		cb := chunks[k].cumBeforeRune
+		ce := cb + len([]rune(chunks[k].norm))
+		from := max(0, start-cb)
+		to := min(ce-cb, end-cb)
+		out = append(out, seg{idx: k, fromNorm: from, toNorm: to})
+	}
+	return out
+}
+
+// ---- map local normalized slice to raw rune indices just-in-time ----
+func mapLocalNormToRaw(raw string, fromNorm, toNorm int) (rawFrom, rawTo int) {
+	if fromNorm >= toNorm {
+		return -1, -1
+	}
+	rawRunes := []rune(raw)
+	normCount := 0
+	rawFrom, rawTo = -1, -1
+	for i, r := range rawRunes {
+		nr := r
+		switch nr {
+		case '«', '»', '“', '”', '„', '‟', '″', '＂':
+			nr = '"'
+		case '’', '‘', '‚', '′', '＇':
+			nr = '\''
+		case '–', '—', '−', '-':
+			nr = '-'
+		case 'ё':
+			nr = 'е'
+		case 'Ё':
+			nr = 'Е'
+		}
+		if unicode.IsLetter(nr) || unicode.IsDigit(nr) || unicode.IsSpace(nr) ||
+			strings.ContainsRune(`.,:;!?-"'/()`, nr) {
+			// NB: мы не коллапсим пробелы здесь; этого хватает на коротких фрагментах
+			if normCount == fromNorm && rawFrom == -1 {
+				rawFrom = i
+			}
+			normCount++
+			if normCount == toNorm {
+				rawTo = i + 1
+				break
+			}
+		}
+	}
+	return rawFrom, rawTo
+}
+
+// ---- wrap per fragment (no posToRun, no full rebuild) ----
+func wrapInFrag(fc *fragCache, segments []seg, spanID string) (string, error) {
+	for _, s := range segments {
+		ch := fc.chunks[s.idx]
+		n := ch.node
+		orig := n.Data
+		rawFrom, rawTo := mapLocalNormToRaw(orig, s.fromNorm, s.toNorm)
+		if rawFrom < 0 || rawTo <= rawFrom || rawTo > len([]rune(orig)) {
+			continue
+		}
+
+		runes := []rune(orig)
+		before := string(runes[:rawFrom])
+		middle := string(runes[rawFrom:rawTo])
+		after := string(runes[rawTo:])
+
+		parent := n.Parent
+		if parent == nil {
+			continue
+		}
+
+		if before != "" {
+			parent.InsertBefore(&html.Node{Type: html.TextNode, Data: before}, n)
+		}
+		span := &html.Node{Type: html.ElementNode, Data: "span",
+			Attr: []html.Attribute{{Key: "data-error", Val: spanID}},
+		}
+		span.AppendChild(&html.Node{Type: html.TextNode, Data: middle})
+		parent.InsertBefore(span, n)
+		if after != "" {
+			parent.InsertBefore(&html.Node{Type: html.TextNode, Data: after}, n)
+		}
+		parent.RemoveChild(n)
+	}
+	// serialize fragment (children of <body>)
+	var buf bytes.Buffer
+	if err := html.Render(&buf, fc.root); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
