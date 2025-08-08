@@ -338,6 +338,9 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		tz.tgClient.SendMessage(audit)
 	}
 
+	log.Info("аудит: ")
+	log.Info(audit)
+
 	outInvalidErrors := make([]TzError, len(invalidErrors))
 
 	for i := range invalidErrors {
