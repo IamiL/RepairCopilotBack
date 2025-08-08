@@ -6,17 +6,26 @@ import (
 )
 
 type ReportEntry struct {
-	ErrorID      string
-	GroupID      string
-	Code         string
-	ErrType      string
-	Snippet      string
-	LineStart    *int
-	LineEnd      *int
-	CandidateIDs []string
-	ElementID    string // где найдено/пытались ставить
-	Status       string // found|not-found|skipped
-	Reason       string // пояснение (контейнер, мульти-узел, пересечения и т.п.)
+	ErrorID          string
+	GroupID          string
+	Code             string
+	ErrType          string
+	Snippet          string
+	LineStart        *int
+	LineEnd          *int
+	CandidateIDs     []string
+	ElementID        string   // где найдено/пытались ставить
+	Status           string   // found|not-found|skipped
+	Reason           string   // пояснение (контейнер, мульти-узел, пересечения и т.п.)
+	CandidatePreview []string // id::preview
+}
+
+func summarizeText(s string) string {
+	s = strings.TrimSpace(s)
+	if len([]rune(s)) > 80 {
+		s = string([]rune(s))[:80] + "…"
+	}
+	return s
 }
 
 func (r ReportEntry) String() string {
@@ -31,6 +40,9 @@ func (r ReportEntry) String() string {
 	}
 	if r.LineEnd != nil {
 		le = strconv.Itoa(*r.LineEnd)
+	}
+	if r.CandidatePreview != nil {
+		strings.Join(r.CandidatePreview, " | ")
 	}
 	return strings.Join([]string{
 		r.ErrorID, r.ErrType, r.Code, r.GroupID, ls, le,

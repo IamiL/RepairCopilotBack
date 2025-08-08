@@ -90,6 +90,8 @@ func (tz *Tz) integrateErrors(
 		}
 		ids := make([]string, 0, len(candidates))
 		for _, c := range candidates {
+			prev := summarizeText(c.Plain.Plain)
+			rep.CandidatePreview = append(rep.CandidatePreview, c.Map.ElementID+"::"+prev)
 			ids = append(ids, c.Map.ElementID)
 		}
 		rep.CandidateIDs = ids
@@ -263,37 +265,37 @@ func mapValues[K comparable, V any](m map[K]V) []V {
 }
 
 // помощники: нормализация/токенизация
-func normalizeText(s string) string {
-	// 1) HTML entities -> символы
-	s = html.UnescapeString(s)
-	// 2) заменить NBSP и прочие хитрые пробелы на обычный
-	s = strings.ReplaceAll(s, "\u00A0", " ")
-	s = strings.ReplaceAll(s, "\u2009", " ")
-	s = strings.ReplaceAll(s, "\u202F", " ")
-	// 3) умные кавычки/тире -> обычные
-	repl := map[string]string{
-		"“": "\"", "”": "\"", "«": "\"", "»": "\"", "‘": "'", "’": "'",
-		"—": "-", "–": "-",
-	}
-	for k, v := range repl {
-		s = strings.ReplaceAll(s, k, v)
-	}
-	// 4) схлопываем пробелы
-	s = strings.TrimSpace(s)
-	reSpaces := regexp.MustCompile(`\s+`)
-	s = reSpaces.ReplaceAllString(s, " ")
-	return s
-}
+//func normalizeText(s string) string {
+//	// 1) HTML entities -> символы
+//	s = html.UnescapeString(s)
+//	// 2) заменить NBSP и прочие хитрые пробелы на обычный
+//	s = strings.ReplaceAll(s, "\u00A0", " ")
+//	s = strings.ReplaceAll(s, "\u2009", " ")
+//	s = strings.ReplaceAll(s, "\u202F", " ")
+//	// 3) умные кавычки/тире -> обычные
+//	repl := map[string]string{
+//		"“": "\"", "”": "\"", "«": "\"", "»": "\"", "‘": "'", "’": "'",
+//		"—": "-", "–": "-",
+//	}
+//	for k, v := range repl {
+//		s = strings.ReplaceAll(s, k, v)
+//	}
+//	// 4) схлопываем пробелы
+//	s = strings.TrimSpace(s)
+//	reSpaces := regexp.MustCompile(`\s+`)
+//	s = reSpaces.ReplaceAllString(s, " ")
+//	return s
+//}
 
-func stripMarkdown(s string) string {
-	// очень лёгкая чистка markdown (для сниппетов):
-	// **bold**, *i*, __u__, `code`, [text](url), начальные "- " / "* " списков
-	s = regexp.MustCompile("`([^`]*)`").ReplaceAllString(s, "$1")
-	s = strings.NewReplacer("**", "", "__", "", "*", "", "_", "").Replace(s)
-	s = regexp.MustCompile(`\[(.*?)\]\((.*?)\)`).ReplaceAllString(s, "$1")
-	s = regexp.MustCompile(`(?m)^\s*[-*]\s+`).ReplaceAllString(s, "")
-	return s
-}
+//func stripMarkdown(s string) string {
+//	// очень лёгкая чистка markdown (для сниппетов):
+//	// **bold**, *i*, __u__, `code`, [text](url), начальные "- " / "* " списков
+//	s = regexp.MustCompile("`([^`]*)`").ReplaceAllString(s, "$1")
+//	s = strings.NewReplacer("**", "", "__", "", "*", "", "_", "").Replace(s)
+//	s = regexp.MustCompile(`\[(.*?)\]\((.*?)\)`).ReplaceAllString(s, "$1")
+//	s = regexp.MustCompile(`(?m)^\s*[-*]\s+`).ReplaceAllString(s, "")
+//	return s
+//}
 
 type plainIndex struct {
 	// mapping from plain-text index -> byte offset in original HTML
@@ -398,39 +400,6 @@ type match struct {
 	Start, End int
 	Score      int
 	Found      bool
-}
-
-func findBestMatch(snippet string, plain string) match {
-	toks := tokens(snippet)
-	if len(toks) == 0 || len(plain) == 0 {
-		return match{}
-	}
-	// простая эвристика: строим регекс вида \btok1\b.*?\btok2\b.*?\btok3\b ...
-	// (.*? допускает пробелы/шум); но plain уже без тегов, с норм пробелами.
-	// Добавим \s+ вместо .*, чтобы не “переедать”
-	var b strings.Builder
-	b.WriteString(`(?s)`)
-	for i, t := range toks {
-		if i > 0 {
-			b.WriteString(`\s+`)
-		}
-		b.WriteString(`\Q` + t + `\E`)
-	}
-	re := regexp.MustCompile(b.String())
-	loc := re.FindStringIndex(plain)
-	if loc != nil {
-		return match{Start: loc[0], End: loc[1], Score: loc[1] - loc[0], Found: true}
-	}
-	// fallback: попробуем обрезать крайние токены
-	for cut := 1; cut <= 2 && len(toks)-cut >= 2; cut++ {
-		sub := strings.Join(toks[0:len(toks)-cut], " ")
-		re2 := regexp.MustCompile(`(?s)\Q` + sub + `\E`)
-		loc2 := re2.FindStringIndex(plain)
-		if loc2 != nil {
-			return match{Start: loc2[0], End: loc2[1], Score: loc2[1] - loc2[0], Found: true}
-		}
-	}
-	return match{}
 }
 
 // оборачивание диапазона в HTML (по байтовым индексам)

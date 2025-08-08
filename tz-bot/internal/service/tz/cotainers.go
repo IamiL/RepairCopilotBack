@@ -12,7 +12,8 @@ var blockContainers = map[string]bool{
 }
 
 var inlinePrefer = map[string]bool{
-	"li": true, "p": true, "span": true, "a": true, "em": true, "strong": true, "i": true, "b": true,
+	"li": true, "p": true, "span": true, "a": true, "em": true, "strong": true, "i": true, "b": true, "u": true, "small": true,
+	"td": true, "th": true,
 }
 
 func isContainer(tag string) bool { return blockContainers[strings.ToLower(tag)] }
