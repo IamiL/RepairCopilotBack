@@ -768,7 +768,7 @@ func wrapHTMLSpan(htmlBlock string, startByte, endByte int, spanID string) (stri
 	if startByte < 0 || endByte > len(htmlBlock) || startByte >= endByte {
 		return htmlBlock, fmt.Errorf("bad range")
 	}
-	return htmlBlock[:startByte] + `<span data-error="` + spanID + `">` +
+	return htmlBlock[:startByte] + `<span error-id="` + spanID + `">` +
 		htmlBlock[startByte:endByte] + `</span>` + htmlBlock[endByte:], nil
 }
 
