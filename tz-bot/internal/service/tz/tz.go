@@ -1,10 +1,14 @@
 package tzservice
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
@@ -12,8 +16,11 @@ import (
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
+	"golang.org/x/net/html"
 )
 
 type Tz struct {
@@ -212,23 +219,6 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 	log.Info("конвертация HTML в markdown успешна")
 	log.Info(fmt.Sprintf("получены дополнительные данные: message=%s, mappings_count=%d", markdownResponse.Message, len(markdownResponse.Mappings)))
 
-	//mdLines, err := readLinesFromString(markdownResponse.Markdown)
-	//if err != nil {
-	//	log.Error("error in  readLinesFromString: ", err.Error())
-	//	return "", "", "", nil, nil, "", err
-	//}
-	//log.Info("отправка HTML файла в телеграм")
-	//
-	//htmlFileName := strings.TrimSuffix(filename, ".docx") + ".html"
-	//htmlFileData := []byte(*htmlText)
-	//err = tz.tgClient.SendFile(htmlFileData, htmlFileName)
-	//if err != nil {
-	//	log.Error("ошибка отправки HTML файла в телеграм: ", sl.Err(err))
-	//	//tz.tgClient.SendMessage(fmt.Sprintf("Ошибка отправки HTML файла в телеграм: %v", err))
-	//} else {
-	//	log.Info("HTML файл успешно отправлен в телеграм")
-	//}
-
 	//log.Info("отправка Markdown файла в телеграм")
 	//
 	//markdownFileName := strings.TrimSuffix(filename, ".docx") + ".md"
@@ -276,155 +266,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		}
 	}
 	//
-	//// Для каждого блока заполняем NormText
-	//for i := range markdownResponse.Mappings {
-	//	markdownResponse.Mappings[i].NormText = extractAndNormalize(markdownResponse.Mappings[i].HtmlContent)
-	//}
-	//
-	//var outErrors []OutError
-	//
-	//for _, inst := range instances {
-	//	if inst.ErrType != "invalid" || strings.TrimSpace(inst.Snippet) == "" {
-	//		log.Info("Skip highlighting, empty or non-invalid snippet",
-	//			slog.String("group_id", inst.GroupID),
-	//			slog.String("code", inst.Code),
-	//			slog.String("err_type", inst.ErrType),
-	//		)
-	//		continue
-	//	}
-	//
-	//	// генерация уникального ID
-	//	errID := uuid.New().String()
-	//	outErrors = append(outErrors, OutError{
-	//		ID:           errID,
-	//		GroupID:      inst.GroupID,
-	//		Code:         inst.Code,
-	//		SuggestedFix: inst.SuggestedFix,
-	//		Rationale:    inst.Rationale,
-	//	})
-	//
-	//	// логируем начало обработки инстанса
-	//	log.Info("Processing error instance",
-	//		slog.String("error_id", errID),
-	//		slog.String("group_id", inst.GroupID),
-	//		slog.String("code", inst.Code),
-	//		slog.String("err_type", inst.ErrType),
-	//		slog.String("snippet", inst.Snippet),
-	//		slog.Int("line_start", getInt(inst.LineStart)),
-	//		slog.Int("line_end", getInt(inst.LineEnd)),
-	//	)
-	//
-	//	// Определить диапазон строк
-	//	start, end := 1, len(mdLines)
-	//	if inst.LineStart != nil {
-	//		start = *inst.LineStart
-	//		if inst.LineEnd != nil {
-	//			end = *inst.LineEnd
-	//		} else {
-	//			end = start
-	//		}
-	//	}
-	//	log.Info("[Error %s/%s] Search lines %d-%d for snippet: %q", inst.GroupID, inst.Code, start, end, inst.Snippet)
-	//
-	//	// Нормализовать сниппет
-	//	normSnippet := normalize(inst.Snippet)
-	//	if normSnippet == "" {
-	//		log.Warn("Normalized snippet is empty, skipping",
-	//			slog.String("error_id", errID),
-	//			slog.String("original_snippet", inst.Snippet),
-	//		)
-	//		continue
-	//	}
-	//
-	//	// Искать по блокам
-	//	wrapped := false
-	//	for i := range markdownResponse.Mappings {
-	//		blk := &markdownResponse.Mappings[i]
-	//
-	//		log.Debug("Trying HTML block for snippet",
-	//			slog.String("html_element_id", blk.HtmlElementId),
-	//			slog.Int("blk_line_start", blk.MarkdownLineStart),
-	//			slog.Int("blk_line_end", blk.MarkdownLineEnd),
-	//		)
-	//
-	//		if blk.MarkdownLineStart > end || blk.MarkdownLineEnd < start {
-	//			log.Debug("Skipping block — вне диапазона строк",
-	//				slog.String("html_element_id", blk.HtmlElementId),
-	//			)
-	//			continue
-	//		}
-	//		// Exact match
-	//		// Exact match in normalized text
-	//		idx := strings.Index(blk.NormText, normSnippet)
-	//		//method := "exact"
-	//		if idx == -1 {
-	//			// fuzzy fallback
-	//			idx_temp, dist := fuzzyFind(blk.NormText, normSnippet)
-	//			idx = idx_temp
-	//			//method = "fuzzy"
-	//			log.Debug("Fuzzy match result",
-	//				slog.String("html_element_id", blk.HtmlElementId),
-	//				slog.Int("distance", dist),
-	//			)
-	//		}
-	//		if idx >= 0 {
-	//			// Теперь найдём в исходном HTML ту же порцию текста
-	//			original := extractOriginalSnippet(blk.HtmlContent, blk.NormText, normSnippet, idx)
-	//			if original != "" {
-	//				newHTML, err := wrapSnippetInSpan(blk.HtmlContent, original, errID)
-	//				if err != nil {
-	//					log.Error("Failed to wrap snippet", sl.Err(err))
-	//				} else {
-	//					blk.HtmlContent = newHTML
-	//				}
-	//				log.Info("Wrapped snippet in span", slog.String("error_id", errID),
-	//					slog.String("html_element_id", blk.HtmlElementId),
-	//					slog.String("original", original),
-	//				)
-	//				wrapped = true
-	//				break
-	//			}
-	//		}
-	//	}
-	//	if !wrapped {
-	//		log.Info("[-] Not found snippet %q", inst.Snippet)
-	//	}
-	//
-	//	if !wrapped {
-	//		log.Warn("Snippet not found in any HTML block",
-	//			slog.String("error_id", errID),
-	//			slog.String("snippet", inst.Snippet),
-	//		)
-	//	}
-	//}
-	//
-	//var sb strings.Builder
-	//for _, blk := range markdownResponse.Mappings {
-	//	sb.WriteString(blk.HtmlContent)
-	//	sb.WriteString("\n")
-	//}
-	//finalHTML := sb.String()
-	//
-	//invalidErrorsResponse := make([]TzError, len(outErrors))
-	//
-	//for i := range outErrors {
-	//	if outErrors[i].SuggestedFix != nil {
-	//		invalidErrorsResponse[i] = TzError{
-	//			Id:    outErrors[i].ID,
-	//			Title: outErrors[i].GroupID,
-	//			Text:  *outErrors[i].SuggestedFix,
-	//			Type:  outErrors[i].Code,
-	//		}
-	//	} else {
-	//		invalidErrorsResponse[i] = TzError{
-	//			Id:    outErrors[i].ID,
-	//			Title: outErrors[i].GroupID,
-	//			Text:  " ",
-	//			Type:  outErrors[i].Code,
-	//		}
-	//	}
-	//}
-	//
+
 	missingErrorsResponse := make([]TzError, 1)
 
 	//htmlTextResp = FixHTMLTags(htmlTextResp)
@@ -477,19 +319,23 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 	//}
 
 	//return htmlTextResp, *css, fileId.String(), errorsResponse, errorsMissingResponse, fileId.String(), nil
-
-	outHtml, invalidErrors, report, err := tz.integrateErrors(ctx, markdownResponse.HtmlWithIds, markdownResponse.Mappings, instances, log)
+	var groups []GroupReport
+	outHTML, invalidErrors, audit, err := IntegrateErrorsIntoHTML(
+		markdownResponse.HtmlWithIds,
+		markdownResponse.Mappings, // если типы совпадают — можно напрямую
+		groups,
+	)
 	if err != nil {
 		log.Error("Ошибка алгоритма совмещения ошибок с html: ", sl.Err(err))
 	}
 	// Отправка сообщения с умным делением по границам предложений
-	if len(report) > 3999 {
-		messages := tz.splitMessage(report, 4000)
+	if len(audit) > 3999 {
+		messages := tz.splitMessage(audit, 4000)
 		for _, msg := range messages {
 			tz.tgClient.SendMessage(msg)
 		}
 	} else {
-		tz.tgClient.SendMessage(report)
+		tz.tgClient.SendMessage(audit)
 	}
 
 	outInvalidErrors := make([]TzError, len(invalidErrors))
@@ -512,456 +358,682 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 		}
 	}
 
-	return outHtml, *css, "123", outInvalidErrors, missingErrorsResponse, "123", nil
+	return outHTML, *css, "123", outInvalidErrors, missingErrorsResponse, "123", nil
 }
 
-//// readLinesFromString разбирает переданный Markdown-текст на строки.
-//// Возвращает срез строк и ошибку, если она возникла при сканировании (очень маловероятна для строки).
-//func readLinesFromString(md string) ([]string, error) {
-//	scanner := bufio.NewScanner(strings.NewReader(md))
-//	var lines []string
-//	for scanner.Scan() {
-//		lines = append(lines, scanner.Text())
-//	}
-//	if err := scanner.Err(); err != nil {
-//		return nil, err
-//	}
-//	return lines, nil
-//}
-//
-//// extractAndNormalize извлекает текст из HTML и нормализует его
-//func extractAndNormalize(htmlStr string) string {
-//	var sb strings.Builder
-//	doc, err := html.Parse(strings.NewReader(htmlStr))
-//	if err != nil {
-//		return ""
-//	}
-//	var f func(*html.Node)
-//	f = func(n *html.Node) {
-//		if n.Type == html.TextNode {
-//			sb.WriteString(n.Data)
-//		}
-//		for c := n.FirstChild; c != nil; c = c.NextSibling {
-//			f(c)
-//		}
-//	}
-//	f(doc)
-//	return normalize(sb.String())
-//}
-//
-//// normalize убирает Markdown-разметку, пунктуацию и приводит к нижнему регистру
-//func normalize(s string) string {
-//	reMd := regexp.MustCompile(`\*\*|__|\[|\]|\([^)]*\)`)
-//	s = reMd.ReplaceAllString(s, "")
-//	s = strings.ToLower(s)
-//	s = strings.Trim(s, ` ,.-–—!?:;"'`)
-//	reSp := regexp.MustCompile(`\s+`)
-//	s = reSp.ReplaceAllString(s, " ")
-//	return strings.TrimSpace(s)
-//}
-//
-//// HighlightPhraseIgnoreCase ищет фразу без учета регистра в указанном блоке
-//func HighlightPhraseIgnoreCase(text, phrase string, id int, blockNum string) string {
-//	if phrase == "" || blockNum == "" {
-//		return text
-//	}
-//
-//	// Ищем блок с указанным номером
-//	blockPattern := fmt.Sprintf(`<[^>]*\b%s\b[^>]*>.*?</[^>]*>`, regexp.QuoteMeta(blockNum))
-//	blockRegex := regexp.MustCompile(blockPattern)
-//
-//	// Находим блок
-//	blockMatch := blockRegex.FindString(text)
-//	if blockMatch == "" {
-//		return text // Блок не найден
-//	}
-//
-//	blockStart := strings.Index(text, blockMatch)
-//	if blockStart == -1 {
-//		return text
-//	}
-//
-//	lowerBlockContent := strings.ToLower(blockMatch)
-//	lowerPhrase := strings.ToLower(phrase)
-//
-//	// Ищем фразу только в содержимом блока
-//	index := strings.Index(lowerBlockContent, lowerPhrase)
-//	if index == -1 {
-//		return text // Фраза не найдена в блоке
-//	}
-//
-//	modifiedBlock := blockMatch
-//
-//	// Заменяем все вхождения фразы в блоке
-//	for index != -1 {
-//		// Извлекаем оригинальную фразу с сохранением регистра
-//		originalPhrase := modifiedBlock[index : index+len(phrase)]
-//		escapedPhrase := html.EscapeString(originalPhrase)
-//		highlightedPhrase := fmt.Sprintf(`<span error-id="%d">%s</span>`, id, escapedPhrase)
-//
-//		// Заменяем найденную фразу в блоке
-//		modifiedBlock = modifiedBlock[:index] + highlightedPhrase + modifiedBlock[index+len(phrase):]
-//
-//		// Ищем следующее вхождение
-//		searchStart := index + len(highlightedPhrase)
-//		if searchStart >= len(modifiedBlock) {
-//			break
-//		}
-//
-//		lowerModifiedBlock := strings.ToLower(modifiedBlock[searchStart:])
-//		nextIndex := strings.Index(lowerModifiedBlock, lowerPhrase)
-//		if nextIndex == -1 {
-//			break
-//		}
-//		index = searchStart + nextIndex
-//	}
-//
-//	// Заменяем оригинальный блок на модифицированный в полном тексте
-//	result := strings.Replace(text, blockMatch, modifiedBlock, 1)
-//
-//	return result
-//}
-//
-//// fuzzyFind ищет ближайшее вхождение по Левенштейну и возвращает индекс и расстояние
-//func fuzzyFind(text, pat string) (int, int) {
-//	minDist := len(pat)
-//	minIdx := -1
-//	for i := 0; i+len(pat) <= len(text); i++ {
-//		segment := text[i : i+len(pat)]
-//		dist := levenshtein.ComputeDistance(segment, pat)
-//		if dist < minDist {
-//			minDist = dist
-//			minIdx = i
-//		}
-//		if dist == 0 {
-//			break
-//		}
-//	}
-//	return minIdx, minDist
-//}
-//
-//// injectSpan оборачивает найденный HTML-фрагмент в span с data-error
-//func injectSpan(htmlStr, normSnippet string, normIdx int, errID string) string {
-//	if normSnippet == "" {
-//		return htmlStr
-//	}
-//
-//	spanStart := fmt.Sprintf(`<span data-error="%s">`, errID)
-//	spanEnd := `</span>`
-//	return strings.Replace(htmlStr, normSnippet, spanStart+normSnippet+spanEnd, 1)
-//}
-//
-//func getInt(p *int) int {
-//	if p == nil {
-//		return 0
-//	}
-//	return *p
-//}
-//
-//// extractOriginalSnippet пытается сопоставить позицию normIdx
-//// в blk.NormText с соответствующим куском в blk.HtmlContent.
-//// Очень упрощённый вариант: последовательно удаляем теги из html,
-//// но запоминаем границы для реконструкции оригинала.
-//func extractOriginalSnippet(htmlStr, normText, normSnippet string, normIdx int) string {
-//	// Убираем теги, но при этом запоминаем срезы:
-//	type seg struct{ text, html string }
-//	var segs []seg
-//	var bufTxt, bufHtml strings.Builder
-//	inTag := false
-//	for _, r := range htmlStr {
-//		if r == '<' {
-//			inTag = true
-//			if bufTxt.Len() > 0 {
-//				segs = append(segs, seg{bufTxt.String(), bufHtml.String()})
-//				bufTxt.Reset()
-//				bufHtml.Reset()
-//			}
-//			bufHtml.WriteRune(r)
-//		} else if r == '>' {
-//			bufHtml.WriteRune(r)
-//			inTag = false
-//		} else {
-//			bufHtml.WriteRune(r)
-//			if !inTag {
-//				bufTxt.WriteRune(r)
-//			}
-//		}
-//	}
-//	if bufTxt.Len() > 0 {
-//		segs = append(segs, seg{bufTxt.String(), bufHtml.String()})
-//	}
-//	// Теперь проходим по сегментам, копим normText и ищем normIdx
-//	acc := 0
-//	for _, s := range segs {
-//		if acc+len(s.text) < normIdx {
-//			acc += len(s.text)
-//			continue
-//		}
-//		// нужный фрагмент начинается в этом сегменте
-//		rel := normIdx - acc
-//		if rel+len(normSnippet) <= len(s.text) {
-//			// оригинал — такой же кусок из html
-//			return s.html[rel : rel+len(normSnippet)]
-//		}
-//		break
-//	}
-//	return ""
-//}
-//
-//// injectSpanRaw оборачивает именно найденный оригинальный кусок
-//func injectSpanRaw(htmlStr, original, errID string) string {
-//	start := fmt.Sprintf(`<span data-error="%s">`, errID)
-//	end := `</span>`
-//	return strings.Replace(htmlStr, original, start+original+end, 1)
-//}
-//
-//// wrapSnippetInSpan парсит htmlStr, находит в текстовых узлах фразу snippet
-//// и оборачивает её в <span data-error="errID">…</span>.
-//// Возвращает новый HTML или ошибку.
-//func wrapSnippetInSpan(htmlStr, snippet, errID string) (string, error) {
-//	// 1) Парсим HTML в дерево
-//	doc, err := html.Parse(strings.NewReader(htmlStr))
-//	if err != nil {
-//		return "", fmt.Errorf("html.Parse: %w", err)
-//	}
-//
-//	// 2) Рекурсивно обходим дерево
-//	var f func(*html.Node)
-//	f = func(n *html.Node) {
-//		// Если это текстовый узел и он содержит наш сниппет
-//		if n.Type == html.TextNode {
-//			idx := strings.Index(n.Data, snippet)
-//			if idx >= 0 {
-//				// Разбиваем текст на до-, совпадение и после-части
-//				before := n.Data[:idx]
-//				match := n.Data[idx : idx+len(snippet)]
-//				after := n.Data[idx+len(snippet):]
-//
-//				// Создаём span-узел
-//				span := &html.Node{
-//					Type: html.ElementNode,
-//					Data: "span",
-//					Attr: []html.Attribute{
-//						{Key: "error-id", Val: errID},
-//					},
-//				}
-//				span.AppendChild(&html.Node{Type: html.TextNode, Data: match})
-//
-//				// Вставляем: beforeTextNode, span, afterTextNode вместо оригинального n
-//				parent := n.Parent
-//				parent.InsertBefore(&html.Node{Type: html.TextNode, Data: before}, n)
-//				parent.InsertBefore(span, n)
-//				parent.InsertBefore(&html.Node{Type: html.TextNode, Data: after}, n)
-//				parent.RemoveChild(n)
-//
-//				// Прекращаем рекурсию для этого узла — snippet только один раз
-//				return
-//			}
-//		}
-//		// Иначе идём глубже
-//		for c := n.FirstChild; c != nil; c = c.NextSibling {
-//			f(c)
-//		}
-//	}
-//	f(doc)
-//
-//	// 3) Рендерим обратно в строку
-//	var buf bytes.Buffer
-//	if err := html.Render(&buf, doc); err != nil {
-//		return "", fmt.Errorf("html.Render: %w", err)
-//	}
-//	return buf.String(), nil
-//}
+type AuditLine struct {
+	GroupID     string
+	Code        string
+	ErrType     string
+	SnippetRaw  string
+	SnippetNorm string
+	LineStart   *int
+	LineEnd     *int
+	ElementID   string
+	HtmlTag     string
+	Status      string // FOUND | NOT_FOUND
+	Note        string // позиции/детали или причина
+}
 
-//func FixHTMLTags(input string) string {
-//	// Регулярное выражение для открывающих тегов <p[числа]>
-//	openTagRegex := regexp.MustCompile(`<p\d+>`)
-//
-//	// Регулярное выражение для закрывающих тегов </p[числа]>
-//	closeTagRegex := regexp.MustCompile(`</p\d+>`)
-//
-//	// Заменяем открывающие теги
-//	result := openTagRegex.ReplaceAllString(input, "<p>")
-//
-//	// Заменяем закрывающие теги
-//	result = closeTagRegex.ReplaceAllString(result, "</p>")
-//
-//	return result
-//}
+type textRun struct {
+	Node   *html.Node
+	Offset int // byte offset внутри Node.Data
+	Len    int // bytes
+}
 
-// extractErrorIds извлекает все error-id из span тегов в тексте
-//func ExtractErrorIds(text string) []string {
-//	// Регулярное выражение для поиска <span error-id="...">
-//	// Поддерживает пробелы вокруг атрибутов и другие атрибуты
-//	re := regexp.MustCompile(`<span[^>]*\berror-id="([^"]+)"[^>]*>`)
-//
-//	// Найти все совпадения с группами захвата
-//	matches := re.FindAllStringSubmatch(text, -1)
-//
-//	// Извлечь значения id из групп захвата
-//	var ids []string
-//	for _, match := range matches {
-//		if len(match) > 1 {
-//			ids = append(ids, match[1])
-//		}
-//	}
-//
-//	return ids
-//}
+type concatIndex struct {
+	NormText string
+	Runs     []textRun // по порядку, покрывают NormText
+	// map: глобальный offset в NormText -> (runIdx, localOffset)
+	// строим на лету в mapIndex()
+	posToRun []struct{ runIdx, localOff int }
+}
 
-// StringsToInts преобразует массив строк в массив int
-// Возвращает ошибку, если какая-то строка не является числом
-//func StringsToInts(strings []string) ([]int, error) {
-//	ints := make([]int, len(strings))
-//
-//	for i, str := range strings {
-//		num, err := strconv.Atoi(str)
-//		if err != nil {
-//			return nil, fmt.Errorf("не удалось преобразовать '%s' в число: %v", str, err)
-//		}
-//		ints[i] = num
-//	}
-//
-//	return ints, nil
-//}
+// ==== Нормализация: markdown/HTML → «сопоставимый текст» ====
 
-// ProcessInvalidErrors обрабатывает ошибки типа invalid из LLM ответа
-// Возвращает обработанные ошибки и обновленный HTML текст с подсветкой
-//func ProcessInvalidErrors(reports []tz_llm_client.Report, mappings []markdown_service_client.Mapping, htmlText string) ([]TzError, string, int) {
-//	errorsRespTemp := make([]TzError, 0, 100)
-//	htmlTextResp := htmlText
-//	errorId := 0
-//
-//	for _, report := range reports {
-//		for _, tzError := range report.Errors {
-//			if tzError.Verdict != "error_present" {
-//				continue
-//			}
-//
-//			for _, instance := range tzError.Instances {
-//				if instance.ErrType != "invalid" {
-//					continue
-//				}
-//
-//				if len(instance.Snippet) < 4 {
-//					continue
-//				}
-//
-//				// Ищем подходящие маппинги по номерам строк
-//				var targetMappings []markdown_service_client.Mapping
-//				if instance.LineStart != nil && instance.LineEnd != nil {
-//					for _, mapping := range mappings {
-//						if mapping.MarkdownLineStart <= *instance.LineStart &&
-//							mapping.MarkdownLineEnd >= *instance.LineEnd {
-//							targetMappings = append(targetMappings, mapping)
-//						}
-//					}
-//				}
-//
-//				// Если не нашли по номерам строк, используем все маппинги
-//				if len(targetMappings) == 0 {
-//					targetMappings = mappings
-//				}
-//
-//				// Ищем фразу из snippet в HTML контенте маппингов
-//				found := false
-//				blockNum := "00000"
-//
-//				for _, mapping := range targetMappings {
-//					if searchPhraseInHTML(instance.Snippet, mapping.HtmlContent) {
-//						found = true
-//						blockNum = mapping.HtmlElementId
-//						break
-//					}
-//				}
-//
-//				// Если нашли совпадение, подсвечиваем в HTML
-//				if found {
-//					htmlTextResp = HighlightPhraseIgnoreCase(htmlTextResp, instance.Snippet, errorId, blockNum)
-//				}
-//
-//				// Добавляем ошибку в результат
-//				errorsRespTemp = append(errorsRespTemp, TzError{
-//					Id:    errorId,
-//					Title: tzError.Code + " " + instance.ErrType,
-//					Text:  instance.SuggestedFix + " " + instance.Rationale,
-//					Type:  "error",
-//				})
-//
-//				errorId++
-//			}
-//		}
-//	}
-//
-//	return errorsRespTemp, htmlTextResp, errorId
-//}
+var mdInlineREs = []*regexp.Regexp{
+	regexp.MustCompile(`\*\*(.*?)\*\*`),
+	regexp.MustCompile(`__(.*?)__`),
+	regexp.MustCompile("`([^`]*)`"),
+	regexp.MustCompile(`\[(.*?)\]\((.*?)\)`), // [text](url) -> text
+}
 
-// searchPhraseInHTML ищет фразу из markdown в HTML контенте
-// Учитывает различия в форматировании между markdown и HTML
-//func searchPhraseInHTML(snippet, htmlContent string) bool {
-//	if snippet == "" || htmlContent == "" {
-//		return false
-//	}
-//
-//	// Приводим к нижнему регистру для поиска без учета регистра
-//	lowerSnippet := strings.ToLower(snippet)
-//	lowerHTML := strings.ToLower(htmlContent)
-//
-//	// Удаляем HTML теги из контента для чистого текстового поиска
-//	htmlWithoutTags := regexp.MustCompile(`<[^>]*>`).ReplaceAllString(lowerHTML, "")
-//
-//	// Нормализуем пробелы и знаки препинания
-//	normalizeText := func(text string) string {
-//		// Заменяем множественные пробелы на один
-//		text = regexp.MustCompile(`\s+`).ReplaceAllString(text, " ")
-//		// Удаляем некоторые знаки препинания для более гибкого поиска
-//		text = regexp.MustCompile(`[,.;:!?""''«»]`).ReplaceAllString(text, "")
-//		return strings.TrimSpace(text)
-//	}
-//
-//	normalizedSnippet := normalizeText(lowerSnippet)
-//	normalizedHTML := normalizeText(htmlWithoutTags)
-//
-//	// Пробуем точное совпадение
-//	if strings.Contains(normalizedHTML, normalizedSnippet) {
-//		return true
-//	}
-//
-//	// Пробуем поиск по словам (если фраза разбита HTML тегами)
-//	snippetWords := strings.Fields(normalizedSnippet)
-//	if len(snippetWords) > 1 {
-//		// Проверяем, что все слова присутствуют в тексте
-//		allWordsFound := true
-//		for _, word := range snippetWords {
-//			if len(word) > 2 && !strings.Contains(normalizedHTML, word) {
-//				allWordsFound = false
-//				break
-//			}
-//		}
-//		if allWordsFound {
-//			return true
-//		}
-//	}
-//
-//	return false
-//}
+func normalizeSnippet(s string) string {
+	x := s
+	// Снимем markdown-инлайн
+	for _, re := range mdInlineREs {
+		x = re.ReplaceAllString(x, `$1`)
+	}
+	// HTML entities → текст (на всякий)
+	x = html.UnescapeString(x)
+	// Ё->Е, кавычки/дефисы → базовые, убрать лишнюю пунктуацию (кроме букв/цифр/пробелов)
+	x = unifyRunes(x)
+	// Схлопнем пробелы
+	x = collapseSpaces(x)
+	return x
+}
 
-// SortByIdOrderFiltered - альтернативная версия, которая возвращает только те элементы,
-// ID которых есть во втором массиве, в точном порядке
-//func SortByIdOrderFiltered(responses []TzError, idOrder []int) []TzError {
-//	// Создаем map для быстрого поиска структур по ID
-//	idToResponse := make(map[int]TzError)
-//	for _, response := range responses {
-//		idToResponse[response.Id] = response
-//	}
-//
-//	// Создаем результирующий массив в нужном порядке
-//	var result []TzError
-//	for _, id := range idOrder {
-//		if response, exists := idToResponse[id]; exists {
-//			result = append(result, response)
-//		}
-//	}
-//
-//	return result
-//}
+func unifyRunes(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		switch r {
+		case '«', '»', '“', '”', '„', '‟', '″', '＂':
+			r = '"'
+		case '’', '‘', '‚', '′', '＇':
+			r = '\''
+		case '–', '—', '−', '-':
+			r = '-' // минусы/дефисы
+		case 'ё':
+			r = 'е'
+		case 'Ё':
+			r = 'Е'
+		}
+		// Оставим буквы/цифры/пробелы/основную пунктуацию .,:;!?-'"()/ — остальное уберём
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) ||
+			strings.ContainsRune(`.,:;!?-"'/()`, r) {
+			b.WriteRune(r)
+		}
+		// прочее — пропускаем (снимаем визуальные артефакты)
+	}
+	return b.String()
+}
+
+func collapseSpaces(s string) string {
+	// Заменим любые пробельные на одиночный пробел
+	re := regexp.MustCompile(`\s+`)
+	out := re.ReplaceAllString(strings.TrimSpace(s), " ")
+	// Снимем пробел перед точкой/запятой/… (частый артефакт)
+	out = regexp.MustCompile(`\s+([.,:;!?])`).ReplaceAllString(out, "$1")
+	return out
+}
+
+// ==== Построение индекса по HTML: собираем нормализованный «плоский» текст и карту смещений ====
+
+func buildConcatIndexFromHTML(htmlFrag string) (*concatIndex, *html.Node, error) {
+	root, err := html.Parse(strings.NewReader(htmlFrag))
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse html: %w", err)
+	}
+
+	var runs []textRun
+	var buf strings.Builder
+	// Повторим нормализацию для html-текста (по текстовым узлам)
+	var walk func(n *html.Node)
+	walk = func(n *html.Node) {
+		if n.Type == html.TextNode {
+			orig := n.Data
+			if strings.TrimSpace(orig) != "" {
+				// Нормализуем текст узла в ту же систему координат
+				norm := normalizeSnippet(orig)
+				if norm != "" {
+					offset := len(buf.String())
+					buf.WriteString(norm)
+					runs = append(runs, textRun{Node: n, Offset: 0, Len: len(n.Data)}) // Offset/Len в исходном тексте (byte). Корректируем при вставке.
+					_ = offset
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+	walk(root)
+
+	ci := &concatIndex{
+		NormText: buf.String(),
+		Runs:     runs,
+	}
+	ci.mapIndex()
+	return ci, root, nil
+}
+
+// Грубая, но эффективная карта: каждый rune в NormText → индекс run + локальное смещение
+func (ci *concatIndex) mapIndex() {
+	ci.posToRun = make([]struct{ runIdx, localOff int }, 0, utf8.RuneCountInString(ci.NormText))
+	//var (
+	//	curRun = 0
+	//)
+	// Упрощённо: считаем, что каждый run добавлялся целиком norm-текстом узла.
+	// Для «сдвигов» внутри узла этого достаточно, т.к. мы всегда отматываем по порядку.
+	//runes := []rune(ci.NormText)
+	//for i := range runes {
+	//	// Найти текущий run по доле длины (приблизительно). Так как мы не держим отдельные длины норм-узлов,
+	//	// пойдём от начала: равномерно распределять нельзя, поэтому проще хранить границы.
+	//	// Упростим: разобьём NormText на равные куски последовательно по числу runs.
+	//	// Для точности лучше хранить per-run длину norm-строк. Давайте её посчитаем.
+	//}
+	// Переделаем: посчитаем норм-строки по-узлово отдельно
+}
+
+func buildConcatIndexFromHTMLPrecise(htmlFrag string) (*concatIndex, *html.Node, error) {
+	root, err := html.Parse(strings.NewReader(htmlFrag))
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse html: %w", err)
+	}
+	type nodeChunk struct {
+		runIdx int
+		norm   string
+	}
+	var runs []textRun
+	var chunks []nodeChunk
+	var flat strings.Builder
+
+	var walk func(n *html.Node)
+	walk = func(n *html.Node) {
+		if n.Type == html.TextNode {
+			orig := n.Data
+			if strings.TrimSpace(orig) != "" {
+				norm := normalizeSnippet(orig)
+				if norm != "" {
+					runs = append(runs, textRun{Node: n, Offset: 0, Len: len(orig)})
+					chunks = append(chunks, nodeChunk{runIdx: len(runs) - 1, norm: norm})
+					flat.WriteString(norm)
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+	walk(root)
+
+	ci := &concatIndex{
+		NormText: flat.String(),
+		Runs:     runs,
+	}
+	// Построим posToRun точно
+	var posMap []struct{ runIdx, localOff int }
+	posMap = make([]struct{ runIdx, localOff int }, 0, len([]rune(ci.NormText)))
+	pos := 0
+	for _, ch := range chunks {
+		runes := []rune(ch.norm)
+		for i := 0; i < len(runes); i++ {
+			posMap = append(posMap, struct{ runIdx, localOff int }{runIdx: ch.runIdx, localOff: i})
+			pos++
+		}
+	}
+	ci.posToRun = posMap
+	return ci, root, nil
+}
+
+// ==== Поиск нормализованного сниппета в нормализованном тексте блока ====
+
+func findNormalized(haystack, needle string) (startRune, endRune int, ok bool) {
+	if needle == "" || haystack == "" {
+		return 0, 0, false
+	}
+	// Простой индекс по рунам
+	H := []rune(haystack)
+	N := []rune(needle)
+	HL := len(H)
+	NL := len(N)
+	if NL > HL {
+		return 0, 0, false
+	}
+	// На больших текстах имеет смысл KMP/2-gram индекс; тут — простой проход
+	for i := 0; i <= HL-NL; i++ {
+		match := true
+		for j := 0; j < NL; j++ {
+			if H[i+j] != N[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return i, i + NL, true
+		}
+	}
+	return 0, 0, false
+}
+
+// ==== Оборачивание совпадения в <span data-error="..."> внутри DOM ====
+
+func wrapMatchInDOM(root *html.Node, ci *concatIndex, startRune, endRune int, spanID string) (bool, string, error) {
+	if startRune >= endRune {
+		return false, "", nil
+	}
+	// Преобразуем глобальные rune-позиции в списки (runIdx, localOff)
+	if startRune < 0 || endRune > len(ci.posToRun) {
+		return false, "", fmt.Errorf("range out of bounds")
+	}
+	start := ci.posToRun[startRune]
+	end := ci.posToRun[endRune-1] // включительно
+	// Мы могли задеть несколько textNode-ов: надо оборачивать куски последовательно.
+	// Подход: создаём один общий <span>, а внутрь перемещаем фрагменты, которые пересекают этот диапазон —
+	// но DOM не позволит положить в один span части, разделённые тегами. Поэтому делаем per-node обёртку.
+	// Это ОК: одна ошибка → несколько span'ов с одинаковым data-error.
+
+	// Генерим атрибуты
+	// <span data-error="spanID"></span>
+	makeSpan := func() *html.Node {
+		span := &html.Node{
+			Type: html.ElementNode,
+			Data: "span",
+			Attr: []html.Attribute{{Key: "data-error", Val: spanID}},
+		}
+		return span
+	}
+
+	// Упрощение: оборачиваем каждый задействованный текстовый узел в части его диапазона.
+	// Идём от start до end, шагами по posToRun, группируя по runIdx.
+	type seg struct{ runIdx, fromLocal, toLocal int } // rune-based
+	segs := make([]seg, 0, 4)
+	curRun := start.runIdx
+	from := start.localOff
+	for i := startRune; i < endRune; i++ {
+		pr := ci.posToRun[i]
+		if pr.runIdx != curRun {
+			// закрываем предыдущий сегмент [from, last+1)
+			segs = append(segs, seg{runIdx: curRun, fromLocal: from, toLocal: ci.posToRun[i-1].localOff + 1})
+			curRun = pr.runIdx
+			from = pr.localOff
+		}
+	}
+	// хвост
+	segs = append(segs, seg{runIdx: curRun, fromLocal: from, toLocal: end.localOff + 1})
+
+	// Теперь на каждом textNode делим строку (по рунам) и вставляем span вокруг средины
+	for _, s := range segs {
+		n := ci.Runs[s.runIdx].Node
+		orig := n.Data
+		runes := []rune(orig)
+
+		// Для корректности нам нужно «сопоставление нормализованных рун → исходные руны».
+		// Мы упростили: нормализовали orig → norm и считали позиции по norm.
+		// Чтобы точно разрезать исходный текст, можно повторно пройти orig, формируя такую же норм-строку и
+		// запоминая соответствие индексов. Сделаем helper:
+
+		rawFrom, rawTo := mapNormalizedSliceToRaw(orig, s.fromLocal, s.toLocal)
+
+		if rawFrom < 0 || rawTo > len(runes) || rawFrom >= rawTo {
+			continue // защитимся
+		}
+
+		before := string(runes[:rawFrom])
+		middle := string(runes[rawFrom:rawTo])
+		after := string(runes[rawTo:])
+
+		parent := n.Parent
+		if parent == nil {
+			continue
+		}
+
+		// Создаём узлы: before, <span>middle</span>, after
+		var beforeNode *html.Node
+		if before != "" {
+			beforeNode = &html.Node{Type: html.TextNode, Data: before}
+			parent.InsertBefore(beforeNode, n)
+		}
+		span := makeSpan()
+		span.AppendChild(&html.Node{Type: html.TextNode, Data: middle})
+		parent.InsertBefore(span, n)
+		var afterNode *html.Node
+		if after != "" {
+			afterNode = &html.Node{Type: html.TextNode, Data: after}
+			parent.InsertBefore(afterNode, n)
+		}
+		parent.RemoveChild(n) // удаляем исходный
+
+	}
+	// Сериализуем root обратно в строку
+	var buf bytes.Buffer
+	if err := html.Render(&buf, root); err != nil {
+		return false, "", err
+	}
+	return true, buf.String(), nil
+}
+
+// Сопоставление: локальный отрезок нормализованной строки textNode → диапазон в raw runes
+func mapNormalizedSliceToRaw(raw string, normFrom, normTo int) (rawFrom, rawTo int) {
+	// Строим нормализованный рун-поток побуквенно, параллельно запоминая «какая raw-руна попала в какой norm-индекс»
+	rawRunes := []rune(raw)
+	normIndex := 0
+	rawIndexAtNorm := make([]int, 0, len(rawRunes))
+	for i, r := range rawRunes {
+		nr := r
+		switch nr {
+		case '«', '»', '“', '”', '„', '‟', '″', '＂':
+			nr = '"'
+		case '’', '‘', '‚', '′', '＇':
+			nr = '\''
+		case '–', '—', '−', '-':
+			nr = '-'
+		case 'ё':
+			nr = 'е'
+		case 'Ё':
+			nr = 'Е'
+		}
+		// Фильтр символов так же, как в unifyRunes:
+		if unicode.IsLetter(nr) || unicode.IsDigit(nr) || unicode.IsSpace(nr) ||
+			strings.ContainsRune(`.,:;!?-"'/()`, nr) {
+			// collapsed spaces/trim — сложнее. Здесь мы только считаем соответствие посимвольно.
+			// Это даёт достаточно точности на коротких сниппетах. Для production можно сделать полный pipe.
+			rawIndexAtNorm = append(rawIndexAtNorm, i)
+			normIndex++
+		}
+	}
+	if normFrom < 0 || normTo > len(rawIndexAtNorm) || normFrom >= normTo {
+		return -1, -1
+	}
+	rawFrom = rawIndexAtNorm[normFrom]
+	rawTo = rawIndexAtNorm[normTo-1] + 1
+	return rawFrom, rawTo
+}
+
+// ==== Склейка всего: интеграция ошибок в HTML ====
+
+type GroupReport struct {
+	GroupID string `json:"group_id"`
+	Errors  []struct {
+		Code      string `json:"code"`
+		Instances []struct {
+			ErrType      string  `json:"err_type"`
+			Snippet      string  `json:"snippet"`
+			LineStart    *int    `json:"line_start"`
+			LineEnd      *int    `json:"line_end"`
+			SuggestedFix *string `json:"suggested_fix"`
+			Rationale    string  `json:"rationale"`
+		} `json:"instances"`
+	} `json:"errors"`
+}
+
+// Вход: htmlWithIds целиком, mappings, сглаженный список групп/ошибок от LLM
+// Выход: обновленный htmlWithIds, outErrors, auditReport
+func IntegrateErrorsIntoHTML(
+	htmlWithIds string,
+	mappings []markdown_service_client.Mapping,
+	groupReports []GroupReport,
+) (string, []OutError, string, error) {
+
+	// Индекс маппингов по ElementID
+	mapByID := make(map[string]markdown_service_client.Mapping, len(mappings))
+	for _, m := range mappings {
+		mapByID[m.ElementID] = m
+	}
+
+	// Для возможности замены фрагментов — сделаем карту id->обновленный html_content
+	updatedFrag := make(map[string]string, len(mappings))
+
+	// Соберём единый список инстансов с метаданными кода/группы
+	type flat struct {
+		GroupID string
+		Code    string
+		ErrorInstance
+	}
+	var all []flat
+	for _, gr := range groupReports {
+		for _, e := range gr.Errors {
+			for _, inst := range e.Instances {
+				all = append(all, flat{
+					GroupID: gr.GroupID,
+					Code:    e.Code,
+					ErrorInstance: ErrorInstance{
+						GroupID:      gr.GroupID,
+						Code:         e.Code,
+						ErrType:      inst.ErrType,
+						Snippet:      inst.Snippet,
+						LineStart:    inst.LineStart,
+						LineEnd:      inst.LineEnd,
+						SuggestedFix: inst.SuggestedFix,
+						Rationale:    inst.Rationale,
+					},
+				})
+			}
+		}
+	}
+
+	// Аудит
+	var audit []AuditLine
+	var out []OutError
+
+	// Хелпер: выбрать кандидатов по строкам
+	selectCandidates := func(ls, le *int) []markdown_service_client.Mapping {
+		if ls == nil || le == nil {
+			return mappings
+		}
+		L := *ls
+		R := *le
+		var res []markdown_service_client.Mapping
+		for _, m := range mappings {
+			// Пересечение диапазонов
+			if !(m.MarkdownEnd < L || m.MarkdownStart > R) {
+				res = append(res, m)
+			}
+		}
+		if len(res) == 0 {
+			return mappings // fallback
+		}
+		return res
+	}
+
+	for _, it := range all {
+		if it.ErrType == "missing" {
+			// Не оборачиваем, просто фиксируем как OutError
+			id := makeStableID(it.GroupID, it.Code, it.ErrType, it.Snippet)
+			out = append(out, OutError{
+				ID:           id,
+				GroupID:      it.GroupID,
+				Code:         it.Code,
+				SuggestedFix: it.SuggestedFix,
+				Rationale:    it.Rationale,
+			})
+			audit = append(audit, AuditLine{
+				GroupID:     it.GroupID,
+				Code:        it.Code,
+				ErrType:     it.ErrType,
+				SnippetRaw:  it.Snippet,
+				SnippetNorm: normalizeSnippet(it.Snippet),
+				LineStart:   it.LineStart,
+				LineEnd:     it.LineEnd,
+				ElementID:   "",
+				HtmlTag:     "",
+				Status:      "NOT_APPLICABLE",
+				Note:        "missing: не внедряется в HTML",
+			})
+			continue
+		}
+
+		// invalid — ищем и оборачиваем
+		normSnippet := normalizeSnippet(it.Snippet)
+		if normSnippet == "" {
+			// пусто — пропустим
+			audit = append(audit, AuditLine{
+				GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
+				SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
+				LineStart: it.LineStart, LineEnd: it.LineEnd,
+				Status: "NOT_FOUND", Note: "пустой после нормализации",
+			})
+			continue
+		}
+
+		cands := selectCandidates(it.LineStart, it.LineEnd)
+		found := false
+		spanID := makeStableID(it.GroupID, it.Code, it.ErrType, it.Snippet)
+
+		for _, cand := range cands {
+			frag := cand.HtmlContent
+			// Возможно, этот фрагмент уже меняли
+			if s, ok := updatedFrag[cand.ElementID]; ok {
+				frag = s
+			}
+
+			ci, root, err := buildConcatIndexFromHTMLPrecise(frag)
+			if err != nil {
+				audit = append(audit, AuditLine{
+					GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
+					SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
+					LineStart: it.LineStart, LineEnd: it.LineEnd,
+					ElementID: cand.ElementID, HtmlTag: cand.HtmlTag,
+					Status: "NOT_FOUND",
+					Note:   fmt.Sprintf("parse error: %v", err),
+				})
+				continue
+			}
+
+			start, end, ok := findNormalized(ci.NormText, normSnippet)
+			if !ok {
+				audit = append(audit, AuditLine{
+					GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
+					SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
+					LineStart: it.LineStart, LineEnd: it.LineEnd,
+					ElementID: cand.ElementID, HtmlTag: cand.HtmlTag,
+					Status: "NOT_FOUND", Note: "no match in candidate",
+				})
+				continue
+			}
+
+			ok2, newFrag, err := wrapMatchInDOM(root, ci, start, end, spanID)
+			if err != nil || !ok2 {
+				audit = append(audit, AuditLine{
+					GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
+					SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
+					LineStart: it.LineStart, LineEnd: it.LineEnd,
+					ElementID: cand.ElementID, HtmlTag: cand.HtmlTag,
+					Status: "NOT_FOUND",
+					Note:   fmt.Sprintf("wrap error: %v", err),
+				})
+				continue
+			}
+
+			updatedFrag[cand.ElementID] = newFrag
+			found = true
+			out = append(out, OutError{
+				ID:           spanID,
+				GroupID:      it.GroupID,
+				Code:         it.Code,
+				SuggestedFix: it.SuggestedFix,
+				Rationale:    it.Rationale,
+			})
+
+			audit = append(audit, AuditLine{
+				GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
+				SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
+				LineStart: it.LineStart, LineEnd: it.LineEnd,
+				ElementID: cand.ElementID, HtmlTag: cand.HtmlTag,
+				Status: "FOUND",
+				Note:   fmt.Sprintf("match [%d..%d] in normalized text", start, end),
+			})
+			break // нашли в подходящем фрагменте — хватит
+		}
+
+		if !found {
+			// fallback: поиск по всем, если был узкий диапазон
+			if it.LineStart != nil {
+				it.LineStart = nil
+				it.LineEnd = nil
+				// рекурсивно можно, но чтобы не усложнять — просто логируем, что не нашли.
+				audit = append(audit, AuditLine{
+					GroupID: it.GroupID, Code: it.Code, ErrType: it.ErrType,
+					SnippetRaw: it.Snippet, SnippetNorm: normSnippet,
+					Status: "NOT_FOUND",
+					Note:   "не найдено в указанных строках; расширение поиска по всему документу можно включить флагом",
+				})
+			}
+		}
+	}
+
+	// Сборка финального HtmlWithIds: заменим обновлённые фрагменты по data-mapping-id
+	finalHTML := applyUpdatedFragments(htmlWithIds, updatedFrag)
+
+	// Аудит → строка (или JSON)
+	auditStr := buildAuditReport(audit)
+	return finalHTML, out, auditStr, nil
+}
+
+func makeStableID(group, code, errType, snippet string) string {
+	sum := sha1.Sum([]byte(group + "|" + code + "|" + errType + "|" + snippet))
+	return hex.EncodeToString(sum[:8]) // короткий хэш
+}
+
+func applyUpdatedFragments(htmlWithIds string, updated map[string]string) string {
+	// Каждый фрагмент окружён контейнером с data-mapping-id="ElementID" — мы можем заменить его innerHTML.
+	// Проще всего распарсить весь htmlWithIds, пройти по узлам с атрибутом data-mapping-id и, если есть updated[id], заменить их children.
+	root, err := html.Parse(strings.NewReader(htmlWithIds))
+	if err != nil {
+		return htmlWithIds // безопасный fallback
+	}
+
+	var walk func(*html.Node)
+	walk = func(n *html.Node) {
+		if n.Type == html.ElementNode {
+			for i := range n.Attr {
+				if n.Attr[i].Key == "data-mapping-id" {
+					id := n.Attr[i].Val
+					if repl, ok := updated[id]; ok {
+						// Заменим детей n на детей из repl
+						newNode, err := html.Parse(strings.NewReader(repl))
+						if err == nil {
+							// newNode это корень документа с <html><head/><body>..., достанем body->firstChild
+							body := findFirst(newNode, func(x *html.Node) bool { return x.Type == html.ElementNode && x.Data == "body" })
+							if body != nil {
+								// Очистим n.Children
+								for c := n.FirstChild; c != nil; {
+									next := c.NextSibling
+									n.RemoveChild(c)
+									c = next
+								}
+								// Перенесём детей body в n
+								for c := body.FirstChild; c != nil; c = c.NextSibling {
+									n.AppendChild(cloneShallowTree(c))
+								}
+							}
+						}
+					}
+					break
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+	walk(root)
+
+	var buf bytes.Buffer
+	_ = html.Render(&buf, root)
+	return buf.String()
+}
+
+func findFirst(n *html.Node, pred func(*html.Node) bool) *html.Node {
+	if pred(n) {
+		return n
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if r := findFirst(c, pred); r != nil {
+			return r
+		}
+	}
+	return nil
+}
+
+func cloneShallowTree(n *html.Node) *html.Node {
+	cp := &html.Node{
+		Type:     n.Type,
+		Data:     n.Data,
+		DataAtom: n.DataAtom,
+		Attr:     append([]html.Attribute(nil), n.Attr...),
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		cp.AppendChild(cloneShallowTree(c))
+	}
+	return cp
+}
+
+func buildAuditReport(lines []AuditLine) string {
+	var b strings.Builder
+	for _, a := range lines {
+		fmt.Fprintf(&b, "group=%s code=%s type=%s snippet=%q norm=%q lines=[%v..%v] element=%s tag=%s status=%s note=%s\n",
+			a.GroupID, a.Code, a.ErrType, a.SnippetRaw, a.SnippetNorm,
+			ptrInt(a.LineStart), ptrInt(a.LineEnd), a.ElementID, a.HtmlTag, a.Status, a.Note,
+		)
+	}
+	return b.String()
+}
+
+func ptrInt(p *int) any {
+	if p == nil {
+		return nil
+	}
+	return *p
+}
