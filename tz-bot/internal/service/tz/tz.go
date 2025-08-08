@@ -319,11 +319,10 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 	//}
 
 	//return htmlTextResp, *css, fileId.String(), errorsResponse, errorsMissingResponse, fileId.String(), nil
-	var groups []GroupReport
 	outHTML, invalidErrors, audit, err := IntegrateErrorsIntoHTML(
 		markdownResponse.HtmlWithIds,
 		markdownResponse.Mappings, // если типы совпадают — можно напрямую
-		groups,
+		llmAnalyzeResult.Reports,
 	)
 	if err != nil {
 		log.Error("Ошибка алгоритма совмещения ошибок с html: ", sl.Err(err))
@@ -453,46 +452,6 @@ func collapseSpaces(s string) string {
 	// Снимем пробел перед точкой/запятой/… (частый артефакт)
 	out = regexp.MustCompile(`\s+([.,:;!?])`).ReplaceAllString(out, "$1")
 	return out
-}
-
-// ==== Построение индекса по HTML: собираем нормализованный «плоский» текст и карту смещений ====
-
-func buildConcatIndexFromHTML(htmlFrag string) (*concatIndex, *html.Node, error) {
-	root, err := html.Parse(strings.NewReader(htmlFrag))
-	if err != nil {
-		return nil, nil, fmt.Errorf("parse html: %w", err)
-	}
-
-	var runs []textRun
-	var buf strings.Builder
-	// Повторим нормализацию для html-текста (по текстовым узлам)
-	var walk func(n *html.Node)
-	walk = func(n *html.Node) {
-		if n.Type == html.TextNode {
-			orig := n.Data
-			if strings.TrimSpace(orig) != "" {
-				// Нормализуем текст узла в ту же систему координат
-				norm := normalizeSnippet(orig)
-				if norm != "" {
-					offset := len(buf.String())
-					buf.WriteString(norm)
-					runs = append(runs, textRun{Node: n, Offset: 0, Len: len(n.Data)}) // Offset/Len в исходном тексте (byte). Корректируем при вставке.
-					_ = offset
-				}
-			}
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			walk(c)
-		}
-	}
-	walk(root)
-
-	ci := &concatIndex{
-		NormText: buf.String(),
-		Runs:     runs,
-	}
-	ci.mapIndex()
-	return ci, root, nil
 }
 
 // Грубая, но эффективная карта: каждый rune в NormText → индекс run + локальное смещение
@@ -730,27 +689,12 @@ func mapNormalizedSliceToRaw(raw string, normFrom, normTo int) (rawFrom, rawTo i
 
 // ==== Склейка всего: интеграция ошибок в HTML ====
 
-type GroupReport struct {
-	GroupID string `json:"group_id"`
-	Errors  []struct {
-		Code      string `json:"code"`
-		Instances []struct {
-			ErrType      string  `json:"err_type"`
-			Snippet      string  `json:"snippet"`
-			LineStart    *int    `json:"line_start"`
-			LineEnd      *int    `json:"line_end"`
-			SuggestedFix *string `json:"suggested_fix"`
-			Rationale    string  `json:"rationale"`
-		} `json:"instances"`
-	} `json:"errors"`
-}
-
 // Вход: htmlWithIds целиком, mappings, сглаженный список групп/ошибок от LLM
 // Выход: обновленный htmlWithIds, outErrors, auditReport
 func IntegrateErrorsIntoHTML(
 	htmlWithIds string,
 	mappings []markdown_service_client.Mapping,
-	groupReports []GroupReport,
+	groupReports []tz_llm_client.GroupReport,
 ) (string, []OutError, string, error) {
 
 	// Индекс маппингов по ElementID

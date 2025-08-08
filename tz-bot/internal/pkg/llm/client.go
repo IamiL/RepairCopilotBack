@@ -27,15 +27,15 @@ type Request struct {
 
 // Структуры для десериализации JSON
 type ReportFile struct {
-	Reports []groupReport `json:"reports"`
+	Reports []GroupReport `json:"reports"`
 }
 
-type groupReport struct {
+type GroupReport struct {
 	GroupID string        `json:"group_id"`
-	Errors  []errorReport `json:"errors"`
+	Errors  []ErrorReport `json:"errors"`
 }
 
-type errorReport struct {
+type ErrorReport struct {
 	Code      string     `json:"code"`
 	Instances []instance `json:"instances"`
 }
