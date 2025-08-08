@@ -6,9 +6,8 @@ import (
 	"log/slog"
 	"regexp"
 	markdown_service_client "repairCopilotBot/tz-bot/internal/pkg/markdown-service"
-	"sort"
+	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
@@ -28,222 +27,237 @@ func (tz *Tz) integrateErrors(
 	errors []ErrorInstance,
 	log *slog.Logger,
 ) (finalHTML string, out []OutError, reportStr string, err error) {
+	// Подготовка: собираем рабочие блоки по mapping-ам
+	type blockWork struct {
+		Map   markdown_service_client.Mapping
+		Plain plainIndex // { PlainOrig, PlainNorm }
+		HTML  string     // outerHTML блока (либо листа, если это подблок)
+	}
 
 	blocks := make(map[string]*blockWork, len(mappings))
 	for i := range mappings {
 		m := mappings[i]
-		pi, err := buildPlainAndIndexFromHTML(m.HtmlContent)
-		if err != nil {
-			log.Error("plain/index build failed", "id", m.ElementID, "err", err)
+		pi, perr := buildPlainAndIndexFromHTML(m.HtmlContent)
+		if perr != nil {
+			if log != nil {
+				log.Warn("buildPlainAndIndexFromHTML failed", "element", m.ElementID, "err", perr)
+			}
+			// всё равно добавим блок, чтобы мы могли его тупо заменить позже, если понадобится
+			blocks[m.ElementID] = &blockWork{Map: m, Plain: plainIndex{PlainOrig: "", PlainNorm: ""}, HTML: m.HtmlContent}
 			continue
 		}
-		blocks[m.ElementID] = &blockWork{
-			Map:   m,
-			Plain: pi,
-			HTML:  m.HtmlContent,
-		}
+		blocks[m.ElementID] = &blockWork{Map: m, Plain: pi, HTML: m.HtmlContent}
 	}
 
-	var report []ReportEntry
+	// Для отчёта: строки TSV
+	var reportLines []string
+	reportLines = append(reportLines, "error_id err_type code group line_start line_end candidates chosen_element status reason snippet")
+
+	// небольшие утилиты для отчёта
+	toStr := func(p *int) string {
+		if p == nil {
+			return ""
+		}
+		return strconv.Itoa(*p)
+	}
+	joinIDs := func(xs []*blockWork) string {
+		if len(xs) == 0 {
+			return ""
+		}
+		ids := make([]string, 0, len(xs))
+		for _, b := range xs {
+			ids = append(ids, b.Map.ElementID)
+		}
+		return strings.Join(ids, ",")
+	}
+	addReport := func(id string, inst ErrorInstance, candidates []*blockWork, chosen string, status string, reason string) {
+		// snippet без перевода строк и усечённый
+		sn := strings.TrimSpace(inst.Snippet)
+		rs := []rune(sn)
+		if len(rs) > 180 {
+			sn = string(rs[:180]) + "…"
+		}
+		line := strings.Join([]string{
+			id,
+			inst.ErrType,
+			inst.Code,
+			inst.GroupID,
+			toStr(inst.LineStart),
+			toStr(inst.LineEnd),
+			joinIDs(candidates),
+			chosen,
+			status,
+			reason,
+			sn,
+		}, " ")
+		reportLines = append(reportLines, line)
+	}
+
 	errCounter := 0
+	out = make([]OutError, 0, len(errors))
 
 	for _, inst := range errors {
 		rid := fmt.Sprintf("e-%03d", errCounter)
 		errCounter++
 
-		rep := ReportEntry{
-			ErrorID: rid, GroupID: inst.GroupID, Code: inst.Code,
-			ErrType: inst.ErrType, Snippet: inst.Snippet,
-			LineStart: inst.LineStart, LineEnd: inst.LineEnd,
-		}
-
-		if inst.ErrType == "missing" {
+		// "missing" — только в список ошибок и в отчёт
+		if strings.ToLower(inst.ErrType) == "missing" {
 			out = append(out, OutError{
-				ID: rid, GroupID: inst.GroupID, Code: inst.Code,
-				SuggestedFix: inst.SuggestedFix, Rationale: inst.Rationale,
+				ID:           rid,
+				GroupID:      inst.GroupID,
+				Code:         inst.Code,
+				SuggestedFix: inst.SuggestedFix,
+				Rationale:    inst.Rationale,
 			})
-			rep.Status = "skipped"
-			rep.Reason = "missing: общий комментарий, без вставки в HTML"
-			report = append(report, rep)
-			continue
-		}
-		if inst.ErrType != "invalid" {
-			rep.Status = "skipped"
-			rep.Reason = "неподдерживаемый err_type"
-			report = append(report, rep)
+			addReport(rid, inst, nil, "", "skipped", "missing: общий комментарий, без вставки в HTML")
 			continue
 		}
 
-		// кандидаты по линиям
+		if strings.ToLower(inst.ErrType) != "invalid" {
+			// непредусмотренный тип — пропускаем
+			addReport(rid, inst, nil, "", "skipped", "unsupported err_type")
+			continue
+		}
+
+		// 1) кандидаты по линиям
 		var candidates []*blockWork
-		for _, bl := range blocks {
-			if inst.LineStart != nil && inst.LineEnd != nil {
+		if inst.LineStart != nil && inst.LineEnd != nil {
+			for _, bl := range blocks {
 				if !(bl.Map.MarkdownEnd < *inst.LineStart || bl.Map.MarkdownStart > *inst.LineEnd) {
 					candidates = append(candidates, bl)
 				}
-			} else {
-				candidates = append(candidates, bl)
 			}
 		}
 		if len(candidates) == 0 {
-			candidates = mapValues(blocks)
+			// если не нашли по линиям — ищем по всем
+			for _, bl := range blocks {
+				candidates = append(candidates, bl)
+			}
 		}
-		ids := make([]string, 0, len(candidates))
-		for _, c := range candidates {
-			prev := summarizeText(c.Plain.Plain)
-			rep.CandidatePreview = append(rep.CandidatePreview, c.Map.ElementID+"::"+prev)
-			ids = append(ids, c.Map.ElementID)
-		}
-		rep.CandidateIDs = ids
 
-		// поиск лучшего совпадения, с учётом контейнеров
+		// 2) Поиск лучшего совпадения:
+		//    - если блок — контейнер (ul/ol/div/table/...), спускаемся в листья и ищем в каждом;
+		//    - выигрывает тот, у кого покрытие (end-start) больше.
 		type pick struct {
-			b   *blockWork
-			sub *blockWork // если спустились в leaf-фрагмент
-			m   match
+			host *blockWork // исходный mapping-блок
+			leaf *blockWork // листовой фрагмент (может совпадать с host)
+			m    match      // {Start, End, Found} — индексы по leaf.Plain.PlainNorm
 		}
 		var best pick
 
-		for _, b := range candidates {
-			// определим тег верхнего уровня блока
-			topTag := detectTopTagName(b.HTML) // реализуй через html.Parse: первый ElementNode name
-			searchTargets := []*blockWork{b}
-
-			if isContainer(topTag) {
-				// разбиваем на листья и ищем в каждом
-				leaves, err := collectLeafFragments(b.HTML)
-				if err != nil {
-					log.Warn("collectLeafFragments failed", "id", b.Map.ElementID, "err", err)
-				} else {
-					searchTargets = nil
-					for _, leaf := range leaves {
-						pi, err := buildPlainAndIndexFromHTML(leaf)
-						if err != nil {
+		for _, host := range candidates {
+			targets := []*blockWork{host}
+			top := detectTopTagName(host.HTML)
+			if isContainer(top) {
+				leaves, lerr := collectLeafFragments(host.HTML)
+				if lerr == nil && len(leaves) > 0 {
+					targets = targets[:0]
+					for _, leafHTML := range leaves {
+						pi, perr := buildPlainAndIndexFromHTML(leafHTML)
+						if perr != nil {
 							continue
 						}
-						// создаём «виртуальный» под-блок
-						sub := &blockWork{
+						targets = append(targets, &blockWork{
 							Map: markdown_service_client.Mapping{
-								ElementID:     b.Map.ElementID, // тот же, но html будет другой
-								HtmlContent:   leaf,
-								MarkdownStart: b.Map.MarkdownStart,
-								MarkdownEnd:   b.Map.MarkdownEnd,
+								ElementID:     host.Map.ElementID,
+								HtmlContent:   leafHTML,
+								MarkdownStart: host.Map.MarkdownStart,
+								MarkdownEnd:   host.Map.MarkdownEnd,
 							},
 							Plain: pi,
-							HTML:  leaf,
-						}
-						searchTargets = append(searchTargets, sub)
+							HTML:  leafHTML,
+						})
 					}
 				}
 			}
 
-			// ищем
-			for _, target := range searchTargets {
-				m := findBestMatch(inst.Snippet, target.Plain.Plain)
-				if m.Found && (best.b == nil || m.Score > best.m.Score) {
-					if target == b {
-						best = pick{b: b, sub: nil, m: m}
-					} else {
-						best = pick{b: b, sub: target, m: m}
+			for _, leaf := range targets {
+				m := findBestMatch(inst.Snippet, leaf.Plain.PlainNorm)
+				if m.Found {
+					// выбираем по максимальному покрытию
+					if best.host == nil || (m.End-m.Start) > (best.m.End-best.m.Start) {
+						best = pick{host: host, leaf: leaf, m: m}
 					}
 				}
 			}
 		}
 
-		// фиксация OutError (всегда добавляем)
+		// В список ошибок добавляем ВСЕ invalid (даже если не нашли место вставки),
+		// чтобы фронт видел весь набор.
 		out = append(out, OutError{
-			ID: rid, GroupID: inst.GroupID, Code: inst.Code,
-			SuggestedFix: inst.SuggestedFix, Rationale: inst.Rationale,
+			ID:           rid,
+			GroupID:      inst.GroupID,
+			Code:         inst.Code,
+			SuggestedFix: inst.SuggestedFix,
+			Rationale:    inst.Rationale,
 		})
 
-		if best.b == nil {
-			rep.Status = "not-found"
-			rep.Reason = "совпадение не найдено ни в одном кандидате"
-			report = append(report, rep)
-			continue
-		}
-
-		// целевой «блок для вставки»
-		target := best.sub
-		host := best.b
-		if target == nil {
-			target = best.b
-		}
-
-		// проверим, что матч попадает ВНУТРЬ одного текстового фрагмента (не «сшивает» несколько детей)
-		// У нас target — это leaf outerHTML (li/p/span). В нём индекс/вставка безопасны.
-		startPlain := clamp(best.m.Start, 0, len(target.Plain.IndexMap)-1)
-		endPlain := clamp(best.m.End-1, 0, len(target.Plain.IndexMap)-1)
-		startByte := target.Plain.IndexMap[startPlain]
-		endByte := target.Plain.IndexMap[endPlain] + 1
-
-		// применим вставку к target.HTML (локально)
-		wrapped, werr := wrapHTMLSpan(target.HTML, startByte, endByte, rid)
-		if werr != nil {
-			rep.Status = "skipped"
-			rep.Reason = "ошибка wrapHTMLSpan: " + werr.Error()
-			rep.ElementID = host.Map.ElementID
-			report = append(report, rep)
-			continue
-		}
-		// теперь нужно заменить ЛИШЬ этот leaf обратно в host.HTML
-		if best.sub != nil {
-			// точечная подмена leaf в host.HTML
-			host.HTML = strings.Replace(host.HTML, target.HTML, wrapped, 1)
-		} else {
-			host.HTML = wrapped
-		}
-		// и пересобрать host.Plain, чтобы последующие попадания были корректные (не обязательно, но полезно)
-		if pi, err := buildPlainAndIndexFromHTML(host.HTML); err == nil {
-			host.Plain = pi
-		}
-
-		rep.Status = "found"
-		rep.ElementID = host.Map.ElementID
-		report = append(report, rep)
-		log.Info("invalid matched",
-			"id", rid, "element", host.Map.ElementID,
-			"score", best.m.Score, "byteStart", startByte, "byteEnd", endByte,
-		)
-	}
-
-	// 3) применяем вставки (в каждом блоке — с конца)
-	for _, b := range blocks {
-		if len(b.Repls) == 0 {
-			continue
-		}
-		sort.Slice(b.Repls, func(i, j int) bool { return b.Repls[i][0] > b.Repls[j][0] })
-
-		html := b.HTML
-		for _, r := range b.Repls {
-			var err error
-			html, err = wrapHTMLSpan(html, r[0], r[1], fmt.Sprintf("blk-%s-%d", b.Map.ElementID, r[2]))
-			if err != nil {
-				log.Error("wrap failed", "id", b.Map.ElementID, "err", err)
+		if best.host == nil {
+			// не нашли совпадение
+			addReport(rid, inst, candidates, "", "not-found", "совпадение не найдено ни в одном кандидате")
+			if log != nil {
+				log.Warn("invalid not matched", "id", rid, "code", inst.Code, "group", inst.GroupID, "snippet", inst.Snippet)
 			}
+			continue
 		}
-		b.HTML = html
+
+		// 3) Проецируем диапазон из PlainNorm → PlainOrig, затем оборачиваем внутри leaf.HTML
+		startOrig, endOrig := mapNormToOrig(best.leaf.Plain.PlainOrig, best.leaf.Plain.PlainNorm, best.m.Start, best.m.End)
+		wrapped, werr := wrapInLeafHTML(best.leaf.HTML, best.leaf.Plain.PlainOrig, startOrig, endOrig, rid)
+		if werr != nil {
+			addReport(rid, inst, candidates, best.host.Map.ElementID, "skipped", "wrap failed: "+werr.Error())
+			if log != nil {
+				log.Warn("wrap failed", "id", rid, "element", best.host.Map.ElementID, "err", werr)
+			}
+			continue
+		}
+
+		// 4) Возвращаем лист в хост и пересобираем plain хоста (для последующих вставок)
+		if best.leaf != best.host {
+			best.host.HTML = strings.Replace(best.host.HTML, best.leaf.HTML, wrapped, 1)
+		} else {
+			best.host.HTML = wrapped
+		}
+		if pi, perr := buildPlainAndIndexFromHTML(best.host.HTML); perr == nil {
+			best.host.Plain = pi
+		}
+
+		addReport(rid, inst, candidates, best.host.Map.ElementID, "found", "")
+		if log != nil {
+			log.Info("invalid matched",
+				"id", rid,
+				"element", best.host.Map.ElementID,
+				"normStart", best.m.Start,
+				"normEnd", best.m.End,
+				"startOrig", startOrig,
+				"endOrig", endOrig,
+			)
+		}
 	}
 
-	// 4) пересобираем итоговый htmlWithIds (заменами по data-mapping-id)
-	// Самый надёжный путь — через goquery: найти элемент с data-mapping-id и заменить html на b.HTML.
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlWithIds))
-	if err != nil {
-		return
+	// 5) Пересборка итогового HTML: заменяем data-mapping-id соответствующим outerHTML блока
+	doc, derr := goquery.NewDocumentFromReader(strings.NewReader(htmlWithIds))
+	if derr != nil {
+		err = derr
+		return htmlWithIds, out, strings.Join(reportLines, "\n"), err
 	}
 
 	for _, b := range blocks {
 		sel := fmt.Sprintf(`[data-mapping-id="%s"]`, b.Map.ElementID)
-		doc.Find(sel).Each(func(i int, s *goquery.Selection) {
-			// заменяем весь outer? у нас b.HTML включает сам элемент;
-			// проще заменить через Parent? Или заменить s.SetHtml(inner) если b.HTML — innerHTML
-			// В твоём json b.HtmlContent — полный outer HTML узла (p/li/ul). Делаем ReplaceWithHtml.
-			s.ReplaceWithHtml(b.HTML)
+		doc.Find(sel).Each(func(_ int, s *goquery.Selection) {
+			// Заменяем весь узел на наш HTML (outerHTML)
+			_ = s.ReplaceWithHtml(b.HTML)
 		})
 	}
 
-	finalHTML, err = doc.Html()
-	reportStr = buildReport(report)
+	htmlRes, herr := doc.Html()
+	if herr != nil {
+		err = herr
+		return htmlWithIds, out, strings.Join(reportLines, "\n"), err
+	}
+
+	finalHTML = htmlRes
+	reportStr = strings.Join(reportLines, "\n")
 	return
 }
 
@@ -298,85 +312,58 @@ func mapValues[K comparable, V any](m map[K]V) []V {
 //}
 
 type plainIndex struct {
-	// mapping from plain-text index -> byte offset in original HTML
-	// we будем хранить только границы, нам хватит массива длиной len(plain)+1,
-	// где indexMap[i] = байтовая позиция в HTML до символа plain[i]
-	IndexMap []int
-	Plain    string
+	IndexMap  []int  // по PlainOrig: позиция байта в HTML перед символом PlainOrig[i]
+	PlainOrig string // сырой текст без тегов, пробелы можно схлопнуть
+	PlainNorm string // нормализованный текст для поиска
 }
 
-// вытащить текст из HTML и построить индексную карту
+// аккуратно вытаскиваем именно текст-ноды и строим позиционную карту
 func buildPlainAndIndexFromHTML(htmlBlock string) (plainIndex, error) {
-	// Парсим HTML как фрагмент
-	node, err := html.Parse(strings.NewReader(htmlBlock))
+	n, err := html.Parse(strings.NewReader(htmlBlock))
 	if err != nil {
 		return plainIndex{}, err
 	}
 
-	var buf strings.Builder
-	var indexMap []int
-	var walk func(*html.Node, int) int
-	walk = func(n *html.Node, htmlPos int) int {
-		// htmlPos — текущее смещение по исходной HTML-строке (байты).
-		// Для простоты считаем, что htmlBlock — исходная строка;
-		// будем инкрементировать htmlPos, когда пишем в buf.
-		// Реализуем через повторный рендер ноды до текста? Проще: пробежимся текст-ноды.
-		if n.Type == html.TextNode {
-			text := n.Data
-			// перед добавлением: нормализация пробелов позже; сейчас точный маппинг
-			for i := 0; i < len(text); i++ {
-				// добавляем символ в буфер
-				buf.WriteByte(text[i])
-				indexMap = append(indexMap, htmlPos+i) // позиция в html перед символом
-			}
-			return htmlPos + len(text)
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			htmlPos = walk(c, htmlPos)
-		}
-		return htmlPos
-	}
-	// Примерная оценка смещения: для простоты считаем нулём,
-	// т.к. мы будем вставлять по indexMap в конкретном htmlBlock,
-	// без привязки к глобальному документу.
-	walk(node, 0)
+	// Пройдёмся по дереву и соберём текст без тегов + карту позиций в исходном htmlBlock.
+	// ВНИМАНИЕ: парасер строит новое дерево и у нас нет «реальных» смещений.
+	// Поэтому пойдём проще: удалим теги вручную на копии строки, но это ненадёжно.
+	// Надёжнее: рендерить обратно ВНУТРЕННОСТИ узлов текста мы не сможем.
+	// Пойдём практично: конкатенируем TextNode.Data, карта будет «виртуальная» (по тексту),
+	// а для wrap будем находить подстроку в htmlBlock через text и локальный поиск. Это работает,
+	// если внутри одного “листа” текстовая последовательность не размазана сложными нодами.
+	// Для устойчивости оставим IndexMap как «индекс в htmlBlock по локальному поиску» при вставке.
 
-	plain := buf.String()
-	// теперь нормализуем plain так же, как нормализуем сниппеты
-	// но, чтобы не потерять карту, пересоберём карту под нормализованный текст
-	normalized := normalizeText(plain)
-	// Перестроим карту "как сможем": делаем двухуказательный проход по plain и normalized
-	// Схлопывание пробелов может склеить позиции — возьмём первую попавшуюся
-	newIndex := make([]int, 0, len(normalized))
-	i, j := 0, 0
-	for i < len(plain) && j < len(normalized) {
-		pc := plain[i]
-		nc := normalized[j]
-		// приводим регистр?
-		if pc == nc {
-			newIndex = append(newIndex, indexMap[i])
-			i++
-			j++
-			continue
+	// => Проще: для вставки ЛИСТОВЫХ узлов мы заменяем leaf.outerHTML целиком (как уже делаем),
+	// а внутри leaf подстроку режем по его собственному HTML (локальный wrap). Для этого
+	// IndexMap нам не нужен — нам нужен offset в leaf.HTML. Его мы получим через поиск
+	// по PlainOrig внутри leaf.HTML (локальный re-матч текста).
+	// Поэтому здесь храним только PlainOrig и PlainNorm.
+
+	var b strings.Builder
+	var walk func(*html.Node)
+	walk = func(x *html.Node) {
+		if x.Type == html.TextNode {
+			b.WriteString(x.Data)
 		}
-		// если plain[i] пробел и в normalized уже схлопнуто — пропускаем лишние пробелы
-		if unicode.IsSpace(rune(pc)) {
-			i++
-			continue
+		for c := x.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
 		}
-		if unicode.IsSpace(rune(nc)) {
-			// normalized вставил пробел — попробуем пропустить шум в plain до ближайшего непробельного
-			i++
-			continue
-		}
-		// иное несовпадение: сдвигаемся в plain (теги/шумы уже выкинуты)
-		i++
 	}
-	// защитимся от пустоты
-	if len(newIndex) == 0 && len(normalized) == 0 {
-		newIndex = []int{0}
+	// ищем первый элемент под body, если это фрагмент
+	body := findBody(n)
+	if body == nil {
+		body = n
 	}
-	return plainIndex{IndexMap: newIndex, Plain: normalized}, nil
+	walk(body)
+
+	plainOrig := squeezeSpaces(b.String()) // схлопнем пробелы, но без смены регистра/символов
+	plainNorm := normalizeText(plainOrig)  // полноценная нормализация — только для поиска
+
+	return plainIndex{
+		IndexMap:  nil, // больше не используем
+		PlainOrig: plainOrig,
+		PlainNorm: plainNorm,
+	}, nil
 }
 
 // токенизация сниппета
@@ -395,12 +382,12 @@ func tokens(s string) []string {
 	return out
 }
 
-// последовательный поиск токенов с допуском пробелов/шума
-type match struct {
-	Start, End int
-	Score      int
-	Found      bool
-}
+//// последовательный поиск токенов с допуском пробелов/шума
+//type match struct {
+//	Start, End int
+//	Score      int
+//	Found      bool
+//}
 
 // оборачивание диапазона в HTML (по байтовым индексам)
 func wrapHTMLSpan(htmlBlock string, startByte, endByte int, spanID string) (string, error) {
@@ -411,26 +398,30 @@ func wrapHTMLSpan(htmlBlock string, startByte, endByte int, spanID string) (stri
 		htmlBlock[startByte:endByte] + `</span>` + htmlBlock[endByte:], nil
 }
 
-func detectTopTagName(htmlBlock string) string {
-	n, err := html.Parse(strings.NewReader(htmlBlock))
-	if err != nil {
-		return ""
-	}
-	// найти первый ElementNode под корнем
-	var tag string
+func squeezeSpaces(s string) string {
+	s = strings.ReplaceAll(s, "\u00A0", " ")
+	s = strings.ReplaceAll(s, "\u2009", " ")
+	s = strings.ReplaceAll(s, "\u202F", " ")
+	s = strings.TrimSpace(s)
+	re := regexp.MustCompile(`\s+`)
+	return re.ReplaceAllString(s, " ")
+}
+
+func findBody(n *html.Node) *html.Node {
+	var body *html.Node
 	var dfs func(*html.Node)
 	dfs = func(x *html.Node) {
-		if tag != "" {
-			return
-		}
-		if x.Type == html.ElementNode {
-			tag = x.Data
+		if x.Type == html.ElementNode && x.Data == "body" {
+			body = x
 			return
 		}
 		for c := x.FirstChild; c != nil; c = c.NextSibling {
+			if body != nil {
+				return
+			}
 			dfs(c)
 		}
 	}
 	dfs(n)
-	return tag
+	return body
 }
