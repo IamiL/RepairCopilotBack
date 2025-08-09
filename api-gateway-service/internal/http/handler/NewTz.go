@@ -3,37 +3,38 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"repairCopilotBot/tz-bot/client"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type NewTzResponse struct {
-	Text          string                     `json:"text"`
-	Css           string                     `json:"css"`
-	DocId         string                     `json:"doc_id"`
+	Text          string                      `json:"text"`
+	Css           string                      `json:"css"`
+	DocId         string                      `json:"doc_id"`
 	InvalidErrors []NewTzInvalidErrorResponse `json:"invalid_errors"`
 	MissingErrors []NewTzMissingErrorResponse `json:"missing_errors"`
 }
 
 type NewTzInvalidErrorResponse struct {
-	Id                   uint32 `json:"id"`
-	IdStr                string `json:"id_str"`
-	GroupID              string `json:"group_id"`
-	ErrorCode            string `json:"error_code"`
-	Quote                string `json:"quote"`
-	Analysis             string `json:"analysis"`
-	Critique             string `json:"critique"`
-	Verification         string `json:"verification"`
-	SuggestedFix         string `json:"suggested_fix"`
-	Rationale            string `json:"rationale"`
-	UntilTheEndOfSentence bool   `json:"until_the_end_of_sentence"`
-	StartLineNumber      *int   `json:"start_line_number,omitempty"`
-	EndLineNumber        *int   `json:"end_line_number,omitempty"`
+	Id                    uint32
+	IdStr                 string `json:"id"`
+	GroupID               string `json:"group_id"`
+	ErrorCode             string `json:"error_code"`
+	Quote                 string `json:"quote"`
+	Analysis              string `json:"analysis"`
+	Critique              string `json:"critique"`
+	Verification          string `json:"verification"`
+	SuggestedFix          string `json:"suggested_fix"`
+	Rationale             string `json:"rationale"`
+	UntilTheEndOfSentence bool
+	StartLineNumber       *int
+	EndLineNumber         *int
 }
 
 type NewTzMissingErrorResponse struct {
@@ -119,19 +120,19 @@ func NewTzHandler(
 		invalidErrorsResp := make([]NewTzInvalidErrorResponse, len(checkTzResult.InvalidErrors))
 		for i, e := range checkTzResult.InvalidErrors {
 			invalidErrorsResp[i] = NewTzInvalidErrorResponse{
-				Id:                   e.Id,
-				IdStr:                e.IdStr,
-				GroupID:              e.GroupID,
-				ErrorCode:            e.ErrorCode,
-				Quote:                e.Quote,
-				Analysis:             e.Analysis,
-				Critique:             e.Critique,
-				Verification:         e.Verification,
-				SuggestedFix:         e.SuggestedFix,
-				Rationale:            e.Rationale,
+				Id:                    e.Id,
+				IdStr:                 e.IdStr,
+				GroupID:               e.GroupID,
+				ErrorCode:             e.ErrorCode,
+				Quote:                 e.Quote,
+				Analysis:              e.Analysis,
+				Critique:              e.Critique,
+				Verification:          e.Verification,
+				SuggestedFix:          e.SuggestedFix,
+				Rationale:             e.Rationale,
 				UntilTheEndOfSentence: e.UntilTheEndOfSentence,
-				StartLineNumber:      e.StartLineNumber,
-				EndLineNumber:        e.EndLineNumber,
+				StartLineNumber:       e.StartLineNumber,
+				EndLineNumber:         e.EndLineNumber,
 			}
 		}
 
