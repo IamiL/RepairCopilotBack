@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"time"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
 
 	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
@@ -33,7 +35,19 @@ type serverAPI struct {
 }
 
 func New(log *slog.Logger, tzService *tzservice.Tz, config *Config) *App {
-	gRPCServer := grpc.NewServer()
+	// Настраиваем gRPC сервер с увеличенными таймаутами
+	gRPCServer := grpc.NewServer(
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle: 30 * time.Minute,
+			Time:              30 * time.Minute,
+			Timeout:           30 * time.Minute,
+		}),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             30 * time.Second,
+			PermitWithoutStream: true,
+		}),
+		grpc.ConnectionTimeout(30*time.Minute),
+	)
 
 	tzv1.RegisterTzServiceServer(gRPCServer, &serverAPI{
 		tzService: tzService,

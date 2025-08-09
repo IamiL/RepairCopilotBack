@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"time"
 
 	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 )
@@ -76,6 +77,10 @@ func New(ctx context.Context, addr string) (*Client, error) {
 
 func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requestID uuid.UUID) (*CheckTzResult, error) {
 	const op = "tz_client.CheckTz"
+
+	// Создаем контекст с таймаутом 30 минут для gRPC запроса
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
+	defer cancel()
 
 	fmt.Println("точка 11")
 	resp, err := c.api.CheckTz(ctx, &tzv1.CheckTzRequest{
