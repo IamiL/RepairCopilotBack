@@ -13,18 +13,39 @@ import (
 )
 
 type NewTzResponse struct {
-	Text        string               `json:"text"`
-	Css         string               `json:"css"`
-	DocId       string               `json:"doc_id"`
-	Err         []NewTzErrorResponse `json:"errors"`
-	ErrsMissing []NewTzErrorResponse `json:"errors_missing"`
+	Text          string                     `json:"text"`
+	Css           string                     `json:"css"`
+	DocId         string                     `json:"doc_id"`
+	InvalidErrors []NewTzInvalidErrorResponse `json:"invalid_errors"`
+	MissingErrors []NewTzMissingErrorResponse `json:"missing_errors"`
 }
 
-type NewTzErrorResponse struct {
-	Id    string `json:"id"`
-	Title string `json:"title"`
-	Text  string `json:"description"`
-	Type  string `json:"type"`
+type NewTzInvalidErrorResponse struct {
+	Id                   uint32 `json:"id"`
+	IdStr                string `json:"id_str"`
+	GroupID              string `json:"group_id"`
+	ErrorCode            string `json:"error_code"`
+	Quote                string `json:"quote"`
+	Analysis             string `json:"analysis"`
+	Critique             string `json:"critique"`
+	Verification         string `json:"verification"`
+	SuggestedFix         string `json:"suggested_fix"`
+	Rationale            string `json:"rationale"`
+	UntilTheEndOfSentence bool   `json:"until_the_end_of_sentence"`
+	StartLineNumber      *int   `json:"start_line_number,omitempty"`
+	EndLineNumber        *int   `json:"end_line_number,omitempty"`
+}
+
+type NewTzMissingErrorResponse struct {
+	Id           uint32 `json:"id"`
+	IdStr        string `json:"id_str"`
+	GroupID      string `json:"group_id"`
+	ErrorCode    string `json:"error_code"`
+	Analysis     string `json:"analysis"`
+	Critique     string `json:"critique"`
+	Verification string `json:"verification"`
+	SuggestedFix string `json:"suggested_fix"`
+	Rationale    string `json:"rationale"`
 }
 
 func NewTzHandler(
@@ -90,36 +111,52 @@ func NewTzHandler(
 		}
 
 		log.Info("TZ processing completed successfully",
-			slog.Int("errors_count", len(checkTzResult.Errors)),
-			slog.Int("missing_errors_count", len(checkTzResult.ErrorsMissing)),
+			slog.Int("invalid_errors_count", len(checkTzResult.InvalidErrors)),
+			slog.Int("missing_errors_count", len(checkTzResult.MissingErrors)),
 			slog.String("doc_id", checkTzResult.DocId))
 
-		errorsResp := make([]NewTzErrorResponse, len(checkTzResult.Errors))
-		for i, e := range checkTzResult.Errors {
-			errorsResp[i] = NewTzErrorResponse{
-				Id:    e.Id,
-				Title: e.Title,
-				Text:  e.Text,
-				Type:  e.Type,
+		// Конвертация OutInvalidError в HTTP response структуры
+		invalidErrorsResp := make([]NewTzInvalidErrorResponse, len(checkTzResult.InvalidErrors))
+		for i, e := range checkTzResult.InvalidErrors {
+			invalidErrorsResp[i] = NewTzInvalidErrorResponse{
+				Id:                   e.Id,
+				IdStr:                e.IdStr,
+				GroupID:              e.GroupID,
+				ErrorCode:            e.ErrorCode,
+				Quote:                e.Quote,
+				Analysis:             e.Analysis,
+				Critique:             e.Critique,
+				Verification:         e.Verification,
+				SuggestedFix:         e.SuggestedFix,
+				Rationale:            e.Rationale,
+				UntilTheEndOfSentence: e.UntilTheEndOfSentence,
+				StartLineNumber:      e.StartLineNumber,
+				EndLineNumber:        e.EndLineNumber,
 			}
 		}
 
-		errorsMissing := make([]NewTzErrorResponse, len(checkTzResult.ErrorsMissing))
-		for i, e := range checkTzResult.ErrorsMissing {
-			errorsMissing[i] = NewTzErrorResponse{
-				Id:    e.Id,
-				Title: e.Title,
-				Text:  e.Text,
-				Type:  e.Type,
+		// Конвертация OutMissingError в HTTP response структуры
+		missingErrorsResp := make([]NewTzMissingErrorResponse, len(checkTzResult.MissingErrors))
+		for i, e := range checkTzResult.MissingErrors {
+			missingErrorsResp[i] = NewTzMissingErrorResponse{
+				Id:           e.Id,
+				IdStr:        e.IdStr,
+				GroupID:      e.GroupID,
+				ErrorCode:    e.ErrorCode,
+				Analysis:     e.Analysis,
+				Critique:     e.Critique,
+				Verification: e.Verification,
+				SuggestedFix: e.SuggestedFix,
+				Rationale:    e.Rationale,
 			}
 		}
 
 		response := NewTzResponse{
-			Text:        checkTzResult.HtmlText,
-			Err:         errorsResp,
-			ErrsMissing: errorsMissing,
-			Css:         checkTzResult.Css,
-			DocId:       checkTzResult.DocId,
+			Text:          checkTzResult.HtmlText,
+			InvalidErrors: invalidErrorsResp,
+			MissingErrors: missingErrorsResp,
+			Css:           checkTzResult.Css,
+			DocId:         checkTzResult.DocId,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

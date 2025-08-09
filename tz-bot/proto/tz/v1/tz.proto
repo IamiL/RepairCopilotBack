@@ -19,14 +19,35 @@ message CheckTzResponse {
   string html_text = 1;
   string css = 2;
   string docId = 3;
-  repeated TzError errors = 4;
-  repeated TzError errors_missing = 5;
+  repeated OutInvalidError invalid_errors = 4;
+  repeated OutMissingError missing_errors = 5;
   string fileId = 6;
 }
 
-message TzError {
-  string id = 1;
-  string title = 2;
-  string text = 3;
-  string type = 4;
+message OutInvalidError {
+  uint32 id = 1;
+  string id_str = 2;
+  string group_id = 3;
+  string error_code = 4;
+  string quote = 5;
+  string analysis = 6;
+  string critique = 7;
+  string verification = 8;
+  string suggested_fix = 9;
+  string rationale = 10;
+  bool until_the_end_of_sentence = 11;
+  optional int32 start_line_number = 12;
+  optional int32 end_line_number = 13;
+}
+
+message OutMissingError {
+  uint32 id = 1;
+  string id_str = 2;
+  string group_id = 3;
+  string error_code = 4;
+  string analysis = 5;
+  string critique = 6;
+  string verification = 7;
+  string suggested_fix = 8;
+  string rationale = 9;
 }

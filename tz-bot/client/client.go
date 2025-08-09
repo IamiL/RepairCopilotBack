@@ -19,17 +19,38 @@ type Config struct {
 	Addr string `yaml:"addr" env-default:"localhost:9090"`
 }
 
-type TzError struct {
-	Id    string
-	Title string
-	Text  string
-	Type  string
+type OutInvalidError struct {
+	Id                   uint32
+	IdStr                string
+	GroupID              string
+	ErrorCode            string
+	Quote                string
+	Analysis             string
+	Critique             string
+	Verification         string
+	SuggestedFix         string
+	Rationale            string
+	UntilTheEndOfSentence bool
+	StartLineNumber      *int
+	EndLineNumber        *int
+}
+
+type OutMissingError struct {
+	Id           uint32
+	IdStr        string
+	GroupID      string
+	ErrorCode    string
+	Analysis     string
+	Critique     string
+	Verification string
+	SuggestedFix string
+	Rationale    string
 }
 
 type CheckTzResult struct {
 	HtmlText      string
-	Errors        []TzError
-	ErrorsMissing []TzError
+	InvalidErrors []OutInvalidError
+	MissingErrors []OutMissingError
 	FileId        string
 	Css           string
 	DocId         string
@@ -68,23 +89,49 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 
 	fmt.Println("точка 12")
 
-	errors := make([]TzError, len(resp.Errors), len(resp.Errors))
-	for i, grpcError := range resp.Errors {
-		errors[i] = TzError{
-			Id:    grpcError.Id,
-			Title: grpcError.Title,
-			Text:  grpcError.Text,
-			Type:  grpcError.Type,
+	// Конвертация OutInvalidError из proto в клиентские структуры
+	invalidErrors := make([]OutInvalidError, len(resp.InvalidErrors))
+	for i, grpcError := range resp.InvalidErrors {
+		var startLine, endLine *int
+		if grpcError.StartLineNumber != nil {
+			val := int(*grpcError.StartLineNumber)
+			startLine = &val
+		}
+		if grpcError.EndLineNumber != nil {
+			val := int(*grpcError.EndLineNumber)
+			endLine = &val
+		}
+
+		invalidErrors[i] = OutInvalidError{
+			Id:                   grpcError.Id,
+			IdStr:                grpcError.IdStr,
+			GroupID:              grpcError.GroupId,
+			ErrorCode:            grpcError.ErrorCode,
+			Quote:                grpcError.Quote,
+			Analysis:             grpcError.Analysis,
+			Critique:             grpcError.Critique,
+			Verification:         grpcError.Verification,
+			SuggestedFix:         grpcError.SuggestedFix,
+			Rationale:            grpcError.Rationale,
+			UntilTheEndOfSentence: grpcError.UntilTheEndOfSentence,
+			StartLineNumber:      startLine,
+			EndLineNumber:        endLine,
 		}
 	}
 
-	errorsMissing := make([]TzError, len(resp.ErrorsMissing), len(resp.ErrorsMissing))
-	for i, grpcError := range resp.ErrorsMissing {
-		errorsMissing[i] = TzError{
-			Id:    grpcError.Id,
-			Title: grpcError.Title,
-			Text:  grpcError.Text,
-			Type:  grpcError.Type,
+	// Конвертация OutMissingError из proto в клиентские структуры
+	missingErrors := make([]OutMissingError, len(resp.MissingErrors))
+	for i, grpcError := range resp.MissingErrors {
+		missingErrors[i] = OutMissingError{
+			Id:           grpcError.Id,
+			IdStr:        grpcError.IdStr,
+			GroupID:      grpcError.GroupId,
+			ErrorCode:    grpcError.ErrorCode,
+			Analysis:     grpcError.Analysis,
+			Critique:     grpcError.Critique,
+			Verification: grpcError.Verification,
+			SuggestedFix: grpcError.SuggestedFix,
+			Rationale:    grpcError.Rationale,
 		}
 	}
 
@@ -92,9 +139,9 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 
 	return &CheckTzResult{
 		HtmlText:      resp.HtmlText,
-		Errors:        errors,
+		InvalidErrors: invalidErrors,
+		MissingErrors: missingErrors,
 		FileId:        resp.FileId,
-		ErrorsMissing: errorsMissing,
 		Css:           resp.Css,
 		DocId:         resp.DocId,
 	}, nil

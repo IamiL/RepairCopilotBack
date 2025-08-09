@@ -106,7 +106,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		return nil, status.Error(codes.InvalidArgument, "filename cannot be empty")
 	}
 
-	htmlText, css, docId, errors, errorsMissing, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
+	htmlText, css, docId, invalidErrors, missingErrors, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
 	if err != nil {
 		log.Error("failed to check tz", slog.String("error", err.Error()))
 
@@ -120,32 +120,58 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		}
 	}
 
-	grpcErrors := make([]*tzv1.TzError, len(errors))
-	for i, tzError := range errors {
-		grpcErrors[i] = &tzv1.TzError{
-			Id:    tzError.Id,
-			Title: sanitizeString(tzError.Title),
-			Text:  sanitizeString(tzError.Text),
-			Type:  sanitizeString(tzError.Type),
+	// Конвертация OutInvalidError в proto сообщения
+	grpcInvalidErrors := make([]*tzv1.OutInvalidError, len(*invalidErrors))
+	for i, invalidError := range *invalidErrors {
+		var startLine, endLine *int32
+		if invalidError.StartLineNumber != nil {
+			val := int32(*invalidError.StartLineNumber)
+			startLine = &val
+		}
+		if invalidError.EndLineNumber != nil {
+			val := int32(*invalidError.EndLineNumber)
+			endLine = &val
+		}
+
+		grpcInvalidErrors[i] = &tzv1.OutInvalidError{
+			Id:                   invalidError.Id,
+			IdStr:                sanitizeString(invalidError.IdStr),
+			GroupId:              sanitizeString(invalidError.GroupID),
+			ErrorCode:            sanitizeString(invalidError.ErrorCode),
+			Quote:                sanitizeString(invalidError.Quote),
+			Analysis:             sanitizeString(invalidError.Analysis),
+			Critique:             sanitizeString(invalidError.Critique),
+			Verification:         sanitizeString(invalidError.Verification),
+			SuggestedFix:         sanitizeString(invalidError.SuggestedFix),
+			Rationale:            sanitizeString(invalidError.Rationale),
+			UntilTheEndOfSentence: invalidError.UntilTheEndOfSentence,
+			StartLineNumber:      startLine,
+			EndLineNumber:        endLine,
 		}
 	}
 
-	grpcErrorsMissing := make([]*tzv1.TzError, len(errorsMissing))
-	for i, tzErrorMissing := range errorsMissing {
-		grpcErrorsMissing[i] = &tzv1.TzError{
-			Id:    tzErrorMissing.Id,
-			Title: sanitizeString(tzErrorMissing.Title),
-			Text:  sanitizeString(tzErrorMissing.Text),
-			Type:  sanitizeString(tzErrorMissing.Type),
+	// Конвертация OutMissingError в proto сообщения
+	grpcMissingErrors := make([]*tzv1.OutMissingError, len(*missingErrors))
+	for i, missingError := range *missingErrors {
+		grpcMissingErrors[i] = &tzv1.OutMissingError{
+			Id:           missingError.Id,
+			IdStr:        sanitizeString(missingError.IdStr),
+			GroupId:      sanitizeString(missingError.GroupID),
+			ErrorCode:    sanitizeString(missingError.ErrorCode),
+			Analysis:     sanitizeString(missingError.Analysis),
+			Critique:     sanitizeString(missingError.Critique),
+			Verification: sanitizeString(missingError.Verification),
+			SuggestedFix: sanitizeString(missingError.SuggestedFix),
+			Rationale:    sanitizeString(missingError.Rationale),
 		}
 	}
 
-	log.Info("CheckTz request processed successfully", slog.Int("errors_count", len(errors)))
+	log.Info("CheckTz request processed successfully", slog.Int("invalid_errors_count", len(*invalidErrors)), slog.Int("missing_errors_count", len(*missingErrors)))
 
 	return &tzv1.CheckTzResponse{
 		HtmlText:      sanitizeString(htmlText),
-		Errors:        grpcErrors,
-		ErrorsMissing: grpcErrorsMissing,
+		InvalidErrors: grpcInvalidErrors,
+		MissingErrors: grpcMissingErrors,
 		FileId:        fileId,
 		Css:           css,
 		DocId:         docId,

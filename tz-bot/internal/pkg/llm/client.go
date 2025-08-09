@@ -31,34 +31,29 @@ type ReportFile struct {
 }
 
 type GroupReport struct {
-	GroupID string        `json:"group_id"`
-	Errors  []ErrorReport `json:"errors"`
+	GroupID *string        `json:"group_id"`
+	Errors  *[]ErrorReport `json:"errors"`
 }
 
 type ErrorReport struct {
-	Code      string     `json:"code"`
-	Instances []instance `json:"instances"`
+	Code      *string     `json:"code"`
+	Instances *[]instance `json:"instances"`
+	Process   *Process    `json:"process"`
+}
+
+type Process struct {
+	Analysis     *string `json:"analysis"`
+	Critique     *string `json:"critique"`
+	Verification *string `json:"verification"`
 }
 
 type instance struct {
-	ErrType      string  `json:"err_type"`
-	Snippet      string  `json:"snippet"`
+	ErrType      *string `json:"err_type"`
+	Snippet      *string `json:"snippet"`
 	LineStart    *int    `json:"line_start"`
 	LineEnd      *int    `json:"line_end"`
 	SuggestedFix *string `json:"suggested_fix"`
-	Rationale    string  `json:"rationale"`
-}
-
-// Итоговая структура
-type ErrorInstance struct {
-	GroupID      string
-	Code         string
-	ErrType      string
-	Snippet      string
-	LineStart    *int
-	LineEnd      *int
-	SuggestedFix *string
-	Rationale    string
+	Rationale    *string `json:"rationale"`
 }
 
 // ValidationError структура для ошибки валидации (422)
