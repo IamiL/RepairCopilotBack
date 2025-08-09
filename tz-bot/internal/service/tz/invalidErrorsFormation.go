@@ -2,6 +2,7 @@ package tzservice
 
 import (
 	"fmt"
+	"regexp"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"strings"
 )
@@ -98,6 +99,12 @@ func MarcdownCleaning(markdown string) string {
 	cleanStr := markdown
 	if strings.HasPrefix(markdown, "- ") {
 		cleanStr = cleanStr[2:]
+	} else {
+		var prefixRegex = regexp.MustCompile(`^\[[^\]]*\] - `)
+
+		// RemoveBracketPrefix удаляет префикс вида "[что-то] - " в начале строки
+		cleanStr = prefixRegex.ReplaceAllString(cleanStr, "")
 	}
+
 	return cleanStr
 }
