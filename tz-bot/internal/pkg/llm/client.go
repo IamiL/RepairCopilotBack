@@ -1,21 +1,26 @@
 package tz_llm_client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
+	"net/http"
+	"time"
 )
 
 type Config struct {
-	Url string `yaml:"url"`
+	Url   string `yaml:"url"`
+	Model string `yaml:"model"`
 }
 
 type Client struct {
-	url string // URL API для отправки файла (замените на реальный URL) apiURL := "https://your-api-endpoint.com/upload"
+	url   string // URL API для отправки файла (замените на реальный URL) apiURL := "https://your-api-endpoint.com/upload"
+	model string
 }
 
-func New(url string) *Client {
-	return &Client{url: url}
+func New(url string, model string) *Client {
+	return &Client{url: url, model: model}
 }
 
 // Request структура для отправки запроса
@@ -75,34 +80,72 @@ type APIResponse struct {
 	Status  int
 }
 
-// MakeHTTPRequest выполняет HTTP запрос к API (MOCK - возвращает данные из файла)
+// MakeHTTPRequest выполняет реальный HTTP запрос к LLM API
 func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
-	// ВРЕМЕННЫЙ МОК - читаем JSON из файла вместо HTTP запроса
-	fmt.Println("MOCK: Используется тестовый ответ из response_example.json")
-
-	mockData, err := json.Marshal(req) // Просто для логирования
-	if err == nil {
-		fmt.Printf("MOCK: Запрос был бы отправлен: %s\n", string(mockData))
+	// Устанавливаем модель из конфигурации клиента
+	req.Model = c.model
+	
+	// Сериализуем запрос в JSON
+	jsonData, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка сериализации запроса: %w", err)
 	}
 
-	// Читаем мок-ответ из файла
-	mockFilePath := "tz-bot/internal/pkg/llm/response_example.json"
-	mockBody, err := os.ReadFile(mockFilePath)
+	fmt.Printf("Отправляем запрос к LLM API: %s\n", c.url)
+
+	// Создаем HTTP запрос
+	httpReq, err := http.NewRequest("POST", c.url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("ошибка чтения мок-файла %s: %w", mockFilePath, err)
+		return nil, fmt.Errorf("ошибка создания HTTP запроса: %w", err)
+	}
+
+	// Устанавливаем заголовки
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	// Создаем HTTP клиент с таймаутом
+	client := &http.Client{
+		Timeout: 120 * time.Second, // Увеличенный таймаут для LLM запросов
+	}
+
+	// Выполняем запрос
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка выполнения HTTP запроса: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Читаем тело ответа
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка чтения тела ответа: %w", err)
 	}
 
 	result := &APIResponse{
-		Status: 200, // Всегда возвращаем успешный статус для мока
+		Status: resp.StatusCode,
 	}
 
-	// Парсим мок-ответ как успешный
-	var successResp ReportFile
-	if err := json.Unmarshal(mockBody, &successResp); err != nil {
-		return nil, fmt.Errorf("ошибка парсинга мок-ответа: %w", err)
-	}
+	// Обрабатываем ответ в зависимости от статус кода
+	switch resp.StatusCode {
+	case 200:
+		// Успешный ответ - парсим как ReportFile
+		var successResp ReportFile
+		if err := json.Unmarshal(body, &successResp); err != nil {
+			return nil, fmt.Errorf("ошибка парсинга успешного ответа: %w", err)
+		}
+		result.Success = &successResp
 
-	result.Success = &successResp
+	case 422:
+		// Ошибка валидации - парсим как ErrorResponse
+		var errorResp ErrorResponse
+		if err := json.Unmarshal(body, &errorResp); err != nil {
+			return nil, fmt.Errorf("ошибка парсинга ответа с ошибкой валидации: %w", err)
+		}
+		result.Error = &errorResp
+
+	default:
+		// Другие коды ответов
+		return nil, fmt.Errorf("неожиданный статус код: %d, тело ответа: %s", resp.StatusCode, string(body))
+	}
 
 	return result, nil
 }

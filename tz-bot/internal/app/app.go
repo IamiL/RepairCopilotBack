@@ -35,7 +35,7 @@ func New(
 	TgConfig *tg_client.Config,
 	s3Config *s3minio.Config,
 ) *App {
-	llmClient := tz_llm_client.New(LlmConfig.Url)
+	llmClient := tz_llm_client.New(LlmConfig.Url, LlmConfig.Model)
 
 	wordParserClient := word_parser_client.New(WordParserConfig.Url)
 
