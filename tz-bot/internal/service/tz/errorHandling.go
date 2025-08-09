@@ -18,6 +18,7 @@ type OutInvalidError struct {
 	Verification          string `json:"verification"`
 	SuggestedFix          string `json:"suggested_fix"`
 	Rationale             string `json:"rational"`
+	QuoteLines            *[]string
 	UntilTheEndOfSentence bool
 	StartLineNumber       *int
 	EndLineNumber         *int
@@ -66,16 +67,16 @@ func extractErrorIdsFromHtml(htmlText string) []string {
 	// Регулярное выражение для поиска <span error-id="...">
 	// Поддерживает различные форматы атрибутов и пробелы
 	re := regexp.MustCompile(`<span[^>]*\berror-id=["']([^"']+)["'][^>]*>`)
-	
+
 	matches := re.FindAllStringSubmatch(htmlText, -1)
-	
+
 	var errorIds []string
 	for _, match := range matches {
 		if len(match) > 1 {
 			errorIds = append(errorIds, match[1])
 		}
 	}
-	
+
 	return errorIds
 }
 
@@ -84,23 +85,23 @@ func sortInvalidErrorsByHtmlOrder(errors *[]OutInvalidError, htmlText string) *[
 	if errors == nil || len(*errors) == 0 {
 		return errors
 	}
-	
+
 	// Извлекаем порядок ID из HTML
 	htmlErrorIds := extractErrorIdsFromHtml(htmlText)
 	if len(htmlErrorIds) == 0 {
 		return errors // Возвращаем исходный порядок, если ID не найдены
 	}
-	
+
 	// Создаем map для быстрого поиска ошибок по IdStr
 	errorMap := make(map[string]OutInvalidError)
 	for _, err := range *errors {
 		errorMap[err.IdStr] = err
 	}
-	
+
 	// Создаем отсортированный массив
 	var sortedErrors []OutInvalidError
 	addedIds := make(map[string]bool)
-	
+
 	// Добавляем ошибки в порядке появления в HTML
 	for _, htmlId := range htmlErrorIds {
 		if err, exists := errorMap[htmlId]; exists && !addedIds[htmlId] {
@@ -108,13 +109,13 @@ func sortInvalidErrorsByHtmlOrder(errors *[]OutInvalidError, htmlText string) *[
 			addedIds[htmlId] = true
 		}
 	}
-	
+
 	// Добавляем оставшиеся ошибки, которых нет в HTML (на случай если что-то пропустили)
 	for _, err := range *errors {
 		if !addedIds[err.IdStr] {
 			sortedErrors = append(sortedErrors, err)
 		}
 	}
-	
+
 	return &sortedErrors
 }

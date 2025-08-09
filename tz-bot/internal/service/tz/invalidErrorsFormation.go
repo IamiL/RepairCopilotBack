@@ -52,6 +52,14 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 
 								cleanQuote := MarcdownCleaning(*(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet)
 
+								var quoteLines *[]string
+
+								cleanQuoteLines := SplitLinesNoEmpty(cleanQuote)
+
+								if cleanQuoteLines != nil && len(cleanQuoteLines) > 1 {
+									quoteLines = &cleanQuoteLines
+								}
+
 								startLineNumber := (*(*((*report)[i]).Errors)[j].Instances)[k].LineStart
 								//if startLineNumber == nil {
 								//
@@ -75,6 +83,7 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									UntilTheEndOfSentence: EllipsisCheck(*(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet),
 									StartLineNumber:       startLineNumber,
 									EndLineNumber:         endLineNumber,
+									QuoteLines:            quoteLines,
 								})
 
 								id++
@@ -107,4 +116,16 @@ func MarcdownCleaning(markdown string) string {
 	}
 
 	return cleanStr
+}
+
+func SplitLinesNoEmpty(s string) []string {
+	rawLines := strings.Split(s, "\n")
+	var lines []string
+	for _, line := range rawLines {
+		line = strings.TrimSpace(line) // убираем пробелы и \r
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+	return lines
 }
