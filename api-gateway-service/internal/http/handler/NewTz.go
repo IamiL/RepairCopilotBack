@@ -116,7 +116,7 @@ func NewTzHandler(
 			slog.Int("missing_errors_count", len(checkTzResult.MissingErrors)),
 			slog.String("doc_id", checkTzResult.DocId))
 
-		// Конвертация OutInvalidError в HTTP response структуры
+		// Конвертация OutInvalidError в HTTP response структуры (ошибки уже отсортированы в tz-bot сервисе)
 		invalidErrorsResp := make([]NewTzInvalidErrorResponse, len(checkTzResult.InvalidErrors))
 		for i, e := range checkTzResult.InvalidErrors {
 			invalidErrorsResp[i] = NewTzInvalidErrorResponse{
@@ -192,22 +192,3 @@ func writeStringToFile(content string, filename string) error {
 	return nil
 }
 
-// SortByIdOrderFiltered - альтернативная версия, которая возвращает только те элементы,
-// ID которых есть во втором массиве, в точном порядке
-//func SortByIdOrderFiltered(responses []NewTzErrorResponse, idOrder []int) []NewTzErrorResponse {
-//	// Создаем map для быстрого поиска структур по ID
-//	idToResponse := make(map[int]NewTzErrorResponse)
-//	for _, response := range responses {
-//		idToResponse[response.Id] = response
-//	}
-//
-//	// Создаем результирующий массив в нужном порядке
-//	var result []NewTzErrorResponse
-//	for _, id := range idOrder {
-//		if response, exists := idToResponse[id]; exists {
-//			result = append(result, response)
-//		}
-//	}
-//
-//	return result
-//}
