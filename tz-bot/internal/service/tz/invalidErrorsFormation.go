@@ -57,7 +57,20 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 								cleanQuoteLines := SplitLinesNoEmpty(cleanQuote)
 
 								if cleanQuoteLines != nil && len(cleanQuoteLines) > 1 {
+									for lineNimber, _ := range cleanQuoteLines {
+										cleanQuoteLines[lineNimber] = MarcdownCleaning(cleanQuoteLines[lineNimber])
+									}
+
 									quoteLines = &cleanQuoteLines
+
+								} else {
+									cleanQuoteCells := SplitByPipeNoEmpty(cleanQuote)
+									if cleanQuoteCells != nil && len(cleanQuoteCells) > 1 {
+										for lineNimber, _ := range cleanQuoteCells {
+											cleanQuoteCells[lineNimber] = MarcdownCleaning(cleanQuoteCells[lineNimber])
+										}
+										quoteLines = &cleanQuoteCells
+									}
 								}
 
 								startLineNumber := (*(*((*report)[i]).Errors)[j].Instances)[k].LineStart
@@ -108,14 +121,43 @@ func MarcdownCleaning(markdown string) string {
 	cleanStr := markdown
 	if strings.HasPrefix(markdown, "- ") {
 		cleanStr = cleanStr[2:]
-	} else {
-		var prefixRegex = regexp.MustCompile(`\[[^\]]*\] - `)
+	}
 
-		// RemoveBracketPrefix удаляет префикс вида "[что-то] - " в начале строки
-		cleanStr = prefixRegex.ReplaceAllString(cleanStr, "")
+	//удаление префиксов `[0123124] - `
+	// RemoveBracketPrefix удаляет префикс вида "[что-то] - " в начале строки
+	var prefixRegex1 = regexp.MustCompile(`\[[^\]]*\] - `)
+	cleanStr = prefixRegex1.ReplaceAllString(cleanStr, "")
+
+	// удаление префиксов `[234525] `
+	cleanStr, _ = TrimBracketPrefix(cleanStr)
+
+	// удаление префиксов `## `
+	if strings.HasPrefix(cleanStr, "## ") {
+		cleanStr = cleanStr[3:]
 	}
 
 	return cleanStr
+}
+
+func TrimBracketPrefix(s string) (string, bool) {
+	// Минимум: "[" + 1 символ + "]" + " " => длина >= 4
+	if len(s) < 4 || s[0] != '[' {
+		return s, false
+	}
+
+	// Ищем первую закрывающую скобку
+	i := strings.IndexByte(s, ']')
+	// i==1 -> внутри скобок ничего (нарушает "несколько символов")
+	if i <= 1 {
+		return s, false
+	}
+
+	// Проверяем, что сразу после ']' стоит пробел
+	if i+1 < len(s) && s[i+1] == ' ' {
+		return s[i+2:], true
+	}
+
+	return s, false
 }
 
 func SplitLinesNoEmpty(s string) []string {
@@ -128,4 +170,16 @@ func SplitLinesNoEmpty(s string) []string {
 		}
 	}
 	return lines
+}
+
+func SplitByPipeNoEmpty(s string) []string {
+	rawParts := strings.Split(s, " | ")
+	var parts []string
+	for _, p := range rawParts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			parts = append(parts, p)
+		}
+	}
+	return parts
 }
