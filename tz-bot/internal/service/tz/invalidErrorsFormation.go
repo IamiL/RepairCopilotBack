@@ -100,7 +100,7 @@ func MarcdownCleaning(markdown string) string {
 	if strings.HasPrefix(markdown, "- ") {
 		cleanStr = cleanStr[2:]
 	} else {
-		var prefixRegex = regexp.MustCompile(`^\[[^\]]*\] - `)
+		var prefixRegex = regexp.MustCompile(`\[[^\]]*\] - `)
 
 		// RemoveBracketPrefix удаляет префикс вида "[что-то] - " в начале строки
 		cleanStr = prefixRegex.ReplaceAllString(cleanStr, "")
