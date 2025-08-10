@@ -139,7 +139,23 @@ func MarcdownCleaning(markdown string) string {
 		cleanStr = cleanStr[3:]
 	}
 
+	cleanStr = RemoveMDBold(cleanStr)
+
 	return cleanStr
+}
+
+func RemoveMDBold(s string) string {
+	// ***bold+italic***
+	reTriple := regexp.MustCompile(`(?s)\*{3}(.+?)\*{3}`)
+	// **bold**
+	reDoubleAsterisk := regexp.MustCompile(`(?s)\*{2}(.+?)\*{2}`)
+	// __bold__
+	reDoubleUnderscore := regexp.MustCompile(`(?s)_{2}(.+?)_{2}`)
+
+	out := reTriple.ReplaceAllString(s, `$1`)
+	out = reDoubleAsterisk.ReplaceAllString(out, `$1`)
+	out = reDoubleUnderscore.ReplaceAllString(out, `$1`)
+	return out
 }
 
 func TrimBracketPrefix(s string) (string, bool) {
