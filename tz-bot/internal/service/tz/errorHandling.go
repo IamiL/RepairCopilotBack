@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
-	"strings"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	markdown_service_client "repairCopilotBot/tz-bot/internal/pkg/markdown-service"
+	"strings"
 )
 
 type OutInvalidError struct {
@@ -40,7 +40,7 @@ type OutMissingError struct {
 }
 
 func HandleErrors(report *[]tz_llm_client.GroupReport, htmlBlocks *[]markdown_service_client.Mapping) (*[]OutInvalidError, *[]OutMissingError, string) {
-	startId := uint32(0)
+	startId := uint32(1)
 
 	outInvalidErrors, lastId := NewInvalidErrorsSet(startId, report)
 
@@ -136,7 +136,7 @@ func LogOutInvalidErrors(log *slog.Logger, errors *[]OutInvalidError, prefix str
 	}
 
 	log.Info(fmt.Sprintf("%s - OutInvalidErrors: найдено %d ошибок", prefix, len(*errors)))
-	
+
 	for i, err := range *errors {
 		// Основная информация об ошибке
 		log.Info(fmt.Sprintf("  [%d] Ошибка ID=%d, IdStr=%s", i+1, err.Id, err.IdStr),
@@ -167,12 +167,12 @@ func LogOutInvalidErrors(log *slog.Logger, errors *[]OutInvalidError, prefix str
 		if err.StartLineNumber != nil {
 			startLineInfo = fmt.Sprintf("%d", *err.StartLineNumber)
 		}
-		
+
 		endLineInfo := "nil"
 		if err.EndLineNumber != nil {
 			endLineInfo = fmt.Sprintf("%d", *err.EndLineNumber)
 		}
-		
+
 		log.Info(fmt.Sprintf("    Строки: %s - %s", startLineInfo, endLineInfo),
 			slog.Bool("until_end_of_sentence", err.UntilTheEndOfSentence))
 
@@ -207,10 +207,10 @@ func truncateString(s string, maxLen int) string {
 	cleaned = strings.ReplaceAll(cleaned, "\r", " ")
 	re := regexp.MustCompile(`\s+`)
 	cleaned = re.ReplaceAllString(strings.TrimSpace(cleaned), " ")
-	
+
 	if len(cleaned) <= maxLen {
 		return cleaned
 	}
-	
+
 	return cleaned[:maxLen-3] + "..."
 }

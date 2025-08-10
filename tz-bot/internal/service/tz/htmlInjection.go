@@ -40,13 +40,13 @@ func injectIntoHTMLBlockByLineNumber(quote string, idStr string, htmlBlocks *[]m
 	for j := range *htmlBlocks {
 		if (*htmlBlocks)[j].MarkdownStart <= lineNumber && (*htmlBlocks)[j].MarkdownEnd >= lineNumber {
 			//newHtml := (*htmlBlocks)[j].HtmlContent
-			newHtml, found := WrapSubstring((*htmlBlocks)[j].HtmlContent, quote, idStr)
+			newHtml, found := WrapSubstringSimilar((*htmlBlocks)[j].HtmlContent, quote, idStr)
 			if found {
 				(*htmlBlocks)[j].HtmlContent = newHtml
 				return nil
 			}
 
-			newHtml, found, err := WrapSubstringApproxHTML(newHtml, quote, idStr)
+			newHtml, found, err := WrapSubstringSmartHTML(newHtml, quote, idStr)
 			if err != nil {
 				fmt.Println("Error in InjectInvalidErrorsToHtmlBlocks: ", err)
 			}

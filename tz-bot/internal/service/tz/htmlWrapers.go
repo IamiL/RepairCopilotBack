@@ -2,6 +2,7 @@ package tzservice
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"unicode"
@@ -9,7 +10,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-func WrapSubstring(s, sub, id string) (string, bool) {
+func WrapSubstringSimilar(s, sub, id string) (string, bool) {
 	if sub == "" {
 		return s, false
 	}
@@ -20,24 +21,191 @@ func WrapSubstring(s, sub, id string) (string, bool) {
 	return strings.ReplaceAll(s, sub, wrapped), true
 }
 
-// WrapApproxHTML ищет подстроку sub в текстовом содержимом htmlStr,
-// позволяя подстроке "жить" частично внутри html-тегов (т.е. игнорируя теги при поиске).
-// Если найдена, оборачивает соответствующий диапазон узлов/частей узлов в <span error-id="id">...</span>.
-// Возвращает (результат, найдена_ли_подстрока, error).
-func WrapSubstringApproxHTML(htmlStr, subSrt, id string) (string, bool, error) {
-	if subSrt == "" {
-		return htmlStr, false, errors.New("subSrt is empty")
+/*
+Корневая функция:
+  - Пытается найти точное вхождение во всём документе (дешёвый путь).
+  - Если нет, ищет подстроку в минимальных блочных контейнерах (<p>, <li>, <td>...).
+  - Внутри контейнера сначала пробует точное вхождение,
+    затем приближённый поиск, разрешая пересекать только инлайновые теги.
+  - Глобального «приближённого» поиска по всему документу НЕТ, чтобы не
+    оборачивать большие фрагменты и не пересекать блоки.
+
+Возвращает: (изменённыйHTML, нашлось, error)
+*/
+func WrapSubstringSmartHTML(htmlStr, subStr, id string) (string, bool, error) {
+	if subStr == "" {
+		return htmlStr, false, errors.New("subStr is empty")
+	}
+	if len(strings.TrimSpace(subStr)) < 2 {
+		return htmlStr, false, errors.New("subStr too short after trimming")
 	}
 
-	// Дополнительная валидация: подстрока не должна быть слишком короткой (защита от случайных символов)
-	if len(strings.TrimSpace(subSrt)) < 2 {
-		return htmlStr, false, errors.New("subSrt too short after trimming")
+	// 1) Самый простой случай — точное вхождение в документе
+	if strings.Contains(htmlStr, subStr) {
+		return WrapSubstring(htmlStr, subStr, id), true, nil
 	}
 
-	pat, err := buildSpanningPattern(subSrt)
+	// 2) Ищем внутри минимальных блочных контейнеров
+	wrapped, found, err := findAndWrapMinimalBlock(htmlStr, subStr, id)
 	if err != nil {
 		return htmlStr, false, err
 	}
+	return wrapped, found, nil
+}
+
+/* -------------------------- Вспомогательные части -------------------------- */
+
+// Точное оборачивание первого вхождения (без регулярок).
+func WrapSubstring(htmlStr, subStr, id string) string {
+	i := strings.Index(htmlStr, subStr)
+	if i < 0 {
+		return htmlStr
+	}
+	return htmlStr[:i] +
+		`<span error-id="` + html.EscapeString(id) + `">` +
+		subStr +
+		`</span>` +
+		htmlStr[i+len(subStr):]
+}
+
+// Поиск «минимального» блока среди распространённых блочных тегов.
+// Здесь нет глобального fallback к приблизённому поиску.
+func findAndWrapMinimalBlock(htmlStr, subStr, id string) (string, bool, error) {
+	blockTags := []string{
+		"p", "div", "section", "article",
+		"h1", "h2", "h3", "h4", "h5", "h6",
+		"li", "td", "th",
+	}
+
+	for _, tag := range blockTags {
+		if wrapped, found := findInBlocks(htmlStr, subStr, id, tag); found {
+			return wrapped, true, nil
+		}
+	}
+	return htmlStr, false, nil
+}
+
+// Ищет по блокам заданного типа и, если в блоке действительно есть
+// искомый текст, оборачивает внутри него (точно или «инлайново-приближённо»).
+func findInBlocks(htmlStr, subStr, id, tagName string) (string, bool) {
+	// (?i) — регистронезависимо, (?s) — '.' матчит переводы строк
+	tagPattern := fmt.Sprintf(`(?is)(<(%s)\b[^>]*>)(.*?)(</\2>)`, regexp.QuoteMeta(tagName))
+	re, err := regexp.Compile(tagPattern)
+	if err != nil {
+		return htmlStr, false
+	}
+
+	matches := re.FindAllStringSubmatchIndex(htmlStr, -1)
+	if matches == nil {
+		return htmlStr, false
+	}
+
+	// Работаем слева направо: как только удачно обернули — выходим.
+	for _, loc := range matches {
+		// индексы групп: 0:full, 1-2:full idxs, 3-4:openTag, 5-6:tagName, 7-8:content, 9-10:closeTag
+		if len(loc) < 10 {
+			continue
+		}
+
+		openStart, openEnd := loc[3], loc[4]
+		contentStart, contentEnd := loc[7], loc[8]
+		closeStart, closeEnd := loc[9], loc[10]
+
+		fullBlock := htmlStr[loc[0]:loc[1]]
+		openTag := htmlStr[openStart:openEnd]
+		blockContent := htmlStr[contentStart:contentEnd]
+		closeTag := htmlStr[closeStart:closeEnd]
+
+		// Быстрая проверка по «текстовой» нормализации: есть ли искомое
+		// (чтобы зря не запускать «инлайновую» регулярку)
+		textContent := extractTextFromHTML(blockContent)
+		if !strings.Contains(normalizeText(textContent), normalizeText(subStr)) {
+			continue
+		}
+		if !isBlockSizeReasonable(blockContent, subStr) {
+			continue
+		}
+
+		// Пытаемся обернуть внутри блока
+		wrappedContent, found, err := wrapWithinBlock(blockContent, subStr, id)
+		if err != nil || !found {
+			continue
+		}
+
+		newBlock := openTag + wrappedContent + closeTag
+		// Заменяем РОВНО один раз найденный fullBlock,
+		// чтобы не затронуть похожие блоки дальше.
+		result := strings.Replace(htmlStr, fullBlock, newBlock, 1)
+		return result, true
+	}
+	return htmlStr, false
+}
+
+// Внутри блока: сначала точное, затем «инлайново-приближённое».
+func wrapWithinBlock(blockContent, subStr, id string) (string, bool, error) {
+	// 1) Точное вхождение
+	if strings.Contains(blockContent, subStr) {
+		wrapped := strings.Replace(blockContent, subStr,
+			`<span error-id="`+html.EscapeString(id)+`">`+subStr+`</span>`, 1)
+		return wrapped, true, nil
+	}
+
+	// 2) «Приближённый» поиск, разрешая пересекать ТОЛЬКО инлайновые теги.
+	wrapped, found, err := wrapSubstringApproxInlineOnly(blockContent, subStr, id)
+	if err != nil {
+		return blockContent, false, err
+	}
+	return wrapped, found, nil
+}
+
+/* ---------------- «Инлайново-приближённый» поиск ---------------- */
+
+var inlineTags = []string{
+	"a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd",
+	"mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong",
+	"sub", "sup", "time", "u", "var", "wbr", "del", "ins",
+}
+
+func inlineAlternation() string {
+	return strings.Join(inlineTags, "|")
+}
+
+func buildInlineSpanningPattern(sub string) string {
+	// (?i) регистронезависимо, (?s) '.' матчит '\n'
+	var b strings.Builder
+	b.WriteString(`(?is)`)
+
+	inlineTag := `(?:<(?:` + inlineAlternation() + `)(?:\s[^>]*?)?>)`
+
+	// Небольшой зазор инлайновых тегов перед первым символом
+	b.WriteString(`(?:` + inlineTag + `){0,3}`)
+
+	rs := []rune(sub)
+	for i, r := range rs {
+		if unicode.IsSpace(r) {
+			b.WriteString(`(?:\s|&nbsp;){1,5}`)
+		} else {
+			b.WriteString(regexp.QuoteMeta(string(r)))
+		}
+		if i != len(rs)-1 {
+			// Между символами допустимы только инлайновые теги (немного)
+			b.WriteString(`(?:` + inlineTag + `){0,5}`)
+		}
+	}
+	return b.String()
+}
+
+var blockTagRe = regexp.MustCompile(`(?i)</?(?:p|div|section|article|header|footer|ul|ol|li|table|thead|tbody|tr|td|th|h[1-6])\b`)
+
+func wrapSubstringApproxInlineOnly(htmlStr, subStr, id string) (string, bool, error) {
+	if subStr == "" {
+		return htmlStr, false, errors.New("subStr is empty")
+	}
+	if len(strings.TrimSpace(subStr)) < 2 {
+		return htmlStr, false, errors.New("subStr too short after trimming")
+	}
+
+	pat := buildInlineSpanningPattern(subStr)
 	re, err := regexp.Compile(pat)
 	if err != nil {
 		return htmlStr, false, err
@@ -49,123 +217,97 @@ func WrapSubstringApproxHTML(htmlStr, subSrt, id string) (string, bool, error) {
 	}
 
 	start, end := loc[0], loc[1]
-	matchedContent := htmlStr[start:end]
-	
-	// Валидация: проверяем разумность найденного совпадения
-	if !isReasonableMatch(matchedContent, subSrt) {
-		return htmlStr, false, errors.New("найденное совпадение слишком длинное или содержит слишком много HTML")
+	matched := htmlStr[start:end]
+
+	// Защита: совпадение не должно пересекать блочные теги
+	if blockTagRe.MatchString(matched) {
+		return htmlStr, false, nil
+	}
+
+	if !isReasonableMatch(matched, subStr) {
+		return htmlStr, false, errors.New("approx match looks unreasonable")
 	}
 
 	wrapped := htmlStr[:start] +
 		`<span error-id="` + html.EscapeString(id) + `">` +
-		matchedContent +
+		matched +
 		`</span>` +
 		htmlStr[end:]
-
 	return wrapped, true, nil
 }
 
-// buildSpanningPattern строит regex, который позволяет встречаться HTML-тегам
-// перед первым символом и между КАЖДЫМИ двумя символами подстроки.
-// Пробельные символы в подстроке сворачиваются в (?:\s|&nbsp;)+.
-func buildSpanningPattern(sub string) (string, error) {
-	var b strings.Builder
-	// Разрешаем сразу перед первым символом ограниченное количество тегов (до 3)
-	b.WriteString(`(?:<[^>]*>){0,3}`)
+/* ------------------------- Валидация совпадения ------------------------- */
 
-	rs := []rune(sub)
-	for i, r := range rs {
-		if unicode.IsSpace(r) {
-			// Ограничиваем количество пробельных символов разумным пределом
-			b.WriteString(`(?:\s|&nbsp;){1,5}`)
-		} else {
-			b.WriteString(regexp.QuoteMeta(string(r)))
-		}
-		// Разрешаем ограниченное количество тегов между символами (до 2)
-		if i != len(rs)-1 {
-			b.WriteString(`(?:<[^>]*>){0,2}`)
-		}
-	}
-
-	return b.String(), nil
-}
-
-// isReasonableMatch проверяет, является ли найденное совпадение разумным
+// Грубая «разумность» для найденного фрагмента
 func isReasonableMatch(matchedContent, originalSubstr string) bool {
-	// 1. Проверяем соотношение длины
-	originalLen := len(originalSubstr)
-	matchedLen := len(matchedContent)
-	
-	// Совпадение не должно быть более чем в 5 раз длиннее оригинальной подстроки
-	if matchedLen > originalLen * 5 {
-		return false
-	}
-	
-	// Совпадение не должно быть абсолютно слишком длинным (более 1000 символов)
-	if matchedLen > 1000 {
+	origLen := len(originalSubstr)
+	matchLen := len(matchedContent)
+
+	// Не длиннее чем в 5 раз (и не абсолютно слишком длинно)
+	if matchLen > origLen*5 || matchLen > 1000 {
 		return false
 	}
 
-	// 2. Подсчитываем количество HTML-тегов в совпадении
-	tagCount := strings.Count(matchedContent, "<")
-	
-	// Не должно быть слишком много тегов (более 10)
-	if tagCount > 10 {
+	// Не слишком много тегов
+	if strings.Count(matchedContent, "<") > 10 {
 		return false
 	}
 
-	// 3. Проверяем, что совпадение не содержит слишком много блочных тегов
-	blockTags := []string{"<p>", "<div>", "<section>", "<article>", "<header>", "<footer>"}
-	blockTagCount := 0
-	for _, tag := range blockTags {
-		blockTagCount += strings.Count(strings.ToLower(matchedContent), tag)
-	}
-	
-	// Не должно быть более 3 блочных тегов
-	if blockTagCount > 3 {
+	// Не слишком много блочных тегов
+	if blockTagRe.MatchString(matchedContent) {
 		return false
 	}
 
-	// 4. Извлекаем текст без HTML и проверяем, что он похож на оригинал
+	// Сравниваем «чистый» текст
 	textContent := extractTextFromHTML(matchedContent)
 	originalText := strings.TrimSpace(originalSubstr)
-	
-	// Текстовое содержимое не должно быть значительно длиннее оригинала
-	if len(textContent) > len(originalText) * 3 {
+	if len(textContent) > len(originalText)*3 {
 		return false
 	}
 
-	// 5. Проверяем, что извлеченный текст содержит основную часть оригинальной подстроки
+	// Проверяем, что хотя бы половина нормализованного оригинала встречается
 	normalizedOriginal := normalizeText(originalText)
 	normalizedExtracted := normalizeText(textContent)
-	
-	if len(normalizedOriginal) > 0 && !strings.Contains(normalizedExtracted, normalizedOriginal[:len(normalizedOriginal)/2]) {
-		return false
+	if len(normalizedOriginal) > 0 {
+		half := len(normalizedOriginal) / 2
+		if half == 0 {
+			half = 1
+		}
+		if !strings.Contains(normalizedExtracted, normalizedOriginal[:half]) {
+			return false
+		}
 	}
-
 	return true
 }
 
-// extractTextFromHTML грубо извлекает текст из HTML, удаляя теги
-func extractTextFromHTML(htmlContent string) string {
-	// Простое удаление тегов с помощью регулярного выражения
-	re := regexp.MustCompile(`<[^>]*>`)
-	text := re.ReplaceAllString(htmlContent, " ")
-	
-	// Заменяем &nbsp; на пробелы
-	text = strings.ReplaceAll(text, "&nbsp;", " ")
-	
-	// Схлопываем множественные пробелы
-	re = regexp.MustCompile(`\s+`)
-	text = re.ReplaceAllString(text, " ")
-	
-	return strings.TrimSpace(text)
+// Разумность размера контейнера (чтобы не оборачивать «простыню»)
+func isBlockSizeReasonable(blockContent, subStr string) bool {
+	text := extractTextFromHTML(blockContent)
+	if len(text) > len(subStr)*10 {
+		return false
+	}
+
+	// Немного вложенных блочных тегов внутри — ок, но не слишком много
+	nestedBlockCount := 0
+	for _, tag := range []string{"<p", "<div", "<section", "<article", "<h1", "<h2", "<h3", "<h4", "<h5", "<h6"} {
+		nestedBlockCount += strings.Count(strings.ToLower(blockContent), strings.ToLower(tag))
+	}
+	return nestedBlockCount <= 2
 }
 
-// normalizeText нормализует текст для сравнения
-func normalizeText(text string) string {
-	// Убираем лишние пробелы и переводим в нижний регистр
-	re := regexp.MustCompile(`\s+`)
-	normalized := re.ReplaceAllString(strings.TrimSpace(text), " ")
-	return strings.ToLower(normalized)
+/* ------------------ Извлечение и нормализация текста ------------------ */
+
+// Очень простой «стриппер» тегов для эвристик.
+func extractTextFromHTML(s string) string {
+	reTags := regexp.MustCompile(`<[^>]*>`)
+	txt := reTags.ReplaceAllString(s, " ")
+	txt = strings.ReplaceAll(txt, "&nbsp;", " ")
+	reWS := regexp.MustCompile(`\s+`)
+	txt = reWS.ReplaceAllString(txt, " ")
+	return strings.TrimSpace(txt)
+}
+
+func normalizeText(s string) string {
+	reWS := regexp.MustCompile(`\s+`)
+	return strings.ToLower(reWS.ReplaceAllString(strings.TrimSpace(s), " "))
 }
