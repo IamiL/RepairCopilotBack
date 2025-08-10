@@ -1,6 +1,13 @@
 env: "local"
 app:
   token_ttl: 300h
+postgres:
+  host: localhost
+  port: 8002
+  database_name: technical_specs
+  username: aAKSHDVasvd
+  password: dbsaLSAGVDvadaj
+  max_connections: 1
 grpc_server:
   port: localhost:8081
 llm_client:
