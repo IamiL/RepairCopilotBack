@@ -31,6 +31,8 @@ type OutInvalidError struct {
 	Verification         string
 	SuggestedFix         string
 	Rationale            string
+	OriginalQuote        string
+	QuoteLines           *[]string
 	UntilTheEndOfSentence bool
 	StartLineNumber      *int
 	EndLineNumber        *int
@@ -107,6 +109,14 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 			endLine = &val
 		}
 
+		// Обработка QuoteLines (массив строк из proto)
+		var quoteLines *[]string
+		if len(grpcError.QuoteLines) > 0 {
+			quoteLinesSlice := make([]string, len(grpcError.QuoteLines))
+			copy(quoteLinesSlice, grpcError.QuoteLines)
+			quoteLines = &quoteLinesSlice
+		}
+
 		invalidErrors[i] = OutInvalidError{
 			Id:                   grpcError.Id,
 			IdStr:                grpcError.IdStr,
@@ -118,6 +128,8 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 			Verification:         grpcError.Verification,
 			SuggestedFix:         grpcError.SuggestedFix,
 			Rationale:            grpcError.Rationale,
+			OriginalQuote:        grpcError.OriginalQuote,
+			QuoteLines:           quoteLines,
 			UntilTheEndOfSentence: grpcError.UntilTheEndOfSentence,
 			StartLineNumber:      startLine,
 			EndLineNumber:        endLine,

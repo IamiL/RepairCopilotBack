@@ -177,9 +177,11 @@ type OutInvalidError struct {
 	Verification          string                 `protobuf:"bytes,8,opt,name=verification,proto3" json:"verification,omitempty"`
 	SuggestedFix          string                 `protobuf:"bytes,9,opt,name=suggested_fix,json=suggestedFix,proto3" json:"suggested_fix,omitempty"`
 	Rationale             string                 `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	UntilTheEndOfSentence bool                   `protobuf:"varint,11,opt,name=until_the_end_of_sentence,json=untilTheEndOfSentence,proto3" json:"until_the_end_of_sentence,omitempty"`
-	StartLineNumber       *int32                 `protobuf:"varint,12,opt,name=start_line_number,json=startLineNumber,proto3,oneof" json:"start_line_number,omitempty"`
-	EndLineNumber         *int32                 `protobuf:"varint,13,opt,name=end_line_number,json=endLineNumber,proto3,oneof" json:"end_line_number,omitempty"`
+	OriginalQuote         string                 `protobuf:"bytes,11,opt,name=original_quote,json=originalQuote,proto3" json:"original_quote,omitempty"`
+	QuoteLines            []string               `protobuf:"bytes,12,rep,name=quote_lines,json=quoteLines,proto3" json:"quote_lines,omitempty"`
+	UntilTheEndOfSentence bool                   `protobuf:"varint,13,opt,name=until_the_end_of_sentence,json=untilTheEndOfSentence,proto3" json:"until_the_end_of_sentence,omitempty"`
+	StartLineNumber       *int32                 `protobuf:"varint,14,opt,name=start_line_number,json=startLineNumber,proto3,oneof" json:"start_line_number,omitempty"`
+	EndLineNumber         *int32                 `protobuf:"varint,15,opt,name=end_line_number,json=endLineNumber,proto3,oneof" json:"end_line_number,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -282,6 +284,20 @@ func (x *OutInvalidError) GetRationale() string {
 		return x.Rationale
 	}
 	return ""
+}
+
+func (x *OutInvalidError) GetOriginalQuote() string {
+	if x != nil {
+		return x.OriginalQuote
+	}
+	return ""
+}
+
+func (x *OutInvalidError) GetQuoteLines() []string {
+	if x != nil {
+		return x.QuoteLines
+	}
+	return nil
 }
 
 func (x *OutInvalidError) GetUntilTheEndOfSentence() bool {
@@ -429,7 +445,7 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x05docId\x18\x03 \x01(\tR\x05docId\x12=\n" +
 	"\x0einvalid_errors\x18\x04 \x03(\v2\x16.tz.v1.OutInvalidErrorR\rinvalidErrors\x12=\n" +
 	"\x0emissing_errors\x18\x05 \x03(\v2\x16.tz.v1.OutMissingErrorR\rmissingErrors\x12\x16\n" +
-	"\x06fileId\x18\x06 \x01(\tR\x06fileId\"\xe9\x03\n" +
+	"\x06fileId\x18\x06 \x01(\tR\x06fileId\"\xb1\x04\n" +
 	"\x0fOutInvalidError\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x15\n" +
 	"\x06id_str\x18\x02 \x01(\tR\x05idStr\x12\x19\n" +
@@ -442,10 +458,13 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\fverification\x18\b \x01(\tR\fverification\x12#\n" +
 	"\rsuggested_fix\x18\t \x01(\tR\fsuggestedFix\x12\x1c\n" +
 	"\trationale\x18\n" +
-	" \x01(\tR\trationale\x128\n" +
-	"\x19until_the_end_of_sentence\x18\v \x01(\bR\x15untilTheEndOfSentence\x12/\n" +
-	"\x11start_line_number\x18\f \x01(\x05H\x00R\x0fstartLineNumber\x88\x01\x01\x12+\n" +
-	"\x0fend_line_number\x18\r \x01(\x05H\x01R\rendLineNumber\x88\x01\x01B\x14\n" +
+	" \x01(\tR\trationale\x12%\n" +
+	"\x0eoriginal_quote\x18\v \x01(\tR\roriginalQuote\x12\x1f\n" +
+	"\vquote_lines\x18\f \x03(\tR\n" +
+	"quoteLines\x128\n" +
+	"\x19until_the_end_of_sentence\x18\r \x01(\bR\x15untilTheEndOfSentence\x12/\n" +
+	"\x11start_line_number\x18\x0e \x01(\x05H\x00R\x0fstartLineNumber\x88\x01\x01\x12+\n" +
+	"\x0fend_line_number\x18\x0f \x01(\x05H\x01R\rendLineNumber\x88\x01\x01B\x14\n" +
 	"\x12_start_line_numberB\x12\n" +
 	"\x10_end_line_number\"\x91\x02\n" +
 	"\x0fOutMissingError\x12\x0e\n" +

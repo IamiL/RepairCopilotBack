@@ -22,19 +22,21 @@ type NewTzResponse struct {
 }
 
 type NewTzInvalidErrorResponse struct {
-	Id                    uint32
-	IdStr                 string `json:"id"`
-	GroupID               string `json:"group_id"`
-	ErrorCode             string `json:"error_code"`
-	Quote                 string `json:"quote"`
-	Analysis              string `json:"analysis"`
-	Critique              string `json:"critique"`
-	Verification          string `json:"verification"`
-	SuggestedFix          string `json:"suggested_fix"`
-	Rationale             string `json:"rationale"`
-	UntilTheEndOfSentence bool
-	StartLineNumber       *int
-	EndLineNumber         *int
+	Id                    uint32   `json:"numeric_id"`
+	IdStr                 string   `json:"id"`
+	GroupID               string   `json:"group_id"`
+	ErrorCode             string   `json:"error_code"`
+	Quote                 string   `json:"quote"`
+	Analysis              string   `json:"analysis"`
+	Critique              string   `json:"critique"`
+	Verification          string   `json:"verification"`
+	SuggestedFix          string   `json:"suggested_fix"`
+	Rationale             string   `json:"rationale"`
+	OriginalQuote         string   `json:"original_quote"`
+	QuoteLines            *[]string `json:"quote_lines"`
+	UntilTheEndOfSentence bool     `json:"until_the_end_of_sentence"`
+	StartLineNumber       *int     `json:"start_line_number"`
+	EndLineNumber         *int     `json:"end_line_number"`
 }
 
 type NewTzMissingErrorResponse struct {
@@ -130,6 +132,8 @@ func NewTzHandler(
 				Verification:          e.Verification,
 				SuggestedFix:          e.SuggestedFix,
 				Rationale:             e.Rationale,
+				OriginalQuote:         e.OriginalQuote,
+				QuoteLines:            e.QuoteLines,
 				UntilTheEndOfSentence: e.UntilTheEndOfSentence,
 				StartLineNumber:       e.StartLineNumber,
 				EndLineNumber:         e.EndLineNumber,

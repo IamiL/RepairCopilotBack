@@ -147,6 +147,16 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 			endLine = &val
 		}
 
+		// Обработка QuoteLines (указатель на массив строк)
+		var quoteLines []string
+		if invalidError.QuoteLines != nil {
+			quoteLinesSlice := *invalidError.QuoteLines
+			quoteLines = make([]string, len(quoteLinesSlice))
+			for j, line := range quoteLinesSlice {
+				quoteLines[j] = sanitizeString(line)
+			}
+		}
+
 		grpcInvalidErrors[i] = &tzv1.OutInvalidError{
 			Id:                   invalidError.Id,
 			IdStr:                sanitizeString(invalidError.IdStr),
@@ -158,6 +168,8 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 			Verification:         sanitizeString(invalidError.Verification),
 			SuggestedFix:         sanitizeString(invalidError.SuggestedFix),
 			Rationale:            sanitizeString(invalidError.Rationale),
+			OriginalQuote:        sanitizeString(invalidError.OriginalQuote),
+			QuoteLines:           quoteLines,
 			UntilTheEndOfSentence: invalidError.UntilTheEndOfSentence,
 			StartLineNumber:      startLine,
 			EndLineNumber:        endLine,
