@@ -23,4 +23,13 @@ else
     echo "- No tz-bot binaries found"
 fi
 
+user_service_files=$(ls user-app-v* 2>/dev/null)
+if [ -n "user_service_files" ]; then
+    chmod +x user-app-v*
+    user_service_files=$(echo "user_service_files" | wc -l)
+    echo "✓ Made user_service_files user-service binary(ies) executable"
+else
+    echo "- No user-service binaries found"
+fi
+
 echo "Done!"

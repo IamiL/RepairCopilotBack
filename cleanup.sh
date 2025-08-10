@@ -21,4 +21,12 @@ else
     echo "- No tz-bot binaries found"
 fi
 
+user_service_count=$(ls user-app-v* 2>/dev/null | wc -l)
+if [ "$user_service_count" -gt 0 ]; then
+    rm user-app-v*
+    echo "✓ Removed $user_service_count user-service binary(ies)"
+else
+    echo "- No tz-bot binaries found"
+fi
+
 echo "Cleanup completed!"
