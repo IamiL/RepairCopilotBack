@@ -2,7 +2,9 @@ package tzservice
 
 import (
 	"fmt"
+	"log/slog"
 	"regexp"
+	"strings"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	markdown_service_client "repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 )
@@ -18,6 +20,7 @@ type OutInvalidError struct {
 	Verification          string `json:"verification"`
 	SuggestedFix          string `json:"suggested_fix"`
 	Rationale             string `json:"rational"`
+	OriginalQuote         string
 	QuoteLines            *[]string
 	UntilTheEndOfSentence bool
 	StartLineNumber       *int
@@ -118,4 +121,96 @@ func sortInvalidErrorsByHtmlOrder(errors *[]OutInvalidError, htmlText string) *[
 	}
 
 	return &sortedErrors
+}
+
+// LogOutInvalidErrors красиво выводит в логи все OutInvalidErrors с детальной информацией
+func LogOutInvalidErrors(log *slog.Logger, errors *[]OutInvalidError, prefix string) {
+	if errors == nil {
+		log.Info(prefix + " - OutInvalidErrors: nil")
+		return
+	}
+
+	if len(*errors) == 0 {
+		log.Info(prefix + " - OutInvalidErrors: пустой массив")
+		return
+	}
+
+	log.Info(fmt.Sprintf("%s - OutInvalidErrors: найдено %d ошибок", prefix, len(*errors)))
+	
+	for i, err := range *errors {
+		// Основная информация об ошибке
+		log.Info(fmt.Sprintf("  [%d] Ошибка ID=%d, IdStr=%s", i+1, err.Id, err.IdStr),
+			slog.String("group_id", err.GroupID),
+			slog.String("error_code", err.ErrorCode))
+
+		// Цитата и оригинальная цитата
+		if err.Quote != "" {
+			log.Info(fmt.Sprintf("    Quote: %s", truncateString(err.Quote, 100)))
+		}
+		if err.OriginalQuote != "" {
+			log.Info(fmt.Sprintf("    OriginalQuote: %s", truncateString(err.OriginalQuote, 100)))
+		}
+
+		// QuoteLines (указатель на массив строк)
+		if err.QuoteLines != nil {
+			quoteLinesSlice := *err.QuoteLines
+			log.Info(fmt.Sprintf("    QuoteLines (%d строк):", len(quoteLinesSlice)))
+			for j, line := range quoteLinesSlice {
+				log.Info(fmt.Sprintf("      [%d]: %s", j+1, truncateString(line, 80)))
+			}
+		} else {
+			log.Info("    QuoteLines: nil")
+		}
+
+		// Номера строк (указатели на int)
+		startLineInfo := "nil"
+		if err.StartLineNumber != nil {
+			startLineInfo = fmt.Sprintf("%d", *err.StartLineNumber)
+		}
+		
+		endLineInfo := "nil"
+		if err.EndLineNumber != nil {
+			endLineInfo = fmt.Sprintf("%d", *err.EndLineNumber)
+		}
+		
+		log.Info(fmt.Sprintf("    Строки: %s - %s", startLineInfo, endLineInfo),
+			slog.Bool("until_end_of_sentence", err.UntilTheEndOfSentence))
+
+		// Анализ и рекомендации
+		if err.Analysis != "" {
+			log.Info(fmt.Sprintf("    Analysis: %s", truncateString(err.Analysis, 150)))
+		}
+		if err.Critique != "" {
+			log.Info(fmt.Sprintf("    Critique: %s", truncateString(err.Critique, 150)))
+		}
+		if err.Verification != "" {
+			log.Info(fmt.Sprintf("    Verification: %s", truncateString(err.Verification, 150)))
+		}
+		if err.SuggestedFix != "" {
+			log.Info(fmt.Sprintf("    SuggestedFix: %s", truncateString(err.SuggestedFix, 150)))
+		}
+		if err.Rationale != "" {
+			log.Info(fmt.Sprintf("    Rationale: %s", truncateString(err.Rationale, 150)))
+		}
+
+		// Разделитель между ошибками
+		if i < len(*errors)-1 {
+			log.Info("    " + strings.Repeat("-", 50))
+		}
+	}
+}
+
+// truncateString обрезает строку до указанной длины, добавляя "..." если строка была обрезана
+func truncateString(s string, maxLen int) string {
+	// Убираем переносы строк и лишние пробелы для лучшего отображения в логах
+	cleaned := strings.ReplaceAll(s, "\n", " ")
+	cleaned = strings.ReplaceAll(cleaned, "\r", " ")
+	re := regexp.MustCompile(`\s+`)
+	cleaned = re.ReplaceAllString(strings.TrimSpace(cleaned), " ")
+	
+	if len(cleaned) <= maxLen {
+		return cleaned
+	}
+	
+	return cleaned[:maxLen-3] + "..."
 }

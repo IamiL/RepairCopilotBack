@@ -50,6 +50,8 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
 								}
 
+								originalQuote := *(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet
+
 								cleanQuote := MarcdownCleaning(*(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet)
 
 								var quoteLines *[]string
@@ -97,6 +99,7 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									StartLineNumber:       startLineNumber,
 									EndLineNumber:         endLineNumber,
 									QuoteLines:            quoteLines,
+									OriginalQuote:         originalQuote,
 								})
 
 								id++

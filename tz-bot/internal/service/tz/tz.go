@@ -11,7 +11,6 @@ import (
 	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
-	"strings"
 
 	"github.com/google/uuid"
 )
@@ -84,101 +83,6 @@ func New(
 	}
 }
 
-// splitMessage разбивает длинное сообщение на части с умным делением по границам предложений
-func (tz *Tz) splitMessage(text string, maxLength int) []string {
-	if len(text) <= maxLength {
-		return []string{text}
-	}
-
-	var messages []string
-	remaining := text
-
-	for len(remaining) > maxLength {
-		// Найти лучшую точку разрыва в пределах maxLength
-		breakPoint := tz.findBestBreakPoint(remaining, maxLength)
-
-		if breakPoint == -1 {
-			// Если не нашли хорошую точку разрыва, режем по maxLength
-			breakPoint = maxLength
-		}
-
-		messages = append(messages, remaining[:breakPoint])
-		remaining = remaining[breakPoint:]
-
-		// Удаляем ведущие пробелы в следующей части
-		remaining = strings.TrimLeft(remaining, " \n\t")
-	}
-
-	// Добавляем оставшуюся часть
-	if len(remaining) > 0 {
-		messages = append(messages, remaining)
-	}
-
-	return messages
-}
-
-// findBestBreakPoint ищет лучшую точку для разрыва сообщения
-func (tz *Tz) findBestBreakPoint(text string, maxLength int) int {
-	if len(text) <= maxLength {
-		return len(text)
-	}
-
-	// Приоритеты для точек разрыва (в порядке предпочтения):
-	// 1. Конец предложения (. ! ?)
-	// 2. Конец абзаца (\n\n)
-	// 3. Перенос строки (\n)
-	// 4. После запятой или точки с запятой
-	// 5. Пробел
-
-	searchText := text[:maxLength]
-
-	// Ищем конец предложения
-	sentenceEnders := []string{". ", "! ", "? ", ".\n", "!\n", "?\n"}
-	bestPoint := -1
-
-	for _, ender := range sentenceEnders {
-		if idx := strings.LastIndex(searchText, ender); idx != -1 && idx > bestPoint {
-			bestPoint = idx + len(ender)
-		}
-	}
-
-	if bestPoint > maxLength/2 { // Используем только если точка разрыва не слишком рано
-		return bestPoint
-	}
-
-	// Ищем двойной перенос строки (конец абзаца)
-	if idx := strings.LastIndex(searchText, "\n\n"); idx != -1 && idx > maxLength/3 {
-		return idx + 2
-	}
-
-	// Ищем перенос строки
-	if idx := strings.LastIndex(searchText, "\n"); idx != -1 && idx > maxLength/3 {
-		return idx + 1
-	}
-
-	// Ищем запятую или точку с запятой
-	punctuation := []string{", ", "; "}
-	for _, punct := range punctuation {
-		if idx := strings.LastIndex(searchText, punct); idx != -1 && idx > maxLength/2 {
-			if idx > bestPoint {
-				bestPoint = idx + len(punct)
-			}
-		}
-	}
-
-	if bestPoint > maxLength/2 {
-		return bestPoint
-	}
-
-	// Ищем последний пробел
-	if idx := strings.LastIndex(searchText, " "); idx != -1 && idx > maxLength/3 {
-		return idx + 1
-	}
-
-	// Если ничего не нашли, возвращаем -1
-	return -1
-}
-
 func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, requestID uuid.UUID) (string, string, string, *[]OutInvalidError, *[]OutMissingError, string, error) {
 	const op = "Tz.CheckTz"
 
@@ -242,6 +146,8 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, request
 	}
 
 	outInvalidErrors, outMissingErrors, outHtml := HandleErrors(&llmAnalyzeResult.Reports, &markdownResponse.Mappings)
+
+	LogOutInvalidErrors(log, outInvalidErrors, "После сортировки")
 
 	//htmlTextResp = FixHTMLTags(htmlTextResp)
 
