@@ -23,8 +23,6 @@ func main() {
 
 	application := app.New(
 		log,
-		&cfg.App,
-		&cfg.HTTP,
 		&cfg.GRPC,
 		&cfg.Llm,
 		&cfg.WordParser,
@@ -41,7 +39,7 @@ func main() {
 	<-stop
 	log.Info("stopping server")
 
-	application.HTTPServer.Stop()
+	application.GRPCServer.Stop()
 
 	log.Info("server stopped")
 }

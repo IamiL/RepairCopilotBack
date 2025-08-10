@@ -4,20 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"log/slog"
 	"repairCopilotBot/user-service/internal/pkg/logger/sl"
 	"repairCopilotBot/user-service/internal/repository"
-	"time"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	log           *slog.Logger
-	usrSaver      UserSaver
-	usrProvider   UserProvider
-	loginProvider LoginProvider
-	tokenTTL      time.Duration
+	log         *slog.Logger
+	usrSaver    UserSaver
+	usrProvider UserProvider
 }
 
 var (
@@ -33,14 +31,11 @@ type UserSaver interface {
 		isAdmin1 bool,
 		isAdmin2 bool,
 		uid uuid.UUID,
-	) (err error)
+	) error
 }
 
 type UserProvider interface {
 	User(ctx context.Context, login string) (uuid.UUID, []byte, bool, bool, error)
-}
-
-type LoginProvider interface {
 	LoginById(ctx context.Context, uid string) (string, error)
 }
 
@@ -48,15 +43,11 @@ func New(
 	log *slog.Logger,
 	userSaver UserSaver,
 	userProvider UserProvider,
-	loginProvider LoginProvider,
-	tokenTTL time.Duration,
 ) *User {
 	return &User{
-		usrSaver:      userSaver,
-		usrProvider:   userProvider,
-		loginProvider: loginProvider,
-		log:           log,
-		tokenTTL:      tokenTTL,
+		usrSaver:    userSaver,
+		usrProvider: userProvider,
+		log:         log,
 	}
 }
 
@@ -144,7 +135,7 @@ func (u *User) GetLoginById(ctx context.Context, userId string) (string, error) 
 
 	log.Info("getting login by user id")
 
-	login, err := u.loginProvider.LoginById(ctx, userId)
+	login, err := u.usrProvider.LoginById(ctx, userId)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			u.log.Warn("user not found", sl.Err(err))

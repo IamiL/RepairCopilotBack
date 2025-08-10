@@ -1,9 +1,6 @@
 env: "local"
 app:
   token_ttl: 300h
-http_server:
-  port: 8001
-  timeout: 4s
 grpc_server:
   port: localhost:9090
 llm_client:

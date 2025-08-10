@@ -12,6 +12,6 @@ tz_bot_service:
   addr: localhost:8081
 redis:
   address: localhost:6379
-  password: ""
+  password: r8VwP2mQe7Jx1Tz9Hb4Kc6Nf3Lg5Yd8
 user_service:
   address: localhost:50051

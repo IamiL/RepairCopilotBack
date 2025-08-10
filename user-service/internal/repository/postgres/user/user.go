@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -19,13 +20,13 @@ func New(pool *pgxpool.Pool) (*Storage, error) {
 	return &Storage{db: pool}, nil
 }
 
-func (s *Storage) NewUser(
+func (s *Storage) SaveUser(
 	ctx context.Context,
-	uid string,
 	login string,
-	passHash string,
+	passHash []byte,
 	isAdmin1 bool,
 	isAdmin2 bool,
+	uid uuid.UUID,
 ) error {
 	_, err := s.db.Exec(
 		ctx,
@@ -44,26 +45,32 @@ func (s *Storage) NewUser(
 }
 
 func (s *Storage) User(ctx context.Context, login string) (
-	string,
-	string,
+	uuid.UUID,
+	[]byte,
 	bool,
 	bool,
 	error,
 ) {
 	query := `SELECT id, pass_hash, is_admin1, is_admin2 FROM users WHERE login = $1`
 
-	var id, passHash string
+	var id string
+	var passHash []byte
 	var isAdmin1, isAdmin2 bool
 
 	err := s.db.QueryRow(ctx, query, login).Scan(&id, &passHash, &isAdmin1, &isAdmin2)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", "", false, false, repo.ErrUserNotFound
+			return uuid.Nil, nil, false, false, repo.ErrUserNotFound
 		}
-		return "", "", false, false, fmt.Errorf("database error: %w", err)
+		return uuid.Nil, nil, false, false, fmt.Errorf("database error: %w", err)
 	}
 
-	return id, passHash, isAdmin1, isAdmin2, nil
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return uuid.Nil, nil, false, false, fmt.Errorf("database error: %w", err)
+	}
+
+	return uid, passHash, isAdmin1, isAdmin2, nil
 }
 
 func (s *Storage) EditUser(

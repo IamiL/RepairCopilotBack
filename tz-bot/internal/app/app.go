@@ -5,7 +5,6 @@ import (
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 
 	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
-	httpapp "repairCopilotBot/tz-bot/internal/app/http"
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	"repairCopilotBot/tz-bot/internal/pkg/tg"
@@ -20,14 +19,11 @@ type Config struct {
 }
 
 type App struct {
-	HTTPServer *httpapp.App
 	GRPCServer *grpcapp.App
 }
 
 func New(
 	log *slog.Logger,
-	appConfig *Config,
-	httpConfig *httpapp.Config,
 	grpcConfig *grpcapp.Config,
 	LlmConfig *tz_llm_client.Config,
 	WordParserConfig *word_parser_client.Config,
@@ -57,12 +53,9 @@ func New(
 
 	tzService := tzservice.New(log, wordParserClient, markdownClient, llmClient, tgClient, s3Client)
 
-	httpApp := httpapp.New(log, httpConfig, tzService)
-
 	grpcApp := grpcapp.New(log, tzService, grpcConfig)
 
 	return &App{
-		HTTPServer: httpApp,
 		GRPCServer: grpcApp,
 	}
 }

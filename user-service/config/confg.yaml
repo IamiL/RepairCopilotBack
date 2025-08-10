@@ -1,0 +1,10 @@
+env: "local"
+grpc_server:
+  port: localhost:8001
+postgres:
+  host: localhost
+  port: 8085
+  database_name: user
+  username: QvXiuBQFQHOy
+  password: vkIeydiDtJWqUpQVOmHm
+  max_connections: 10
