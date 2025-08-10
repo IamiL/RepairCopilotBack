@@ -11,6 +11,7 @@ echo "🔨 Начинаю сборку проекта..."
 echo "🧹 Удаление старых бинарников..."
 rm -f api-gateway-app-*
 rm -f tz-bot-app-*
+rm -f user-app-*
 
 # Создание временной метки для версии
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
@@ -28,10 +29,17 @@ cd tz-bot
 GOOS=linux GOARCH=amd64 go build -o ../tz-bot-app-v${TIMESTAMP} ./cmd/main.go
 cd ..
 
+# Сборка user-service для Ubuntu
+echo "🏗️  Компилирую user-service для Ubuntu..."
+cd user-service
+GOOS=linux GOARCH=amd64 go build -o ../user-app-v${TIMESTAMP} ./cmd/main.go
+cd ..
+
 echo "✅ Сборка завершена успешно!"
 echo "📦 Созданы файлы:"
 echo "   - api-gateway-app-v${TIMESTAMP}"
 echo "   - tz-bot-app-v${TIMESTAMP}"
+echo "    - user-app-v${TIMESTAMP}"
 
 # Git операции
 echo "📝 Выполняю git операции..."

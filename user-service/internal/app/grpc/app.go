@@ -36,7 +36,7 @@ type UserGRPCServer struct {
 }
 
 // NewUserGRPCServer создает новый gRPC сервер
-func NewUserGRPCServer(log *slog.Logger, userService *service.User, config Config) *UserGRPCServer {
+func NewUserGRPCServer(log *slog.Logger, userService *service.User, config *Config) *UserGRPCServer {
 	gRPCServer := grpc.NewServer(
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle: 30 * time.Minute,

@@ -6,13 +6,12 @@ import (
 	"repairCopilotBot/user-service/internal/repository/postgres"
 	postgresUser "repairCopilotBot/user-service/internal/repository/postgres/user"
 	userservice "repairCopilotBot/user-service/internal/service/user"
-	"time"
 )
 
-type Config struct {
-	TokenTTL time.Duration `yaml:"token_ttl" env-default:"300h"`
-	GRPCPort string        `yaml:"grpc_port" env-default:":50051"`
-}
+//type Config struct {
+//	TokenTTL time.Duration `yaml:"token_ttl" env-default:"300h"`
+//	GRPCPort string        `yaml:"grpc_port" env-default:":50051"`
+//}
 
 type App struct {
 	GRPCServer *grpcapp.UserGRPCServer
@@ -35,7 +34,7 @@ func New(
 
 	usrService := userservice.New(log, postgres, postgres)
 
-	grpcApp := grpcapp.NewUserGRPCServer(usrService)
+	grpcApp := grpcapp.NewUserGRPCServer(log, usrService, grpcConfig)
 
 	return &App{
 		GRPCServer: grpcApp,
