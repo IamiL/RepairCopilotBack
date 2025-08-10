@@ -2,23 +2,24 @@ package config
 
 import (
 	"flag"
-	"github.com/ilyakaznacheev/cleanenv"
 	"os"
 	"repairCopilotBot/api-gateway-service/internal/app"
 	httpapp "repairCopilotBot/api-gateway-service/internal/app/http"
 	"repairCopilotBot/api-gateway-service/internal/pkg/tg"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env         string                   `yaml:"env" env-default:"local"`
-	App         app.Config               `yaml:"app"`
-	HTTP        httpapp.Config           `yaml:"http_server"`
-	Tg          tg_client.Config         `yaml:"tg_client"`
-	TzBotService client.Config           `yaml:"tz_bot_service"`
-	Redis       repository.RedisConfig   `yaml:"redis"`
-	UserService UserServiceConfig        `yaml:"user_service"`
+	Env          string                 `yaml:"env" env-default:"local"`
+	App          app.Config             `yaml:"app"`
+	HTTP         httpapp.Config         `yaml:"http_server"`
+	Tg           tg_client.Config       `yaml:"tg_client"`
+	TzBotService client.Config          `yaml:"tz_bot_service"`
+	Redis        repository.RedisConfig `yaml:"redis"`
+	UserService  UserServiceConfig      `yaml:"user_service"`
 }
 
 type UserServiceConfig struct {

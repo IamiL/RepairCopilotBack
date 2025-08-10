@@ -330,7 +330,7 @@ func (s *Storage) CreateInvalidErrors(ctx context.Context, req *repo.CreateInval
 }
 
 func (s *Storage) GetInvalidErrorsByVersionID(ctx context.Context, versionID uuid.UUID) ([]*repo.InvalidError, error) {
-	query := `SELECT id, version_id, error_id, error_id_str, group_id, error_code, quote, analysis, critique, verification, suggested_fix, rationale, created_at FROM invalid_errors WHERE version_id = $1 ORDER BY error_id`
+	query := `SELECT id, version_id, error_id, error_id_str, group_id, error_code, quote, analysis, critique, verification, suggested_fix, rationale, created_at FROM invalid_errors WHERE version_id = $1`
 
 	rows, err := s.db.Query(ctx, query, versionID)
 	if err != nil {
