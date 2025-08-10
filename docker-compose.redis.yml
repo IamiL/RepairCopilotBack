@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: api-gateway-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: >
+      --requirepass Kx8#mP3vR9$wL2@nQ7
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+      - ./redis-config:/usr/local/etc/redis
+    networks:
+      - api-gateway-redis-network
+    environment:
+      - REDIS_PASSWORD=Kx8#mP3vR9$wL2@nQ7
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: api-gateway-redis-insight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis_insight_data:/data
+    networks:
+      - api-gateway-redis-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - RI_LOG_LEVEL=info
+      - RI_FILES_LOGGER=true
+
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    container_name: api-gateway-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8084:8081"
+    networks:
+      - api-gateway-redis-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOSTS=local:api-gateway-redis:6379:0:Kx8%23mP3vR9%24wL2%40nQ7
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=Zt7$nF9kW3#mX5@pQ8
+      - HTTP_PASSWORD_HASH=false
+      - PORT=8081
+      - URL_PREFIX=/redis-commander
+
+  redis-stack-server:
+    image: redis/redis-stack-server:7.4.0-v0
+    container_name: api-gateway-redis-stack
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    command: >
+      --requirepass Kx8#mP3vR9$wL2@nQ7
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --loadmodule /opt/redis-stack/lib/redisearch.so
+      --loadmodule /opt/redis-stack/lib/redisgraph.so
+      --loadmodule /opt/redis-stack/lib/redistimeseries.so
+      --loadmodule /opt/redis-stack/lib/rejson.so
+      --loadmodule /opt/redis-stack/lib/redisbloom.so
+    volumes:
+      - redis_stack_data:/data
+    networks:
+      - api-gateway-redis-network
+    environment:
+      - REDIS_PASSWORD=Kx8#mP3vR9$wL2@nQ7
+    profiles:
+      - extended
+
+volumes:
+  redis_data:
+    driver: local
+  redis_insight_data:
+    driver: local
+  redis_stack_data:
+    driver: local
+
+networks:
+  api-gateway-redis-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

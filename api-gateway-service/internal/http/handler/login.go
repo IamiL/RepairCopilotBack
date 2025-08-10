@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strconv"
-
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	userserviceclient "repairCopilotBot/user-service/client"
+
+	"github.com/google/uuid"
 )
 
 type LoginRequest struct {
@@ -49,14 +49,18 @@ func LoginHandler(
 			return
 		}
 
-		userID, err := strconv.Atoi(loginResp.UserID)
-		if err != nil {
-			log.With(slog.String("op", op)).Error("invalid user ID format", slog.String("error", err.Error()))
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
+		//userID, err := strconv.Atoi(loginResp.UserID)
+		//if err != nil {
+		//	log.With(slog.String("op", op)).Error("invalid user ID format", slog.String("error", err.Error()))
+		//	http.Error(w, "Internal server error", http.StatusInternalServerError)
+		//	return
+		//}
 
-		sessionID, err := sessionRepo.CreateSession(userID, req.Login, loginResp.IsAdmin1, loginResp.IsAdmin2)
+		uid := uuid.MustParse(loginResp.UserID)
+
+		seseionId := uuid.New()
+
+		err = sessionRepo.CreateSession(seseionId, uid, req.Login, loginResp.IsAdmin1, loginResp.IsAdmin2)
 		if err != nil {
 			log.With(slog.String("op", op)).Error("failed to create session", slog.String("error", err.Error()))
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -65,7 +69,7 @@ func LoginHandler(
 
 		cookie := &http.Cookie{
 			Name:     "session_id",
-			Value:    sessionID,
+			Value:    seseionId.String(),
 			Path:     "/",
 			MaxAge:   24 * 60 * 60, // 24 hours
 			HttpOnly: true,
@@ -78,6 +82,6 @@ func LoginHandler(
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(LoginResponse{Message: "Login successful"})
 
-		log.With(slog.String("op", op)).Info("user logged in successfully", slog.String("login", req.Login), slog.String("sessionID", sessionID))
+		log.With(slog.String("op", op)).Info("user logged in successfully", slog.String("login", req.Login), slog.String("sessionID", seseionId.String()))
 	}
 }

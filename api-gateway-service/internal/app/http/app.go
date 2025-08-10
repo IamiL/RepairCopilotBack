@@ -8,8 +8,8 @@ import (
 	"repairCopilotBot/api-gateway-service/internal/http/handler"
 	"repairCopilotBot/api-gateway-service/internal/pkg/logger/sl"
 	"repairCopilotBot/api-gateway-service/internal/repository"
-	userserviceclient "repairCopilotBot/user-service/client"
 	"repairCopilotBot/tz-bot/client"
+	userserviceclient "repairCopilotBot/user-service/client"
 	"strconv"
 
 	"time"
@@ -37,13 +37,18 @@ func New(
 	router := http.NewServeMux()
 
 	router.HandleFunc(
-		"POST /api/v1/tz",
+		"POST /api/tz",
 		handler.NewTzHandler(log, tzBotClient),
 	)
 
 	router.HandleFunc(
-		"POST /api/v1/users/login",
+		"POST /api/users/login",
 		handler.LoginHandler(log, userServiceClient, sessionRepo),
+	)
+
+	router.HandleFunc(
+		"GET /api/me",
+		handler.MeHandler(log, sessionRepo),
 	)
 
 	routerWithCorsHandler := corsMiddleware(log, router)

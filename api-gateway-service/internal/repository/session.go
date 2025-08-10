@@ -10,7 +10,7 @@ import (
 )
 
 type Session struct {
-	UserID   int    `json:"user_id"`
+	UserID   string `json:"user_id"`
 	Login    string `json:"login"`
 	IsAdmin1 bool   `json:"is_admin1"`
 	IsAdmin2 bool   `json:"is_admin2"`
@@ -46,13 +46,12 @@ func NewSessionRepository(redisAddr, redisPassword string) *SessionRepository {
 	return &SessionRepository{pool: pool}
 }
 
-func (r *SessionRepository) CreateSession(userID int, login string, isAdmin1, isAdmin2 bool) (string, error) {
+func (r *SessionRepository) CreateSession(sessionId uuid.UUID, userID uuid.UUID, login string, isAdmin1, isAdmin2 bool) error {
 	conn := r.pool.Get()
 	defer conn.Close()
 
-	sessionID := uuid.New().String()
 	session := Session{
-		UserID:   userID,
+		UserID:   userID.String(),
 		Login:    login,
 		IsAdmin1: isAdmin1,
 		IsAdmin2: isAdmin2,
@@ -60,15 +59,15 @@ func (r *SessionRepository) CreateSession(userID int, login string, isAdmin1, is
 
 	sessionData, err := json.Marshal(session)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal session: %w", err)
+		return fmt.Errorf("failed to marshal session: %w", err)
 	}
 
-	_, err = conn.Do("SETEX", fmt.Sprintf("session:%s", sessionID), 3600*24, sessionData)
+	_, err = conn.Do("SETEX", fmt.Sprintf("session:%s", sessionId), 3600*2400, sessionData)
 	if err != nil {
-		return "", fmt.Errorf("failed to save session to redis: %w", err)
+		return fmt.Errorf("failed to save session to redis: %w", err)
 	}
 
-	return sessionID, nil
+	return nil
 }
 
 func (r *SessionRepository) GetSession(sessionID string) (*Session, error) {
