@@ -17,10 +17,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type App struct {
+	//pb.UnimplementedUserServiceServer
+	log  *slog.Logger
+	port string
+}
+
 type serverAPI struct {
-	pb.UnimplementedUserServiceServer
-	userService *service.User
 	log         *slog.Logger
+	userService *service.User
+	pb.UnimplementedUserServiceServer
 }
 
 type Config struct {
@@ -50,7 +56,7 @@ func NewUserGRPCServer(log *slog.Logger, userService *service.User, config *Conf
 		grpc.ConnectionTimeout(30*time.Minute),
 	)
 
-	pb.RegisterUserServiceServer(gRPCServer, serverAPI{
+	pb.RegisterUserServiceServer(gRPCServer, &serverAPI{
 		userService: userService,
 		log:         log,
 	})
@@ -63,7 +69,7 @@ func NewUserGRPCServer(log *slog.Logger, userService *service.User, config *Conf
 }
 
 // RegisterUser обрабатывает регистрацию пользователя
-func (s *UserGRPCServer) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
+func (s *serverAPI) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 	// Валидация входных данных
 	if req.Login == "" {
 		return nil, status.Error(codes.InvalidArgument, "login is required")
@@ -90,7 +96,7 @@ func (s *UserGRPCServer) RegisterUser(ctx context.Context, req *pb.RegisterUserR
 }
 
 // Login обрабатывает аутентификацию пользователя
-func (s *UserGRPCServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+func (s *serverAPI) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	// Валидация входных данных
 	if req.Login == "" {
 		return nil, status.Error(codes.InvalidArgument, "login is required")
@@ -117,6 +123,15 @@ func (s *UserGRPCServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.L
 		IsAdmin2: isAdmin2,
 	}, nil
 }
+
+func (s *serverAPI) GetLoginById(ctx context.Context, req *pb.GetLoginByIdRequest) (*pb.GetLoginByIdResponse, error) {
+	s.log.Error("GetLoginById not implemented")
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
+//func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {
+//	s.log.Error("GetLoginById not implemented")
+//}
 
 func (a *UserGRPCServer) MustRun() {
 	if err := a.Run(); err != nil {
