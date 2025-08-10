@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
 	"strings"
 
@@ -22,21 +23,21 @@ type NewTzResponse struct {
 }
 
 type NewTzInvalidErrorResponse struct {
-	Id                    uint32   `json:"numeric_id"`
-	IdStr                 string   `json:"id"`
-	GroupID               string   `json:"group_id"`
-	ErrorCode             string   `json:"error_code"`
-	Quote                 string   `json:"quote"`
-	Analysis              string   `json:"analysis"`
-	Critique              string   `json:"critique"`
-	Verification          string   `json:"verification"`
-	SuggestedFix          string   `json:"suggested_fix"`
-	Rationale             string   `json:"rationale"`
-	OriginalQuote         string   `json:"original_quote"`
+	Id                    uint32    `json:"numeric_id"`
+	IdStr                 string    `json:"id"`
+	GroupID               string    `json:"group_id"`
+	ErrorCode             string    `json:"error_code"`
+	Quote                 string    `json:"quote"`
+	Analysis              string    `json:"analysis"`
+	Critique              string    `json:"critique"`
+	Verification          string    `json:"verification"`
+	SuggestedFix          string    `json:"suggested_fix"`
+	Rationale             string    `json:"rationale"`
+	OriginalQuote         string    `json:"original_quote"`
 	QuoteLines            *[]string `json:"quote_lines"`
-	UntilTheEndOfSentence bool     `json:"until_the_end_of_sentence"`
-	StartLineNumber       *int     `json:"start_line_number"`
-	EndLineNumber         *int     `json:"end_line_number"`
+	UntilTheEndOfSentence bool      `json:"until_the_end_of_sentence"`
+	StartLineNumber       *int      `json:"start_line_number"`
+	EndLineNumber         *int      `json:"end_line_number"`
 }
 
 type NewTzMissingErrorResponse struct {
@@ -54,6 +55,7 @@ type NewTzMissingErrorResponse struct {
 func NewTzHandler(
 	log *slog.Logger,
 	tzBotClient *client.Client,
+	sessionRepo *repository.SessionRepository,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -63,8 +65,43 @@ func NewTzHandler(
 		log := log.With(slog.String("op", op))
 		log.Info("TZ processing request started")
 
+		// Получаем токен из куки
+		cookie, err := r.Cookie("auth_token")
+		if err != nil {
+			log.Info("no auth token cookie found")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		token := cookie.Value
+		if token == "" {
+			log.Info("empty auth token")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Проверяем сессию в Redis
+		session, err := sessionRepo.GetSession(token)
+		if err != nil {
+			log.Info("failed to get session from Redis", slog.String("error", err.Error()))
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		if session == nil {
+			log.Info("session not found")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		uid, err := uuid.Parse(session.UserID)
+		if err != nil {
+			log.Info("failed to parse session uid")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		}
+
 		// Парсим multipart form (максимум 10MB)
-		err := r.ParseMultipartForm(10 << 20)
+		err = r.ParseMultipartForm(10 << 20)
 		if err != nil {
 			log.Error("failed to parse multipart form", slog.String("error", err.Error()))
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
@@ -96,17 +133,17 @@ func NewTzHandler(
 
 		filename := header.Filename
 
-		requestID, err := uuid.NewUUID()
-		if err != nil {
-			log.Error("failed to generate request ID", slog.String("error", err.Error()))
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
+		//requestID, err := uuid.NewUUID()
+		//if err != nil {
+		//	log.Error("failed to generate request ID", slog.String("error", err.Error()))
+		//	http.Error(w, "Internal server error", http.StatusInternalServerError)
+		//	return
+		//}
 
-		log = log.With(slog.String("requestID", requestID.String()))
+		log = log.With(slog.String("requestID", session.UserID))
 		log.Info("processing TZ file", slog.String("filename", filename))
 
-		checkTzResult, err := tzBotClient.CheckTz(r.Context(), fileBytes, filename, requestID)
+		checkTzResult, err := tzBotClient.CheckTz(r.Context(), fileBytes, filename, uid)
 		if err != nil {
 			log.Error("TZ processing failed", slog.String("error", err.Error()))
 			http.Error(w, "TZ processing failed", http.StatusInternalServerError)
@@ -195,4 +232,3 @@ func writeStringToFile(content string, filename string) error {
 
 	return nil
 }
-

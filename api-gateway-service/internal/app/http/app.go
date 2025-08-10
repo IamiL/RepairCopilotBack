@@ -38,7 +38,7 @@ func New(
 
 	router.HandleFunc(
 		"POST /api/tz",
-		handler.NewTzHandler(log, tzBotClient),
+		handler.NewTzHandler(log, tzBotClient, sessionRepo),
 	)
 
 	router.HandleFunc(
