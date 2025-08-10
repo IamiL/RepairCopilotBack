@@ -7,6 +7,8 @@ option go_package = "repairCopilotBot/tz-bot/proto/tz/v1;tzv1";
 
 service TzService {
   rpc CheckTz(CheckTzRequest) returns (CheckTzResponse);
+  rpc GetTechnicalSpecificationVersions(GetTechnicalSpecificationVersionsRequest) returns (GetTechnicalSpecificationVersionsResponse);
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
 }
 
 message CheckTzRequest {
@@ -52,4 +54,32 @@ message OutMissingError {
   string verification = 7;
   string suggested_fix = 8;
   string rationale = 9;
+}
+
+message GetTechnicalSpecificationVersionsRequest {
+  string user_id = 1;
+}
+
+message GetTechnicalSpecificationVersionsResponse {
+  repeated TechnicalSpecificationVersion versions = 1;
+}
+
+message TechnicalSpecificationVersion {
+  string version_id = 1;
+  string technical_specification_name = 2;
+  int32 version_number = 3;
+  string created_at = 4;
+}
+
+message GetVersionRequest {
+  string version_id = 1;
+}
+
+message GetVersionResponse {
+  string html_text = 1;
+  string css = 2;
+  string docId = 3;
+  repeated OutInvalidError invalid_errors = 4;
+  repeated OutMissingError missing_errors = 5;
+  string fileId = 6;
 }

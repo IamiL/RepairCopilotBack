@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TzService_CheckTz_FullMethodName = "/tz.v1.TzService/CheckTz"
+	TzService_CheckTz_FullMethodName                           = "/tz.v1.TzService/CheckTz"
+	TzService_GetTechnicalSpecificationVersions_FullMethodName = "/tz.v1.TzService/GetTechnicalSpecificationVersions"
+	TzService_GetVersion_FullMethodName                        = "/tz.v1.TzService/GetVersion"
 )
 
 // TzServiceClient is the client API for TzService service.
@@ -27,6 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TzServiceClient interface {
 	CheckTz(ctx context.Context, in *CheckTzRequest, opts ...grpc.CallOption) (*CheckTzResponse, error)
+	GetTechnicalSpecificationVersions(ctx context.Context, in *GetTechnicalSpecificationVersionsRequest, opts ...grpc.CallOption) (*GetTechnicalSpecificationVersionsResponse, error)
+	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
 }
 
 type tzServiceClient struct {
@@ -47,11 +51,33 @@ func (c *tzServiceClient) CheckTz(ctx context.Context, in *CheckTzRequest, opts 
 	return out, nil
 }
 
+func (c *tzServiceClient) GetTechnicalSpecificationVersions(ctx context.Context, in *GetTechnicalSpecificationVersionsRequest, opts ...grpc.CallOption) (*GetTechnicalSpecificationVersionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTechnicalSpecificationVersionsResponse)
+	err := c.cc.Invoke(ctx, TzService_GetTechnicalSpecificationVersions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tzServiceClient) GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVersionResponse)
+	err := c.cc.Invoke(ctx, TzService_GetVersion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TzServiceServer is the server API for TzService service.
 // All implementations must embed UnimplementedTzServiceServer
 // for forward compatibility.
 type TzServiceServer interface {
 	CheckTz(context.Context, *CheckTzRequest) (*CheckTzResponse, error)
+	GetTechnicalSpecificationVersions(context.Context, *GetTechnicalSpecificationVersionsRequest) (*GetTechnicalSpecificationVersionsResponse, error)
+	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
 	mustEmbedUnimplementedTzServiceServer()
 }
 
@@ -64,6 +90,12 @@ type UnimplementedTzServiceServer struct{}
 
 func (UnimplementedTzServiceServer) CheckTz(context.Context, *CheckTzRequest) (*CheckTzResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckTz not implemented")
+}
+func (UnimplementedTzServiceServer) GetTechnicalSpecificationVersions(context.Context, *GetTechnicalSpecificationVersionsRequest) (*GetTechnicalSpecificationVersionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTechnicalSpecificationVersions not implemented")
+}
+func (UnimplementedTzServiceServer) GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVersion not implemented")
 }
 func (UnimplementedTzServiceServer) mustEmbedUnimplementedTzServiceServer() {}
 func (UnimplementedTzServiceServer) testEmbeddedByValue()                   {}
@@ -104,6 +136,42 @@ func _TzService_CheckTz_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TzService_GetTechnicalSpecificationVersions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTechnicalSpecificationVersionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TzServiceServer).GetTechnicalSpecificationVersions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TzService_GetTechnicalSpecificationVersions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TzServiceServer).GetTechnicalSpecificationVersions(ctx, req.(*GetTechnicalSpecificationVersionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TzService_GetVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TzServiceServer).GetVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TzService_GetVersion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TzServiceServer).GetVersion(ctx, req.(*GetVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TzService_ServiceDesc is the grpc.ServiceDesc for TzService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +182,14 @@ var TzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckTz",
 			Handler:    _TzService_CheckTz_Handler,
+		},
+		{
+			MethodName: "GetTechnicalSpecificationVersions",
+			Handler:    _TzService_GetTechnicalSpecificationVersions_Handler,
+		},
+		{
+			MethodName: "GetVersion",
+			Handler:    _TzService_GetVersion_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -29,6 +29,7 @@ func main() {
 		&cfg.MarkdownService,
 		&cfg.Tg,
 		&cfg.S3minio,
+		&cfg.Postgres,
 	)
 
 	application.GRPCServer.MustRun()

@@ -2,6 +2,7 @@ package app
 
 import (
 	"log/slog"
+	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 
 	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
@@ -30,7 +31,18 @@ func New(
 	MarkdownServiceConfig *markdown_service_client.Config,
 	TgConfig *tg_client.Config,
 	s3Config *s3minio.Config,
+	postgresConfig *postgres.Config,
 ) *App {
+	postgresConn, err := postgres.NewConnPool(postgresConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	postgres, err := postgres.New(postgresConn)
+	if err != nil {
+		panic(err)
+	}
+
 	llmClient := tz_llm_client.New(LlmConfig.Url, LlmConfig.Model)
 
 	wordParserClient := word_parser_client.New(WordParserConfig.Url)
@@ -51,7 +63,7 @@ func New(
 
 	s3Client := s3minio.New(s3Conn)
 
-	tzService := tzservice.New(log, wordParserClient, markdownClient, llmClient, tgClient, s3Client)
+	tzService := tzservice.New(log, wordParserClient, markdownClient, llmClient, tgClient, s3Client, postgres)
 
 	grpcApp := grpcapp.New(log, tzService, grpcConfig)
 

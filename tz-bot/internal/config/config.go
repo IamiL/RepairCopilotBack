@@ -9,6 +9,7 @@ import (
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
+	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -23,6 +24,7 @@ type Config struct {
 	WordParser      word_parser_client.Config      `yaml:"word_parser_client"`
 	MarkdownService markdown_service_client.Config `yaml:"markdown_service_client"`
 	S3minio         s3minio.Config                 `yaml:"s3minio"`
+	Postgres        postgres.Config                `yaml:"postgres"`
 }
 
 func MustLoad() *Config {

@@ -222,3 +222,135 @@ func sanitizeString(s string) string {
 	}
 	return string(out)
 }
+
+func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *tzv1.GetTechnicalSpecificationVersionsRequest) (*tzv1.GetTechnicalSpecificationVersionsResponse, error) {
+	const op = "grpc.tz.GetTechnicalSpecificationVersions"
+
+	log := s.log.With(
+		slog.String("op", op),
+		slog.String("user_id", req.UserId),
+	)
+
+	log.Info("processing GetTechnicalSpecificationVersions request")
+
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		log.Error("invalid user ID format", slog.String("error", err.Error()))
+		return nil, status.Error(codes.InvalidArgument, "invalid user ID format")
+	}
+
+	versions, err := s.tzService.GetTechnicalSpecificationVersions(ctx, userID)
+	if err != nil {
+		log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to get technical specification versions")
+	}
+
+	// Конвертируем repository.VersionSummary в proto сообщения
+	grpcVersions := make([]*tzv1.TechnicalSpecificationVersion, len(versions))
+	for i, version := range versions {
+		grpcVersions[i] = &tzv1.TechnicalSpecificationVersion{
+			VersionId:                 version.ID.String(),
+			TechnicalSpecificationName: version.TechnicalSpecificationName,
+			VersionNumber:             int32(version.VersionNumber),
+			CreatedAt:                 version.CreatedAt.Format(time.RFC3339),
+		}
+	}
+
+	log.Info("GetTechnicalSpecificationVersions request processed successfully", slog.Int("versions_count", len(versions)))
+
+	return &tzv1.GetTechnicalSpecificationVersionsResponse{
+		Versions: grpcVersions,
+	}, nil
+}
+
+func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest) (*tzv1.GetVersionResponse, error) {
+	const op = "grpc.tz.GetVersion"
+
+	log := s.log.With(
+		slog.String("op", op),
+		slog.String("version_id", req.VersionId),
+	)
+
+	log.Info("processing GetVersion request")
+
+	versionID, err := uuid.Parse(req.VersionId)
+	if err != nil {
+		log.Error("invalid version ID format", slog.String("error", err.Error()))
+		return nil, status.Error(codes.InvalidArgument, "invalid version ID format")
+	}
+
+	htmlText, css, docId, invalidErrors, missingErrors, fileId, err := s.tzService.GetVersion(ctx, versionID)
+	if err != nil {
+		log.Error("failed to get version", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to get version")
+	}
+
+	// Конвертация OutInvalidError в proto сообщения
+	grpcInvalidErrors := make([]*tzv1.OutInvalidError, len(*invalidErrors))
+	for i, invalidError := range *invalidErrors {
+		var startLine, endLine *int32
+		if invalidError.StartLineNumber != nil {
+			val := int32(*invalidError.StartLineNumber)
+			startLine = &val
+		}
+		if invalidError.EndLineNumber != nil {
+			val := int32(*invalidError.EndLineNumber)
+			endLine = &val
+		}
+
+		// Обработка QuoteLines (указатель на массив строк)
+		var quoteLines []string
+		if invalidError.QuoteLines != nil {
+			quoteLinesSlice := *invalidError.QuoteLines
+			quoteLines = make([]string, len(quoteLinesSlice))
+			for j, line := range quoteLinesSlice {
+				quoteLines[j] = sanitizeString(line)
+			}
+		}
+
+		grpcInvalidErrors[i] = &tzv1.OutInvalidError{
+			Id:                   invalidError.Id,
+			IdStr:                sanitizeString(invalidError.IdStr),
+			GroupId:              sanitizeString(invalidError.GroupID),
+			ErrorCode:            sanitizeString(invalidError.ErrorCode),
+			Quote:                sanitizeString(invalidError.Quote),
+			Analysis:             sanitizeString(invalidError.Analysis),
+			Critique:             sanitizeString(invalidError.Critique),
+			Verification:         sanitizeString(invalidError.Verification),
+			SuggestedFix:         sanitizeString(invalidError.SuggestedFix),
+			Rationale:            sanitizeString(invalidError.Rationale),
+			OriginalQuote:        sanitizeString(invalidError.OriginalQuote),
+			QuoteLines:           quoteLines,
+			UntilTheEndOfSentence: invalidError.UntilTheEndOfSentence,
+			StartLineNumber:      startLine,
+			EndLineNumber:        endLine,
+		}
+	}
+
+	// Конвертация OutMissingError в proto сообщения
+	grpcMissingErrors := make([]*tzv1.OutMissingError, len(*missingErrors))
+	for i, missingError := range *missingErrors {
+		grpcMissingErrors[i] = &tzv1.OutMissingError{
+			Id:           missingError.Id,
+			IdStr:        sanitizeString(missingError.IdStr),
+			GroupId:      sanitizeString(missingError.GroupID),
+			ErrorCode:    sanitizeString(missingError.ErrorCode),
+			Analysis:     sanitizeString(missingError.Analysis),
+			Critique:     sanitizeString(missingError.Critique),
+			Verification: sanitizeString(missingError.Verification),
+			SuggestedFix: sanitizeString(missingError.SuggestedFix),
+			Rationale:    sanitizeString(missingError.Rationale),
+		}
+	}
+
+	log.Info("GetVersion request processed successfully", slog.Int("invalid_errors_count", len(*invalidErrors)), slog.Int("missing_errors_count", len(*missingErrors)))
+
+	return &tzv1.GetVersionResponse{
+		HtmlText:      sanitizeString(htmlText),
+		InvalidErrors: grpcInvalidErrors,
+		MissingErrors: grpcMissingErrors,
+		FileId:        fileId,
+		Css:           css,
+		DocId:         docId,
+	}, nil
+}

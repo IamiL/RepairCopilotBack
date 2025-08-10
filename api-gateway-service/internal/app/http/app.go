@@ -43,7 +43,7 @@ func New(
 
 	router.HandleFunc(
 		"POST /api/users/login",
-		handler.LoginHandler(log, userServiceClient, sessionRepo),
+		handler.LoginHandler(log, userServiceClient, sessionRepo, tzBotClient),
 	)
 
 	router.HandleFunc(
@@ -53,7 +53,12 @@ func New(
 
 	router.HandleFunc(
 		"GET /api/me",
-		handler.MeHandler(log, sessionRepo),
+		handler.MeHandler(log, sessionRepo, tzBotClient),
+	)
+
+	router.HandleFunc(
+		"GET /api/tz/{version_id}",
+		handler.GetVersionHandler(log, tzBotClient),
 	)
 
 	routerWithCorsHandler := corsMiddleware(log, router)

@@ -5,16 +5,27 @@ import (
 	"log/slog"
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
+	"repairCopilotBot/tz-bot/client"
+	"github.com/google/uuid"
 )
 
+type TechnicalSpecificationVersion struct {
+	VersionId                 string `json:"version_id"`
+	TechnicalSpecificationName string `json:"technical_specification_name"`
+	VersionNumber             int32  `json:"version_number"`
+	CreatedAt                 string `json:"created_at"`
+}
+
 type MeResponse struct {
-	Login string `json:"login"`
-	Level int    `json:"level"`
+	Login    string                          `json:"login"`
+	Level    int                             `json:"level"`
+	Versions []TechnicalSpecificationVersion `json:"versions"`
 }
 
 func MeHandler(
 	log *slog.Logger,
 	sessionRepo *repository.SessionRepository,
+	tzBotClient *client.Client,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.MeHandler"
@@ -65,9 +76,36 @@ func MeHandler(
 			level = 2
 		}
 
+		// Получаем версии технических заданий от tz-bot
+		var versions []TechnicalSpecificationVersion
+		if session.UserID != "" {
+			userID, err := uuid.Parse(session.UserID)
+			if err != nil {
+				log.Error("invalid user ID format in session", slog.String("user_id", session.UserID), slog.String("error", err.Error()))
+			} else {
+				tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
+				if err != nil {
+					log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
+					// Не возвращаем ошибку, продолжаем с пустым массивом версий
+				} else {
+					// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
+					versions = make([]TechnicalSpecificationVersion, len(tzVersions))
+					for i, tzVersion := range tzVersions {
+						versions[i] = TechnicalSpecificationVersion{
+							VersionId:                 tzVersion.VersionId,
+							TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
+							VersionNumber:             tzVersion.VersionNumber,
+							CreatedAt:                 tzVersion.CreatedAt,
+						}
+					}
+				}
+			}
+		}
+
 		response := MeResponse{
-			Login: session.Login,
-			Level: level,
+			Login:    session.Login,
+			Level:    level,
+			Versions: versions,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
