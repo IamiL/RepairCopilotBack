@@ -47,6 +47,11 @@ func New(
 	)
 
 	router.HandleFunc(
+		"POST /api/register",
+		handler.RegisterHandler(log, userServiceClient, sessionRepo),
+	)
+
+	router.HandleFunc(
 		"GET /api/me",
 		handler.MeHandler(log, sessionRepo),
 	)

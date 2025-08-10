@@ -78,8 +78,8 @@ func MeHandler(
 			return
 		}
 
-		log.Info("me request processed successfully", 
-			slog.String("login", session.Login), 
+		log.Info("me request processed successfully",
+			slog.String("login", session.Login),
 			slog.Int("level", level))
 	}
 }
