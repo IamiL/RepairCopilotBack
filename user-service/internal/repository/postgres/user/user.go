@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -30,12 +31,14 @@ func (s *Storage) SaveUser(
 ) error {
 	_, err := s.db.Exec(
 		ctx,
-		"INSERT INTO users(id, login, pass_hash, is_admin1, is_admin2) VALUES($1, $2, $3, $4, $5)",
+		"INSERT INTO users(id, login, pass_hash, is_admin1, is_admin2, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7)",
 		uid,
 		login,
 		passHash,
 		isAdmin1,
 		isAdmin2,
+		time.Now(),
+		time.Now(),
 	)
 	if err != nil {
 		return err
