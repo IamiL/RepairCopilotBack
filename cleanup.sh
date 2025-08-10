@@ -24,7 +24,7 @@ fi
 user_service_count=$(ls user-app-v* 2>/dev/null | wc -l)
 if [ "$user_service_count" -gt 0 ]; then
     rm user-app-v*
-    echo "✓ Removed $user_service_count user-service binary(ies)"
+    echo "✓ Removed $user_service_count user-service binary(ies)1"
 else
     echo "- No tz-bot binaries found"
 fi

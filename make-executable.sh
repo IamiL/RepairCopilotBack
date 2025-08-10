@@ -18,7 +18,7 @@ tz_bot_files=$(ls tz-bot-app-v* 2>/dev/null)
 if [ -n "$tz_bot_files" ]; then
     chmod +x tz-bot-app-v*
     tz_bot_count=$(echo "$tz_bot_files" | wc -l)
-    echo "✓ Made $tz_bot_count tz-bot binary(ies) executable"
+    echo "✓ Made $tz_bot_count tz-bot binary(ies) executable1"
 else
     echo "- No tz-bot binaries found"
 fi
