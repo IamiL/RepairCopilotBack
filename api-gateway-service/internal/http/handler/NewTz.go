@@ -17,7 +17,7 @@ import (
 type NewTzResponse struct {
 	Text          string                      `json:"text"`
 	Css           string                      `json:"css"`
-	DocId         string                      `json:"doc_id"`
+	DocId         *string                     `json:"doc_id"`
 	InvalidErrors []NewTzInvalidErrorResponse `json:"invalid_errors"`
 	MissingErrors []NewTzMissingErrorResponse `json:"missing_errors"`
 }
@@ -198,7 +198,7 @@ func NewTzHandler(
 			InvalidErrors: invalidErrorsResp,
 			MissingErrors: missingErrorsResp,
 			Css:           checkTzResult.Css,
-			DocId:         checkTzResult.DocId,
+			DocId:         &checkTzResult.DocId,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"repairCopilotBot/tz-bot/client"
+
 	"github.com/google/uuid"
 )
 
@@ -41,16 +42,61 @@ func GetVersionHandler(
 			return
 		}
 
+		// Конвертация OutInvalidError в HTTP response структуры (ошибки уже отсортированы в tz-bot сервисе)
+		invalidErrorsResp := make([]NewTzInvalidErrorResponse, len(result.InvalidErrors))
+		for i, e := range result.InvalidErrors {
+			invalidErrorsResp[i] = NewTzInvalidErrorResponse{
+				Id:                    e.Id,
+				IdStr:                 e.IdStr,
+				GroupID:               e.GroupID,
+				ErrorCode:             e.ErrorCode,
+				Quote:                 e.Quote,
+				Analysis:              e.Analysis,
+				Critique:              e.Critique,
+				Verification:          e.Verification,
+				SuggestedFix:          e.SuggestedFix,
+				Rationale:             e.Rationale,
+				OriginalQuote:         e.OriginalQuote,
+				QuoteLines:            e.QuoteLines,
+				UntilTheEndOfSentence: e.UntilTheEndOfSentence,
+				StartLineNumber:       e.StartLineNumber,
+				EndLineNumber:         e.EndLineNumber,
+			}
+		}
+
+		// Конвертация OutMissingError в HTTP response структуры
+		missingErrorsResp := make([]NewTzMissingErrorResponse, len(result.MissingErrors))
+		for i, e := range result.MissingErrors {
+			missingErrorsResp[i] = NewTzMissingErrorResponse{
+				Id:           e.Id,
+				IdStr:        e.IdStr,
+				GroupID:      e.GroupID,
+				ErrorCode:    e.ErrorCode,
+				Analysis:     e.Analysis,
+				Critique:     e.Critique,
+				Verification: e.Verification,
+				SuggestedFix: e.SuggestedFix,
+				Rationale:    e.Rationale,
+			}
+		}
+
+		response := NewTzResponse{
+			Text:          result.HtmlText,
+			InvalidErrors: invalidErrorsResp,
+			MissingErrors: missingErrorsResp,
+			Css:           result.Css,
+		}
+
 		// Возвращаем результат
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
-		if err := json.NewEncoder(w).Encode(result); err != nil {
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Error("failed to encode response", slog.String("error", err.Error()))
 			return
 		}
 
-		log.Info("GetVersion request processed successfully", 
+		log.Info("GetVersion request processed successfully",
 			slog.String("version_id", versionID.String()),
 			slog.Int("invalid_errors_count", len(result.InvalidErrors)),
 			slog.Int("missing_errors_count", len(result.MissingErrors)))
