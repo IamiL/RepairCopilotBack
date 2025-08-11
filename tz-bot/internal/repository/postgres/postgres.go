@@ -386,7 +386,7 @@ func (s *Storage) CreateMissingErrors(ctx context.Context, req *repo.CreateMissi
 			errorData.ID, req.VersionID, errorData.ErrorID, errorData.ErrorIDStr,
 			errorData.GroupID, errorData.ErrorCode, errorData.Analysis,
 			errorData.Critique, errorData.Verification, errorData.SuggestedFix,
-			errorData.Rationale, errorData.CreatedAt)
+			errorData.Rationale, []string{"", ""}, errorData.CreatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to insert missing error: %w", err)
 		}
