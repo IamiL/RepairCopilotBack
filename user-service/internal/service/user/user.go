@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	postgresUser "repairCopilotBot/user-service/internal/repository/postgres/user"
 )
 
 type User struct {
@@ -37,6 +38,7 @@ type UserSaver interface {
 type UserProvider interface {
 	User(ctx context.Context, login string) (uuid.UUID, []byte, bool, bool, error)
 	LoginById(ctx context.Context, uid string) (string, error)
+	GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error)
 }
 
 func New(
@@ -149,4 +151,24 @@ func (u *User) GetLoginById(ctx context.Context, userId string) (string, error) 
 	log.Info("login retrieved successfully")
 
 	return login, nil
+}
+
+func (u *User) GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error) {
+	const op = "User.GetAllUsers"
+
+	log := u.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("getting all users")
+
+	users, err := u.usrProvider.GetAllUsers(ctx)
+	if err != nil {
+		u.log.Error("failed to get all users", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("all users retrieved successfully", slog.Int("count", len(users)))
+
+	return users, nil
 }

@@ -28,6 +28,7 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 								analysis := ""
 								critique := ""
 								verification := ""
+								var retrieval []string
 								if (*((*report)[i]).Errors)[j].Process != nil {
 									if (*((*report)[i]).Errors)[j].Process.Analysis != nil {
 										analysis = *(*((*report)[i]).Errors)[j].Process.Analysis
@@ -37,6 +38,14 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									}
 									if (*((*report)[i]).Errors)[j].Process.Verification != nil {
 										verification = *(*((*report)[i]).Errors)[j].Process.Verification
+									}
+									// Извлекаем тексты из Retrieval
+									if (*((*report)[i]).Errors)[j].Process.Retrieval != nil {
+										for _, r := range *(*((*report)[i]).Errors)[j].Process.Retrieval {
+											if r.Text != nil {
+												retrieval = append(retrieval, *r.Text)
+											}
+										}
 									}
 								}
 
@@ -100,6 +109,7 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									EndLineNumber:         endLineNumber,
 									QuoteLines:            quoteLines,
 									OriginalQuote:         originalQuote,
+									Retrieval:             retrieval,
 								})
 
 								id++

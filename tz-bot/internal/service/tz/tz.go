@@ -230,20 +230,21 @@ func (tz *Tz) saveTechnicalSpecificationData(
 	// Сохраняем InvalidErrors
 	if invalidErrors != nil && len(*invalidErrors) > 0 {
 		invalidErrorData := make([]repository.InvalidErrorData, 0, len(*invalidErrors))
-		for _, err := range *invalidErrors {
+		for i, err := range *invalidErrors {
 			invalidErrorData = append(invalidErrorData, repository.InvalidErrorData{
-				ID:           uuid.New(),
-				ErrorID:      int(err.Id),
-				ErrorIDStr:   err.IdStr,
-				GroupID:      err.GroupID,
-				ErrorCode:    err.ErrorCode,
-				Quote:        err.Quote,
-				Analysis:     err.Analysis,
-				Critique:     err.Critique,
+				ID:          uuid.New(),
+				ErrorID:     int(err.Id),
+				ErrorIDStr:  err.IdStr,
+				GroupID:     err.GroupID,
+				ErrorCode:   err.ErrorCode,
+				Quote:       err.Quote,
+				Analysis:    err.Analysis,
+				Critique:    err.Critique,
 				Verification: err.Verification,
 				SuggestedFix: err.SuggestedFix,
-				Rationale:    err.Rationale,
-				CreatedAt:    now,
+				Rationale:   err.Rationale,
+				OrderNumber: i, // Порядковый номер (индекс в массиве)
+				CreatedAt:   now,
 			})
 		}
 

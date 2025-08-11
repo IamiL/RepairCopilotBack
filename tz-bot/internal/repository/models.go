@@ -52,19 +52,21 @@ type VersionSummary struct {
 
 // InvalidError represents an invalid error from the analysis
 type InvalidError struct {
-	ID           uuid.UUID `db:"id"`
-	VersionID    uuid.UUID `db:"version_id"`
-	ErrorID      int       `db:"error_id"`
-	ErrorIDStr   string    `db:"error_id_str"`
-	GroupID      string    `db:"group_id"`
-	ErrorCode    string    `db:"error_code"`
-	Quote        string    `db:"quote"`
-	Analysis     string    `db:"analysis"`
-	Critique     string    `db:"critique"`
-	Verification string    `db:"verification"`
-	SuggestedFix string    `db:"suggested_fix"`
-	Rationale    string    `db:"rationale"`
-	CreatedAt    time.Time `db:"created_at"`
+	ID          uuid.UUID `db:"id"`
+	VersionID   uuid.UUID `db:"version_id"`
+	ErrorID     int       `db:"error_id"`
+	ErrorIDStr  string    `db:"error_id_str"`
+	GroupID     string    `db:"group_id"`
+	ErrorCode   string    `db:"error_code"`
+	Quote       string    `db:"quote"`
+	Analysis    string    `db:"analysis"`
+	Critique    string    `db:"critique"`
+	Verification string   `db:"verification"`
+	SuggestedFix string   `db:"suggested_fix"`
+	Rationale   string    `db:"rationale"`
+	OrderNumber int       `db:"order_number"`
+	Retrieval   []string  `db:"retrieval"`
+	CreatedAt   time.Time `db:"created_at"`
 }
 
 // MissingError represents a missing error from the analysis
@@ -80,6 +82,7 @@ type MissingError struct {
 	Verification string    `db:"verification"`
 	SuggestedFix string    `db:"suggested_fix"`
 	Rationale    string    `db:"rationale"`
+	Retrieval    []string  `db:"retrieval"`
 	CreatedAt    time.Time `db:"created_at"`
 }
 
@@ -119,18 +122,20 @@ type CreateMissingErrorsRequest struct {
 
 // InvalidErrorData represents data for creating an invalid error
 type InvalidErrorData struct {
-	ID           uuid.UUID
-	ErrorID      int
-	ErrorIDStr   string
-	GroupID      string
-	ErrorCode    string
-	Quote        string
-	Analysis     string
-	Critique     string
+	ID          uuid.UUID
+	ErrorID     int
+	ErrorIDStr  string
+	GroupID     string
+	ErrorCode   string
+	Quote       string
+	Analysis    string
+	Critique    string
 	Verification string
 	SuggestedFix string
-	Rationale    string
-	CreatedAt    time.Time
+	Rationale   string
+	OrderNumber int
+	Retrieval   []string
+	CreatedAt   time.Time
 }
 
 // MissingErrorData represents data for creating a missing error
@@ -145,5 +150,6 @@ type MissingErrorData struct {
 	Verification string
 	SuggestedFix string
 	Rationale    string
+	Retrieval    []string
 	CreatedAt    time.Time
 }

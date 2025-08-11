@@ -108,3 +108,42 @@ func (c *UserClient) Login(ctx context.Context, login, password string) (*LoginR
 		IsAdmin2: resp.IsAdmin2,
 	}, nil
 }
+
+// UserInfo информация о пользователе
+type UserInfo struct {
+	UserID   string `json:"user_id"`
+	Login    string `json:"login"`
+	IsAdmin1 bool   `json:"is_admin1"`
+	IsAdmin2 bool   `json:"is_admin2"`
+}
+
+// GetAllUsers получает список всех пользователей
+func (c *UserClient) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
+	req := &pb.GetAllUsersRequest{}
+
+	resp, err := c.client.GetAllUsers(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.Internal:
+				return nil, fmt.Errorf("internal server error")
+			default:
+				return nil, fmt.Errorf("failed to get users: %s", st.Message())
+			}
+		}
+		return nil, err
+	}
+
+	users := make([]UserInfo, len(resp.Users))
+	for i, user := range resp.Users {
+		users[i] = UserInfo{
+			UserID:   user.UserId,
+			Login:    user.Login,
+			IsAdmin1: user.IsAdmin1,
+			IsAdmin2: user.IsAdmin2,
+		}
+	}
+
+	return users, nil
+}

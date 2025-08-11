@@ -17,6 +17,9 @@ service UserService {
 
   // GetUserByLogin получает информацию о пользователе по логину
   rpc GetUserByLogin(GetUserByLoginRequest) returns (GetUserByLoginResponse);
+
+  // GetAllUsers получает список всех пользователей
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
 }
 
 // RegisterUserRequest содержит данные для регистрации пользователя
@@ -51,4 +54,35 @@ message GetLoginByIdRequest {
 // GetLoginByIdResponse содержит логин пользователя
 message GetLoginByIdResponse {
   string login = 1;         // Логин пользователя
+}
+
+// GetUserByLoginRequest содержит логин для получения информации о пользователе
+message GetUserByLoginRequest {
+  string login = 1;         // Логин пользователя
+}
+
+// GetUserByLoginResponse содержит информацию о пользователе
+message GetUserByLoginResponse {
+  string user_id = 1;       // UUID пользователя
+  string login = 2;         // Логин пользователя
+  bool is_admin1 = 3;       // Флаг администратора 1
+  bool is_admin2 = 4;       // Флаг администратора 2
+}
+
+// GetAllUsersRequest запрос для получения всех пользователей
+message GetAllUsersRequest {
+  // Пустой запрос - получаем всех пользователей
+}
+
+// UserInfo информация о пользователе
+message UserInfo {
+  string user_id = 1;       // UUID пользователя
+  string login = 2;         // Логин пользователя
+  bool is_admin1 = 3;       // Флаг администратора 1
+  bool is_admin2 = 4;       // Флаг администратора 2
+}
+
+// GetAllUsersResponse ответ со списком всех пользователей
+message GetAllUsersResponse {
+  repeated UserInfo users = 1; // Массив пользователей
 }

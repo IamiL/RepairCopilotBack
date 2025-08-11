@@ -36,29 +36,38 @@ type ReportFile struct {
 }
 
 type GroupReport struct {
-	GroupID *string        `json:"group_id"`
-	Errors  *[]ErrorReport `json:"errors"`
+	GroupID          *string        `json:"group_id"`
+	Errors           *[]ErrorReport `json:"errors"`
+	PreliminaryNotes string         `json:"preliminary_notes"`
 }
 
 type ErrorReport struct {
 	Code      *string     `json:"code"`
-	Instances *[]instance `json:"instances"`
+	Instances *[]Instance `json:"instances"`
 	Process   *Process    `json:"process"`
+	Verdict   string      `json:"verdict"`
 }
 
 type Process struct {
-	Analysis     *string `json:"analysis"`
-	Critique     *string `json:"critique"`
-	Verification *string `json:"verification"`
+	Analysis     *string      `json:"analysis"`
+	Critique     *string      `json:"critique"`
+	Verification *string      `json:"verification"`
+	Retrieval    *[]Retrieval `json:"retrieval"`
 }
 
-type instance struct {
+type Instance struct {
 	ErrType      *string `json:"err_type"`
 	Snippet      *string `json:"snippet"`
 	LineStart    *int    `json:"line_start"`
 	LineEnd      *int    `json:"line_end"`
 	SuggestedFix *string `json:"suggested_fix"`
 	Rationale    *string `json:"rationale"`
+}
+
+type Retrieval struct {
+	Text      *string `json:"text"`
+	LineStart *int    `json:"line_start"`
+	LineEnd   *int    `json:"line_end"`
 }
 
 // ValidationError структура для ошибки валидации (422)
@@ -84,7 +93,7 @@ type APIResponse struct {
 func (c *Client) MakeHTTPRequest(req Request) (*APIResponse, error) {
 	// Устанавливаем модель из конфигурации клиента
 	req.Model = c.model
-	
+
 	// Сериализуем запрос в JSON
 	jsonData, err := json.Marshal(req)
 	if err != nil {

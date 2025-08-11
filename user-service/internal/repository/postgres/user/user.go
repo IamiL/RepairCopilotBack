@@ -109,3 +109,36 @@ func (s *Storage) LoginById(ctx context.Context, uid string) (string, error) {
 
 	return login, nil
 }
+
+type UserInfo struct {
+	ID       string
+	Login    string
+	IsAdmin1 bool
+	IsAdmin2 bool
+}
+
+func (s *Storage) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
+	query := `SELECT id, login, is_admin1, is_admin2 FROM users ORDER BY login`
+
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+	defer rows.Close()
+
+	var users []UserInfo
+	for rows.Next() {
+		var user UserInfo
+		err := rows.Scan(&user.ID, &user.Login, &user.IsAdmin1, &user.IsAdmin2)
+		if err != nil {
+			return nil, fmt.Errorf("scan error: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return users, nil
+}

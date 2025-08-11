@@ -1,0 +1,113 @@
+package handler
+
+import (
+	"encoding/json"
+	"log/slog"
+	"net/http"
+	"repairCopilotBot/api-gateway-service/internal/repository"
+	"repairCopilotBot/tz-bot/client"
+
+	"github.com/google/uuid"
+)
+
+type GetUserVersionsResponse struct {
+	UserID   string                          `json:"user_id"`
+	Versions []TechnicalSpecificationVersion `json:"versions"`
+}
+
+func GetUserVersionsHandler(
+	log *slog.Logger,
+	sessionRepo *repository.SessionRepository,
+	tzBotClient *client.Client,
+) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handler.GetUserVersionsHandler"
+
+		log := log.With(slog.String("op", op))
+		log.Info("get user versions request started")
+
+		// Получаем токен из куки для проверки аутентификации
+		cookie, err := r.Cookie("auth_token")
+		if err != nil {
+			log.Info("no auth token cookie found")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		token := cookie.Value
+		if token == "" {
+			log.Info("empty auth token")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Проверяем сессию в Redis
+		session, err := sessionRepo.GetSession(token)
+		if err != nil {
+			log.Info("failed to get session from Redis", slog.String("error", err.Error()))
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		if session == nil {
+			log.Info("session not found")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Получаем user_id из URL path параметра
+		userIDStr := r.PathValue("user_id")
+		if userIDStr == "" {
+			log.Error("user_id path parameter is required")
+			http.Error(w, "user_id is required", http.StatusBadRequest)
+			return
+		}
+
+		// Валидируем UUID формат
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			log.Error("invalid user_id format", slog.String("user_id", userIDStr), slog.String("error", err.Error()))
+			http.Error(w, "invalid user_id format", http.StatusBadRequest)
+			return
+		}
+
+		log = log.With(slog.String("target_user_id", userIDStr))
+
+		// Получаем версии технических заданий от tz-bot для указанного пользователя
+		var versions []TechnicalSpecificationVersion
+		tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
+		if err != nil {
+			log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
+			http.Error(w, "Failed to get versions", http.StatusInternalServerError)
+			return
+		}
+
+		// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
+		versions = make([]TechnicalSpecificationVersion, len(tzVersions))
+		for i, tzVersion := range tzVersions {
+			versions[i] = TechnicalSpecificationVersion{
+				VersionId:                 tzVersion.VersionId,
+				TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
+				VersionNumber:             tzVersion.VersionNumber,
+				CreatedAt:                 tzVersion.CreatedAt,
+			}
+		}
+
+		response := GetUserVersionsResponse{
+			UserID:   userIDStr,
+			Versions: versions,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("failed to encode response", slog.String("error", err.Error()))
+			return
+		}
+
+		log.Info("get user versions request completed successfully",
+			slog.String("target_user_id", userIDStr),
+			slog.Int("versions_count", len(versions)))
+	}
+}

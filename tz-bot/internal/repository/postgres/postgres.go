@@ -306,8 +306,8 @@ func (s *Storage) CreateInvalidErrors(ctx context.Context, req *repo.CreateInval
 	}
 
 	query := `
-		INSERT INTO invalid_errors (id, version_id, error_id, error_id_str, group_id, error_code, quote, analysis, critique, verification, suggested_fix, rationale, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
+		INSERT INTO invalid_errors (id, version_id, error_id, error_id_str, group_id, error_code, quote, analysis, critique, verification, suggested_fix, rationale, order_number, retrieval, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -320,7 +320,7 @@ func (s *Storage) CreateInvalidErrors(ctx context.Context, req *repo.CreateInval
 			errorData.ID, req.VersionID, errorData.ErrorID, errorData.ErrorIDStr,
 			errorData.GroupID, errorData.ErrorCode, errorData.Quote,
 			errorData.Analysis, errorData.Critique, errorData.Verification,
-			errorData.SuggestedFix, errorData.Rationale, errorData.CreatedAt)
+			errorData.SuggestedFix, errorData.Rationale, errorData.OrderNumber, errorData.Retrieval, errorData.CreatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to insert invalid error: %w", err)
 		}
@@ -330,7 +330,7 @@ func (s *Storage) CreateInvalidErrors(ctx context.Context, req *repo.CreateInval
 }
 
 func (s *Storage) GetInvalidErrorsByVersionID(ctx context.Context, versionID uuid.UUID) ([]*repo.InvalidError, error) {
-	query := `SELECT id, version_id, error_id, error_id_str, group_id, error_code, quote, analysis, critique, verification, suggested_fix, rationale, created_at FROM invalid_errors WHERE version_id = $1`
+	query := `SELECT id, version_id, error_id, error_id_str, group_id, error_code, quote, analysis, critique, verification, suggested_fix, rationale,  created_at FROM invalid_errors WHERE version_id = $1 ORDER BY order_number`
 
 	rows, err := s.db.Query(ctx, query, versionID)
 	if err != nil {
@@ -372,8 +372,8 @@ func (s *Storage) CreateMissingErrors(ctx context.Context, req *repo.CreateMissi
 	}
 
 	query := `
-		INSERT INTO missing_errors (id, version_id, error_id, error_id_str, group_id, error_code, analysis, critique, verification, suggested_fix, rationale, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+		INSERT INTO missing_errors (id, version_id, error_id, error_id_str, group_id, error_code, analysis, critique, verification, suggested_fix, rationale, retrieval, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {

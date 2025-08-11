@@ -125,8 +125,44 @@ func (s *serverAPI) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginR
 }
 
 func (s *serverAPI) GetLoginById(ctx context.Context, req *pb.GetLoginByIdRequest) (*pb.GetLoginByIdResponse, error) {
-	s.log.Error("GetLoginById not implemented")
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	login, err := s.userService.GetLoginById(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get login")
+	}
+
+	return &pb.GetLoginByIdResponse{
+		Login: login,
+	}, nil
+}
+
+func (s *serverAPI) GetUserByLogin(ctx context.Context, req *pb.GetUserByLoginRequest) (*pb.GetUserByLoginResponse, error) {
+	s.log.Error("GetUserByLogin not implemented")
 	return nil, status.Error(codes.Unimplemented, "")
+}
+
+func (s *serverAPI) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest) (*pb.GetAllUsersResponse, error) {
+	users, err := s.userService.GetAllUsers(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get users")
+	}
+
+	var pbUsers []*pb.UserInfo
+	for _, user := range users {
+		pbUsers = append(pbUsers, &pb.UserInfo{
+			UserId:   user.ID,
+			Login:    user.Login,
+			IsAdmin1: user.IsAdmin1,
+			IsAdmin2: user.IsAdmin2,
+		})
+	}
+
+	return &pb.GetAllUsersResponse{
+		Users: pbUsers,
+	}, nil
 }
 
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {

@@ -25,6 +25,7 @@ type OutInvalidError struct {
 	UntilTheEndOfSentence bool
 	StartLineNumber       *int
 	EndLineNumber         *int
+	Retrieval             []string `json:"retrieval"`
 }
 
 type OutMissingError struct {
@@ -37,6 +38,7 @@ type OutMissingError struct {
 	Verification string `json:"verification"`
 	SuggestedFix string `json:"suggested_fix"`
 	Rationale    string `json:"rational"`
+	Retrieval    []string `json:"retrieval"`
 }
 
 func HandleErrors(report *[]tz_llm_client.GroupReport, htmlBlocks *[]markdown_service_client.Mapping) (*[]OutInvalidError, *[]OutMissingError, string) {

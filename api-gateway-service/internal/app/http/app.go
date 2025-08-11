@@ -61,6 +61,16 @@ func New(
 		handler.GetVersionHandler(log, tzBotClient),
 	)
 
+	router.HandleFunc(
+		"GET /api/users",
+		handler.GetUsersHandler(log, userServiceClient, sessionRepo),
+	)
+
+	router.HandleFunc(
+		"GET /api/users/{user_id}/versions",
+		handler.GetUserVersionsHandler(log, sessionRepo, tzBotClient),
+	)
+
 	routerWithCorsHandler := corsMiddleware(log, router)
 
 	srv := &http.Server{
