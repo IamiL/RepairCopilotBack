@@ -20,6 +20,9 @@ service UserService {
 
   // GetAllUsers получает список всех пользователей
   rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+
+  // GetUserInfo получает информацию о пользователе по ID
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
 }
 
 // RegisterUserRequest содержит данные для регистрации пользователя
@@ -85,4 +88,18 @@ message UserInfo {
 // GetAllUsersResponse ответ со списком всех пользователей
 message GetAllUsersResponse {
   repeated UserInfo users = 1; // Массив пользователей
+}
+
+// GetUserInfoRequest запрос для получения информации о пользователе по ID
+message GetUserInfoRequest {
+  string user_id = 1;           // UUID пользователя
+}
+
+// GetUserInfoResponse ответ с подробной информацией о пользователе
+message GetUserInfoResponse {
+  string user_id = 1;           // UUID пользователя
+  string login = 2;             // Логин пользователя
+  bool is_admin1 = 3;           // Флаг администратора 1
+  bool is_admin2 = 4;           // Флаг администратора 2
+  string created_at = 5;        // Дата и время регистрации в RFC3339 формате
 }

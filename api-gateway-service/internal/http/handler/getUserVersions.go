@@ -6,25 +6,31 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
+	userserviceclient "repairCopilotBot/user-service/client"
 
 	"github.com/google/uuid"
 )
 
-type GetUserVersionsResponse struct {
-	UserID   string                          `json:"user_id"`
-	Versions []TechnicalSpecificationVersion `json:"versions"`
+type GetUserInfoResponse struct {
+	UserID    string                          `json:"user_id"`
+	Login     string                          `json:"login"`
+	IsAdmin1  bool                            `json:"is_admin1"`
+	IsAdmin2  bool                            `json:"is_admin2"`
+	CreatedAt string                          `json:"created_at"`
+	Versions  []TechnicalSpecificationVersion `json:"versions"`
 }
 
-func GetUserVersionsHandler(
+func GetUserInfoHandler(
 	log *slog.Logger,
 	sessionRepo *repository.SessionRepository,
 	tzBotClient *client.Client,
+	userServiceClient *userserviceclient.UserClient,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handler.GetUserVersionsHandler"
+		const op = "handler.GetUserInfoHandler"
 
 		log := log.With(slog.String("op", op))
-		log.Info("get user versions request started")
+		log.Info("get user info request started")
 
 		// Получаем токен из куки для проверки аутентификации
 		cookie, err := r.Cookie("auth_token")
@@ -73,6 +79,14 @@ func GetUserVersionsHandler(
 
 		log = log.With(slog.String("target_user_id", userIDStr))
 
+		// Получаем информацию о пользователе из user-service
+		userInfo, err := userServiceClient.GetUserInfo(r.Context(), userIDStr)
+		if err != nil {
+			log.Error("failed to get user info", slog.String("error", err.Error()))
+			http.Error(w, "Failed to get user info", http.StatusInternalServerError)
+			return
+		}
+
 		// Получаем версии технических заданий от tz-bot для указанного пользователя
 		var versions []TechnicalSpecificationVersion
 		tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
@@ -93,9 +107,13 @@ func GetUserVersionsHandler(
 			}
 		}
 
-		response := GetUserVersionsResponse{
-			UserID:   userIDStr,
-			Versions: versions,
+		response := GetUserInfoResponse{
+			UserID:    userInfo.UserID,
+			Login:     userInfo.Login,
+			IsAdmin1:  userInfo.IsAdmin1,
+			IsAdmin2:  userInfo.IsAdmin2,
+			CreatedAt: userInfo.CreatedAt,
+			Versions:  versions,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -106,8 +124,9 @@ func GetUserVersionsHandler(
 			return
 		}
 
-		log.Info("get user versions request completed successfully",
+		log.Info("get user info request completed successfully",
 			slog.String("target_user_id", userIDStr),
+			slog.String("login", userInfo.Login),
 			slog.Int("versions_count", len(versions)))
 	}
 }

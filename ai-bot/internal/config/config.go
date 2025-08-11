@@ -2,9 +2,10 @@ package config
 
 import (
 	"flag"
-	"github.com/ilyakaznacheev/cleanenv"
 	"os"
 	"repairCopilotBot/ai-bot/internal/app/http"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
@@ -43,7 +44,7 @@ func MustLoadPath(configPath string) *Config {
 func fetchConfigPath() string {
 	var res string
 
-	flag.StringVar(&res, "config", "config/config.yaml", "path to config file")
+	flag.StringVar(&res, "config", "config/local.yaml", "path to config file")
 	flag.Parse()
 
 	if res == "" {

@@ -588,6 +588,128 @@ func (x *GetAllUsersResponse) GetUsers() []*UserInfo {
 	return nil
 }
 
+// GetUserInfoRequest запрос для получения информации о пользователе по ID
+type GetUserInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID пользователя
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserInfoRequest) Reset() {
+	*x = GetUserInfoRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserInfoRequest) ProtoMessage() {}
+
+func (x *GetUserInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserInfoRequest.ProtoReflect.Descriptor instead.
+func (*GetUserInfoRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GetUserInfoRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+// GetUserInfoResponse ответ с подробной информацией о пользователе
+type GetUserInfoResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // UUID пользователя
+	Login         string                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`                          // Логин пользователя
+	IsAdmin1      bool                   `protobuf:"varint,3,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"`   // Флаг администратора 1
+	IsAdmin2      bool                   `protobuf:"varint,4,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"`   // Флаг администратора 2
+	CreatedAt     string                 `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // Дата и время регистрации в RFC3339 формате
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserInfoResponse) Reset() {
+	*x = GetUserInfoResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserInfoResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserInfoResponse) ProtoMessage() {}
+
+func (x *GetUserInfoResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserInfoResponse.ProtoReflect.Descriptor instead.
+func (*GetUserInfoResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetUserInfoResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetLogin() string {
+	if x != nil {
+		return x.Login
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetIsAdmin1() bool {
+	if x != nil {
+		return x.IsAdmin1
+	}
+	return false
+}
+
+func (x *GetUserInfoResponse) GetIsAdmin2() bool {
+	if x != nil {
+		return x.IsAdmin2
+	}
+	return false
+}
+
+func (x *GetUserInfoResponse) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
@@ -623,13 +745,23 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\tis_admin1\x18\x03 \x01(\bR\bisAdmin1\x12\x1b\n" +
 	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\">\n" +
 	"\x13GetAllUsersResponse\x12'\n" +
-	"\x05users\x18\x01 \x03(\v2\x11.user.v1.UserInfoR\x05users2\xfc\x02\n" +
+	"\x05users\x18\x01 \x03(\v2\x11.user.v1.UserInfoR\x05users\"-\n" +
+	"\x12GetUserInfoRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x9d\x01\n" +
+	"\x13GetUserInfoResponse\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05login\x18\x02 \x01(\tR\x05login\x12\x1b\n" +
+	"\tis_admin1\x18\x03 \x01(\bR\bisAdmin1\x12\x1b\n" +
+	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt2\xc6\x03\n" +
 	"\vUserService\x12K\n" +
 	"\fRegisterUser\x12\x1c.user.v1.RegisterUserRequest\x1a\x1d.user.v1.RegisterUserResponse\x126\n" +
 	"\x05Login\x12\x15.user.v1.LoginRequest\x1a\x16.user.v1.LoginResponse\x12K\n" +
 	"\fGetLoginById\x12\x1c.user.v1.GetLoginByIdRequest\x1a\x1d.user.v1.GetLoginByIdResponse\x12Q\n" +
 	"\x0eGetUserByLogin\x12\x1e.user.v1.GetUserByLoginRequest\x1a\x1f.user.v1.GetUserByLoginResponse\x12H\n" +
-	"\vGetAllUsers\x12\x1b.user.v1.GetAllUsersRequest\x1a\x1c.user.v1.GetAllUsersResponseB\tZ\auser/v1b\x06proto3"
+	"\vGetAllUsers\x12\x1b.user.v1.GetAllUsersRequest\x1a\x1c.user.v1.GetAllUsersResponse\x12H\n" +
+	"\vGetUserInfo\x12\x1b.user.v1.GetUserInfoRequest\x1a\x1c.user.v1.GetUserInfoResponseB\tZ\auser/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
@@ -643,7 +775,7 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_user_v1_user_proto_rawDescData
 }
 
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_user_v1_user_proto_goTypes = []any{
 	(*RegisterUserRequest)(nil),    // 0: user.v1.RegisterUserRequest
 	(*RegisterUserResponse)(nil),   // 1: user.v1.RegisterUserResponse
@@ -656,6 +788,8 @@ var file_user_v1_user_proto_goTypes = []any{
 	(*GetAllUsersRequest)(nil),     // 8: user.v1.GetAllUsersRequest
 	(*UserInfo)(nil),               // 9: user.v1.UserInfo
 	(*GetAllUsersResponse)(nil),    // 10: user.v1.GetAllUsersResponse
+	(*GetUserInfoRequest)(nil),     // 11: user.v1.GetUserInfoRequest
+	(*GetUserInfoResponse)(nil),    // 12: user.v1.GetUserInfoResponse
 }
 var file_user_v1_user_proto_depIdxs = []int32{
 	9,  // 0: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
@@ -664,13 +798,15 @@ var file_user_v1_user_proto_depIdxs = []int32{
 	4,  // 3: user.v1.UserService.GetLoginById:input_type -> user.v1.GetLoginByIdRequest
 	6,  // 4: user.v1.UserService.GetUserByLogin:input_type -> user.v1.GetUserByLoginRequest
 	8,  // 5: user.v1.UserService.GetAllUsers:input_type -> user.v1.GetAllUsersRequest
-	1,  // 6: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	3,  // 7: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	5,  // 8: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
-	7,  // 9: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
-	10, // 10: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
-	6,  // [6:11] is the sub-list for method output_type
-	1,  // [1:6] is the sub-list for method input_type
+	11, // 6: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
+	1,  // 7: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	3,  // 8: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	5,  // 9: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	7,  // 10: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
+	10, // 11: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
+	12, // 12: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
+	7,  // [7:13] is the sub-list for method output_type
+	1,  // [1:7] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -687,7 +823,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

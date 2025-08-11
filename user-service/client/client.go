@@ -147,3 +147,43 @@ func (c *UserClient) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
 
 	return users, nil
 }
+
+// UserDetailedInfo информация о пользователе с подробностями
+type UserDetailedInfo struct {
+	UserID    string `json:"user_id"`
+	Login     string `json:"login"`
+	IsAdmin1  bool   `json:"is_admin1"`
+	IsAdmin2  bool   `json:"is_admin2"`
+	CreatedAt string `json:"created_at"`
+}
+
+// GetUserInfo получает подробную информацию о пользователе по ID
+func (c *UserClient) GetUserInfo(ctx context.Context, userID string) (*UserDetailedInfo, error) {
+	req := &pb.GetUserInfoRequest{
+		UserId: userID,
+	}
+
+	resp, err := c.client.GetUserInfo(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return nil, fmt.Errorf("invalid user_id: %s", st.Message())
+			case codes.Internal:
+				return nil, fmt.Errorf("internal server error")
+			default:
+				return nil, fmt.Errorf("failed to get user info: %s", st.Message())
+			}
+		}
+		return nil, err
+	}
+
+	return &UserDetailedInfo{
+		UserID:    resp.UserId,
+		Login:     resp.Login,
+		IsAdmin1:  resp.IsAdmin1,
+		IsAdmin2:  resp.IsAdmin2,
+		CreatedAt: resp.CreatedAt,
+	}, nil
+}

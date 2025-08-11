@@ -39,6 +39,7 @@ type UserProvider interface {
 	User(ctx context.Context, login string) (uuid.UUID, []byte, bool, bool, error)
 	LoginById(ctx context.Context, uid string) (string, error)
 	GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error)
+	GetUserInfo(ctx context.Context, userID string) (*postgresUser.UserDetailedInfo, error)
 }
 
 func New(
@@ -171,4 +172,30 @@ func (u *User) GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error)
 	log.Info("all users retrieved successfully", slog.Int("count", len(users)))
 
 	return users, nil
+}
+
+func (u *User) GetUserInfo(ctx context.Context, userID string) (*postgresUser.UserDetailedInfo, error) {
+	const op = "User.GetUserInfo"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+	)
+
+	log.Info("getting user info")
+
+	userInfo, err := u.usrProvider.GetUserInfo(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+			return nil, fmt.Errorf("%s: user not found", op)
+		}
+
+		u.log.Error("failed to get user info", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("user info retrieved successfully", slog.String("login", userInfo.Login))
+
+	return userInfo, nil
 }

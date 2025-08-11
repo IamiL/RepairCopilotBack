@@ -142,3 +142,26 @@ func (s *Storage) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
 
 	return users, nil
 }
+
+type UserDetailedInfo struct {
+	ID        string
+	Login     string
+	IsAdmin1  bool
+	IsAdmin2  bool
+	CreatedAt time.Time
+}
+
+func (s *Storage) GetUserInfo(ctx context.Context, userID string) (*UserDetailedInfo, error) {
+	query := `SELECT id, login, is_admin1, is_admin2, created_at FROM users WHERE id = $1`
+
+	var user UserDetailedInfo
+	err := s.db.QueryRow(ctx, query, userID).Scan(&user.ID, &user.Login, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repo.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+
+	return &user, nil
+}

@@ -165,6 +165,25 @@ func (s *serverAPI) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest)
 	}, nil
 }
 
+func (s *serverAPI) GetUserInfo(ctx context.Context, req *pb.GetUserInfoRequest) (*pb.GetUserInfoResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	userInfo, err := s.userService.GetUserInfo(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get user info")
+	}
+
+	return &pb.GetUserInfoResponse{
+		UserId:    userInfo.ID,
+		Login:     userInfo.Login,
+		IsAdmin1:  userInfo.IsAdmin1,
+		IsAdmin2:  userInfo.IsAdmin2,
+		CreatedAt: userInfo.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
+}
+
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {
 //	s.log.Error("GetLoginById not implemented")
 //}
