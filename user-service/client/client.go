@@ -159,6 +159,9 @@ type UserDetailedInfo struct {
 	IsAdmin1  bool   `json:"is_admin1"`
 	IsAdmin2  bool   `json:"is_admin2"`
 	CreatedAt string `json:"created_at"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 // GetUserInfo получает подробную информацию о пользователе по ID
@@ -189,5 +192,8 @@ func (c *UserClient) GetUserInfo(ctx context.Context, userID string) (*UserDetai
 		IsAdmin1:  resp.IsAdmin1,
 		IsAdmin2:  resp.IsAdmin2,
 		CreatedAt: resp.CreatedAt,
+		Email:     resp.Email,
+		FirstName: resp.Name,
+		LastName:  resp.Surname,
 	}, nil
 }

@@ -19,9 +19,12 @@ type TechnicalSpecificationVersion struct {
 }
 
 type MeResponse struct {
-	Login    string                          `json:"login"`
-	Level    int                             `json:"level"`
-	Versions []TechnicalSpecificationVersion `json:"versions"`
+	Login     string                          `json:"login"`
+	Level     int                             `json:"level"`
+	FirstName string                          `json:"firstName"`
+	LastName  string                          `json:"lastName"`
+	Versions  []TechnicalSpecificationVersion `json:"versions"`
+	Email     string                          `json:"email"`
 }
 
 func MeHandler(
@@ -79,7 +82,9 @@ func MeHandler(
 		} else if session.IsAdmin2 {
 			level = 2
 		}
-
+		firstName := ""
+		lastName := ""
+		email := ""
 		// Получаем версии технических заданий от tz-bot
 		var versions []TechnicalSpecificationVersion
 		if session.UserID != "" {
@@ -91,10 +96,13 @@ func MeHandler(
 				userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), session.UserID)
 				if userInfoErr == nil {
 					// Логируем событие входа на сайт
-					actionText := "Пользователь " + userInfo.Login + " зашёл на сайт"
+					actionText := "Пользователь " + userInfo.FirstName + " " + userInfo.LastName + " зашёл на сайт"
 					if err := actionLogRepo.CreateActionLog(r.Context(), actionText, userID); err != nil {
 						log.Error("failed to create action log for site access", slog.String("error", err.Error()))
 					}
+					firstName = userInfo.FirstName
+					lastName = userInfo.LastName
+					email = userInfo.Email
 				}
 
 				tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
@@ -117,9 +125,12 @@ func MeHandler(
 		}
 
 		response := MeResponse{
-			Login:    session.Login,
-			Level:    level,
-			Versions: versions,
+			Login:     session.Login,
+			Level:     level,
+			Versions:  versions,
+			FirstName: firstName,
+			LastName:  lastName,
+			Email:     email,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

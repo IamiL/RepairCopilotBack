@@ -73,6 +73,11 @@ func New(
 	)
 
 	router.HandleFunc(
+		"GET /api/users/{user_id}",
+		handler.GetUserByIdHandler(log, userServiceClient, sessionRepo, tzBotClient),
+	)
+
+	router.HandleFunc(
 		"GET /api/action-logs",
 		handler.GetActionLogsHandler(log, actionLogRepo, sessionRepo),
 	)
