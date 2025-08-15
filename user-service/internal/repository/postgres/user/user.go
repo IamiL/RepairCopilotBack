@@ -25,16 +25,22 @@ func (s *Storage) SaveUser(
 	ctx context.Context,
 	login string,
 	passHash []byte,
+	name string,
+	surname string,
+	email string,
 	isAdmin1 bool,
 	isAdmin2 bool,
 	uid uuid.UUID,
 ) error {
 	_, err := s.db.Exec(
 		ctx,
-		"INSERT INTO users(id, login, pass_hash, is_admin1, is_admin2, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7)",
+		"INSERT INTO users(id, login, pass_hash, name, surname, email, is_admin1, is_admin2, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
 		uid,
 		login,
 		passHash,
+		name,
+		surname,
+		email,
 		isAdmin1,
 		isAdmin2,
 		time.Now(),
@@ -50,30 +56,34 @@ func (s *Storage) SaveUser(
 func (s *Storage) User(ctx context.Context, login string) (
 	uuid.UUID,
 	[]byte,
+	string,
+	string,
+	string,
 	bool,
 	bool,
 	error,
 ) {
-	query := `SELECT id, pass_hash, is_admin1, is_admin2 FROM users WHERE login = $1`
+	query := `SELECT id, pass_hash, name, surname, email, is_admin1, is_admin2 FROM users WHERE login = $1`
 
 	var id string
 	var passHash []byte
+	var name, surname, email string
 	var isAdmin1, isAdmin2 bool
 
-	err := s.db.QueryRow(ctx, query, login).Scan(&id, &passHash, &isAdmin1, &isAdmin2)
+	err := s.db.QueryRow(ctx, query, login).Scan(&id, &passHash, &name, &surname, &email, &isAdmin1, &isAdmin2)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, nil, false, false, repo.ErrUserNotFound
+			return uuid.Nil, nil, "", "", "", false, false, repo.ErrUserNotFound
 		}
-		return uuid.Nil, nil, false, false, fmt.Errorf("database error: %w", err)
+		return uuid.Nil, nil, "", "", "", false, false, fmt.Errorf("database error: %w", err)
 	}
 
 	uid, err := uuid.Parse(id)
 	if err != nil {
-		return uuid.Nil, nil, false, false, fmt.Errorf("database error: %w", err)
+		return uuid.Nil, nil, "", "", "", false, false, fmt.Errorf("database error: %w", err)
 	}
 
-	return uid, passHash, isAdmin1, isAdmin2, nil
+	return uid, passHash, name, surname, email, isAdmin1, isAdmin2, nil
 }
 
 func (s *Storage) EditUser(
@@ -113,12 +123,15 @@ func (s *Storage) LoginById(ctx context.Context, uid string) (string, error) {
 type UserInfo struct {
 	ID       string
 	Login    string
+	Name     string
+	Surname  string
+	Email    string
 	IsAdmin1 bool
 	IsAdmin2 bool
 }
 
 func (s *Storage) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
-	query := `SELECT id, login, is_admin1, is_admin2 FROM users ORDER BY login`
+	query := `SELECT id, login, name, surname, email, is_admin1, is_admin2 FROM users ORDER BY login`
 
 	rows, err := s.db.Query(ctx, query)
 	if err != nil {
@@ -129,7 +142,7 @@ func (s *Storage) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
 	var users []UserInfo
 	for rows.Next() {
 		var user UserInfo
-		err := rows.Scan(&user.ID, &user.Login, &user.IsAdmin1, &user.IsAdmin2)
+		err := rows.Scan(&user.ID, &user.Login, &user.Name, &user.Surname, &user.Email, &user.IsAdmin1, &user.IsAdmin2)
 		if err != nil {
 			return nil, fmt.Errorf("scan error: %w", err)
 		}
@@ -146,16 +159,46 @@ func (s *Storage) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
 type UserDetailedInfo struct {
 	ID        string
 	Login     string
+	Name      string
+	Surname   string
+	Email     string
 	IsAdmin1  bool
 	IsAdmin2  bool
 	CreatedAt time.Time
 }
 
+type UserFullDetails struct {
+	ID        string
+	Login     string
+	Name      string
+	Surname   string
+	Email     string
+	IsAdmin1  bool
+	IsAdmin2  bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 func (s *Storage) GetUserInfo(ctx context.Context, userID string) (*UserDetailedInfo, error) {
-	query := `SELECT id, login, is_admin1, is_admin2, created_at FROM users WHERE id = $1`
+	query := `SELECT id, login, name, surname, email, is_admin1, is_admin2, created_at FROM users WHERE id = $1`
 
 	var user UserDetailedInfo
-	err := s.db.QueryRow(ctx, query, userID).Scan(&user.ID, &user.Login, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt)
+	err := s.db.QueryRow(ctx, query, userID).Scan(&user.ID, &user.Login, &user.Name, &user.Surname, &user.Email, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repo.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (s *Storage) GetUserDetailsById(ctx context.Context, userID string) (*UserFullDetails, error) {
+	query := `SELECT id, login, name, surname, email, is_admin1, is_admin2, created_at, updated_at FROM users WHERE id = $1`
+
+	var user UserFullDetails
+	err := s.db.QueryRow(ctx, query, userID).Scan(&user.ID, &user.Login, &user.Name, &user.Surname, &user.Email, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repo.ErrUserNotFound

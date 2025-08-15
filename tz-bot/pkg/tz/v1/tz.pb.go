@@ -713,6 +713,398 @@ func (x *GetVersionResponse) GetFileId() string {
 	return ""
 }
 
+type GetAllVersionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAllVersionsRequest) Reset() {
+	*x = GetAllVersionsRequest{}
+	mi := &file_tz_v1_tz_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAllVersionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAllVersionsRequest) ProtoMessage() {}
+
+func (x *GetAllVersionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAllVersionsRequest.ProtoReflect.Descriptor instead.
+func (*GetAllVersionsRequest) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{9}
+}
+
+type GetAllVersionsResponse struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Versions      []*VersionWithErrorCounts `protobuf:"bytes,1,rep,name=versions,proto3" json:"versions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAllVersionsResponse) Reset() {
+	*x = GetAllVersionsResponse{}
+	mi := &file_tz_v1_tz_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAllVersionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAllVersionsResponse) ProtoMessage() {}
+
+func (x *GetAllVersionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAllVersionsResponse.ProtoReflect.Descriptor instead.
+func (*GetAllVersionsResponse) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetAllVersionsResponse) GetVersions() []*VersionWithErrorCounts {
+	if x != nil {
+		return x.Versions
+	}
+	return nil
+}
+
+type VersionWithErrorCounts struct {
+	state                      protoimpl.MessageState `protogen:"open.v1"`
+	VersionId                  string                 `protobuf:"bytes,1,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
+	TechnicalSpecificationId   string                 `protobuf:"bytes,2,opt,name=technical_specification_id,json=technicalSpecificationId,proto3" json:"technical_specification_id,omitempty"`
+	TechnicalSpecificationName string                 `protobuf:"bytes,3,opt,name=technical_specification_name,json=technicalSpecificationName,proto3" json:"technical_specification_name,omitempty"`
+	UserId                     string                 `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	VersionNumber              int32                  `protobuf:"varint,5,opt,name=version_number,json=versionNumber,proto3" json:"version_number,omitempty"`
+	CreatedAt                  string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt                  string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	OriginalFileId             string                 `protobuf:"bytes,8,opt,name=original_file_id,json=originalFileId,proto3" json:"original_file_id,omitempty"`
+	OutHtml                    string                 `protobuf:"bytes,9,opt,name=out_html,json=outHtml,proto3" json:"out_html,omitempty"`
+	Css                        string                 `protobuf:"bytes,10,opt,name=css,proto3" json:"css,omitempty"`
+	CheckedFileId              string                 `protobuf:"bytes,11,opt,name=checked_file_id,json=checkedFileId,proto3" json:"checked_file_id,omitempty"`
+	AllRubs                    *float64               `protobuf:"fixed64,12,opt,name=all_rubs,json=allRubs,proto3,oneof" json:"all_rubs,omitempty"`
+	AllTokens                  *int64                 `protobuf:"varint,13,opt,name=all_tokens,json=allTokens,proto3,oneof" json:"all_tokens,omitempty"`
+	InspectionTimeNanoseconds  *int64                 `protobuf:"varint,14,opt,name=inspection_time_nanoseconds,json=inspectionTimeNanoseconds,proto3,oneof" json:"inspection_time_nanoseconds,omitempty"`
+	InvalidErrorCount          int32                  `protobuf:"varint,15,opt,name=invalid_error_count,json=invalidErrorCount,proto3" json:"invalid_error_count,omitempty"`
+	MissingErrorCount          int32                  `protobuf:"varint,16,opt,name=missing_error_count,json=missingErrorCount,proto3" json:"missing_error_count,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *VersionWithErrorCounts) Reset() {
+	*x = VersionWithErrorCounts{}
+	mi := &file_tz_v1_tz_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VersionWithErrorCounts) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VersionWithErrorCounts) ProtoMessage() {}
+
+func (x *VersionWithErrorCounts) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VersionWithErrorCounts.ProtoReflect.Descriptor instead.
+func (*VersionWithErrorCounts) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *VersionWithErrorCounts) GetVersionId() string {
+	if x != nil {
+		return x.VersionId
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetTechnicalSpecificationId() string {
+	if x != nil {
+		return x.TechnicalSpecificationId
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetTechnicalSpecificationName() string {
+	if x != nil {
+		return x.TechnicalSpecificationName
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetVersionNumber() int32 {
+	if x != nil {
+		return x.VersionNumber
+	}
+	return 0
+}
+
+func (x *VersionWithErrorCounts) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetOriginalFileId() string {
+	if x != nil {
+		return x.OriginalFileId
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetOutHtml() string {
+	if x != nil {
+		return x.OutHtml
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetCss() string {
+	if x != nil {
+		return x.Css
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetCheckedFileId() string {
+	if x != nil {
+		return x.CheckedFileId
+	}
+	return ""
+}
+
+func (x *VersionWithErrorCounts) GetAllRubs() float64 {
+	if x != nil && x.AllRubs != nil {
+		return *x.AllRubs
+	}
+	return 0
+}
+
+func (x *VersionWithErrorCounts) GetAllTokens() int64 {
+	if x != nil && x.AllTokens != nil {
+		return *x.AllTokens
+	}
+	return 0
+}
+
+func (x *VersionWithErrorCounts) GetInspectionTimeNanoseconds() int64 {
+	if x != nil && x.InspectionTimeNanoseconds != nil {
+		return *x.InspectionTimeNanoseconds
+	}
+	return 0
+}
+
+func (x *VersionWithErrorCounts) GetInvalidErrorCount() int32 {
+	if x != nil {
+		return x.InvalidErrorCount
+	}
+	return 0
+}
+
+func (x *VersionWithErrorCounts) GetMissingErrorCount() int32 {
+	if x != nil {
+		return x.MissingErrorCount
+	}
+	return 0
+}
+
+type GetVersionStatisticsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVersionStatisticsRequest) Reset() {
+	*x = GetVersionStatisticsRequest{}
+	mi := &file_tz_v1_tz_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVersionStatisticsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVersionStatisticsRequest) ProtoMessage() {}
+
+func (x *GetVersionStatisticsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVersionStatisticsRequest.ProtoReflect.Descriptor instead.
+func (*GetVersionStatisticsRequest) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{12}
+}
+
+type GetVersionStatisticsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Statistics    *VersionStatistics     `protobuf:"bytes,1,opt,name=statistics,proto3" json:"statistics,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVersionStatisticsResponse) Reset() {
+	*x = GetVersionStatisticsResponse{}
+	mi := &file_tz_v1_tz_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVersionStatisticsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVersionStatisticsResponse) ProtoMessage() {}
+
+func (x *GetVersionStatisticsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVersionStatisticsResponse.ProtoReflect.Descriptor instead.
+func (*GetVersionStatisticsResponse) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetVersionStatisticsResponse) GetStatistics() *VersionStatistics {
+	if x != nil {
+		return x.Statistics
+	}
+	return nil
+}
+
+type VersionStatistics struct {
+	state                            protoimpl.MessageState `protogen:"open.v1"`
+	TotalVersions                    int64                  `protobuf:"varint,1,opt,name=total_versions,json=totalVersions,proto3" json:"total_versions,omitempty"`
+	TotalTokens                      *int64                 `protobuf:"varint,2,opt,name=total_tokens,json=totalTokens,proto3,oneof" json:"total_tokens,omitempty"`
+	TotalRubs                        *float64               `protobuf:"fixed64,3,opt,name=total_rubs,json=totalRubs,proto3,oneof" json:"total_rubs,omitempty"`
+	AverageInspectionTimeNanoseconds *int64                 `protobuf:"varint,4,opt,name=average_inspection_time_nanoseconds,json=averageInspectionTimeNanoseconds,proto3,oneof" json:"average_inspection_time_nanoseconds,omitempty"`
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
+}
+
+func (x *VersionStatistics) Reset() {
+	*x = VersionStatistics{}
+	mi := &file_tz_v1_tz_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VersionStatistics) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VersionStatistics) ProtoMessage() {}
+
+func (x *VersionStatistics) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VersionStatistics.ProtoReflect.Descriptor instead.
+func (*VersionStatistics) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *VersionStatistics) GetTotalVersions() int64 {
+	if x != nil {
+		return x.TotalVersions
+	}
+	return 0
+}
+
+func (x *VersionStatistics) GetTotalTokens() int64 {
+	if x != nil && x.TotalTokens != nil {
+		return *x.TotalTokens
+	}
+	return 0
+}
+
+func (x *VersionStatistics) GetTotalRubs() float64 {
+	if x != nil && x.TotalRubs != nil {
+		return *x.TotalRubs
+	}
+	return 0
+}
+
+func (x *VersionStatistics) GetAverageInspectionTimeNanoseconds() int64 {
+	if x != nil && x.AverageInspectionTimeNanoseconds != nil {
+		return *x.AverageInspectionTimeNanoseconds
+	}
+	return 0
+}
+
 var File_tz_v1_tz_proto protoreflect.FileDescriptor
 
 const file_tz_v1_tz_proto_rawDesc = "" +
@@ -782,10 +1174,54 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x05docId\x18\x03 \x01(\tR\x05docId\x12=\n" +
 	"\x0einvalid_errors\x18\x04 \x03(\v2\x16.tz.v1.OutInvalidErrorR\rinvalidErrors\x12=\n" +
 	"\x0emissing_errors\x18\x05 \x03(\v2\x16.tz.v1.OutMissingErrorR\rmissingErrors\x12\x16\n" +
-	"\x06fileId\x18\x06 \x01(\tR\x06fileId2\x91\x02\n" +
+	"\x06fileId\x18\x06 \x01(\tR\x06fileId\"\x17\n" +
+	"\x15GetAllVersionsRequest\"S\n" +
+	"\x16GetAllVersionsResponse\x129\n" +
+	"\bversions\x18\x01 \x03(\v2\x1d.tz.v1.VersionWithErrorCountsR\bversions\"\xd9\x05\n" +
+	"\x16VersionWithErrorCounts\x12\x1d\n" +
+	"\n" +
+	"version_id\x18\x01 \x01(\tR\tversionId\x12<\n" +
+	"\x1atechnical_specification_id\x18\x02 \x01(\tR\x18technicalSpecificationId\x12@\n" +
+	"\x1ctechnical_specification_name\x18\x03 \x01(\tR\x1atechnicalSpecificationName\x12\x17\n" +
+	"\auser_id\x18\x04 \x01(\tR\x06userId\x12%\n" +
+	"\x0eversion_number\x18\x05 \x01(\x05R\rversionNumber\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\x12(\n" +
+	"\x10original_file_id\x18\b \x01(\tR\x0eoriginalFileId\x12\x19\n" +
+	"\bout_html\x18\t \x01(\tR\aoutHtml\x12\x10\n" +
+	"\x03css\x18\n" +
+	" \x01(\tR\x03css\x12&\n" +
+	"\x0fchecked_file_id\x18\v \x01(\tR\rcheckedFileId\x12\x1e\n" +
+	"\ball_rubs\x18\f \x01(\x01H\x00R\aallRubs\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"all_tokens\x18\r \x01(\x03H\x01R\tallTokens\x88\x01\x01\x12C\n" +
+	"\x1binspection_time_nanoseconds\x18\x0e \x01(\x03H\x02R\x19inspectionTimeNanoseconds\x88\x01\x01\x12.\n" +
+	"\x13invalid_error_count\x18\x0f \x01(\x05R\x11invalidErrorCount\x12.\n" +
+	"\x13missing_error_count\x18\x10 \x01(\x05R\x11missingErrorCountB\v\n" +
+	"\t_all_rubsB\r\n" +
+	"\v_all_tokensB\x1e\n" +
+	"\x1c_inspection_time_nanoseconds\"\x1d\n" +
+	"\x1bGetVersionStatisticsRequest\"X\n" +
+	"\x1cGetVersionStatisticsResponse\x128\n" +
+	"\n" +
+	"statistics\x18\x01 \x01(\v2\x18.tz.v1.VersionStatisticsR\n" +
+	"statistics\"\xa2\x02\n" +
+	"\x11VersionStatistics\x12%\n" +
+	"\x0etotal_versions\x18\x01 \x01(\x03R\rtotalVersions\x12&\n" +
+	"\ftotal_tokens\x18\x02 \x01(\x03H\x00R\vtotalTokens\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"total_rubs\x18\x03 \x01(\x01H\x01R\ttotalRubs\x88\x01\x01\x12R\n" +
+	"#average_inspection_time_nanoseconds\x18\x04 \x01(\x03H\x02R averageInspectionTimeNanoseconds\x88\x01\x01B\x0f\n" +
+	"\r_total_tokensB\r\n" +
+	"\v_total_rubsB&\n" +
+	"$_average_inspection_time_nanoseconds2\xc1\x03\n" +
 	"\tTzService\x128\n" +
 	"\aCheckTz\x12\x15.tz.v1.CheckTzRequest\x1a\x16.tz.v1.CheckTzResponse\x12\x86\x01\n" +
-	"!GetTechnicalSpecificationVersions\x12/.tz.v1.GetTechnicalSpecificationVersionsRequest\x1a0.tz.v1.GetTechnicalSpecificationVersionsResponse\x12A\n" +
+	"!GetTechnicalSpecificationVersions\x12/.tz.v1.GetTechnicalSpecificationVersionsRequest\x1a0.tz.v1.GetTechnicalSpecificationVersionsResponse\x12M\n" +
+	"\x0eGetAllVersions\x12\x1c.tz.v1.GetAllVersionsRequest\x1a\x1d.tz.v1.GetAllVersionsResponse\x12_\n" +
+	"\x14GetVersionStatistics\x12\".tz.v1.GetVersionStatisticsRequest\x1a#.tz.v1.GetVersionStatisticsResponse\x12A\n" +
 	"\n" +
 	"GetVersion\x12\x18.tz.v1.GetVersionRequest\x1a\x19.tz.v1.GetVersionResponseB*Z(repairCopilotBot/tz-bot/proto/tz/v1;tzv1b\x06proto3"
 
@@ -801,7 +1237,7 @@ func file_tz_v1_tz_proto_rawDescGZIP() []byte {
 	return file_tz_v1_tz_proto_rawDescData
 }
 
-var file_tz_v1_tz_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_tz_v1_tz_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_tz_v1_tz_proto_goTypes = []any{
 	(*CheckTzRequest)(nil),                            // 0: tz.v1.CheckTzRequest
 	(*CheckTzResponse)(nil),                           // 1: tz.v1.CheckTzResponse
@@ -812,24 +1248,36 @@ var file_tz_v1_tz_proto_goTypes = []any{
 	(*TechnicalSpecificationVersion)(nil),             // 6: tz.v1.TechnicalSpecificationVersion
 	(*GetVersionRequest)(nil),                         // 7: tz.v1.GetVersionRequest
 	(*GetVersionResponse)(nil),                        // 8: tz.v1.GetVersionResponse
+	(*GetAllVersionsRequest)(nil),                     // 9: tz.v1.GetAllVersionsRequest
+	(*GetAllVersionsResponse)(nil),                    // 10: tz.v1.GetAllVersionsResponse
+	(*VersionWithErrorCounts)(nil),                    // 11: tz.v1.VersionWithErrorCounts
+	(*GetVersionStatisticsRequest)(nil),               // 12: tz.v1.GetVersionStatisticsRequest
+	(*GetVersionStatisticsResponse)(nil),              // 13: tz.v1.GetVersionStatisticsResponse
+	(*VersionStatistics)(nil),                         // 14: tz.v1.VersionStatistics
 }
 var file_tz_v1_tz_proto_depIdxs = []int32{
-	2, // 0: tz.v1.CheckTzResponse.invalid_errors:type_name -> tz.v1.OutInvalidError
-	3, // 1: tz.v1.CheckTzResponse.missing_errors:type_name -> tz.v1.OutMissingError
-	6, // 2: tz.v1.GetTechnicalSpecificationVersionsResponse.versions:type_name -> tz.v1.TechnicalSpecificationVersion
-	2, // 3: tz.v1.GetVersionResponse.invalid_errors:type_name -> tz.v1.OutInvalidError
-	3, // 4: tz.v1.GetVersionResponse.missing_errors:type_name -> tz.v1.OutMissingError
-	0, // 5: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
-	4, // 6: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
-	7, // 7: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
-	1, // 8: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
-	5, // 9: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
-	8, // 10: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
-	8, // [8:11] is the sub-list for method output_type
-	5, // [5:8] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	2,  // 0: tz.v1.CheckTzResponse.invalid_errors:type_name -> tz.v1.OutInvalidError
+	3,  // 1: tz.v1.CheckTzResponse.missing_errors:type_name -> tz.v1.OutMissingError
+	6,  // 2: tz.v1.GetTechnicalSpecificationVersionsResponse.versions:type_name -> tz.v1.TechnicalSpecificationVersion
+	2,  // 3: tz.v1.GetVersionResponse.invalid_errors:type_name -> tz.v1.OutInvalidError
+	3,  // 4: tz.v1.GetVersionResponse.missing_errors:type_name -> tz.v1.OutMissingError
+	11, // 5: tz.v1.GetAllVersionsResponse.versions:type_name -> tz.v1.VersionWithErrorCounts
+	14, // 6: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
+	0,  // 7: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
+	4,  // 8: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
+	9,  // 9: tz.v1.TzService.GetAllVersions:input_type -> tz.v1.GetAllVersionsRequest
+	12, // 10: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
+	7,  // 11: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
+	1,  // 12: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
+	5,  // 13: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
+	10, // 14: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
+	13, // 15: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
+	8,  // 16: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
+	12, // [12:17] is the sub-list for method output_type
+	7,  // [7:12] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_tz_v1_tz_proto_init() }
@@ -838,13 +1286,15 @@ func file_tz_v1_tz_proto_init() {
 		return
 	}
 	file_tz_v1_tz_proto_msgTypes[2].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[11].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tz_v1_tz_proto_rawDesc), len(file_tz_v1_tz_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

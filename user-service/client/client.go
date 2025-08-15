@@ -3,12 +3,13 @@ package userserviceclient
 import (
 	"context"
 	"fmt"
+	pb "repairCopilotBot/user-service/pkg/user/v1"
+	"time"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-	pb "repairCopilotBot/user-service/pkg/user/v1"
-	"time"
 )
 
 // UserClient обертка для gRPC клиента
@@ -41,10 +42,13 @@ func (c *UserClient) Close() error {
 }
 
 // RegisterUser регистрирует нового пользователя
-func (c *UserClient) RegisterUser(ctx context.Context, login, password string) (string, error) {
+func (c *UserClient) RegisterUser(ctx context.Context, email, firstName, lastName, login, password string) (string, error) {
 	req := &pb.RegisterUserRequest{
 		Login:    login,
 		Password: password,
+		Name:     firstName,
+		Email:    email,
+		Surname:  lastName,
 	}
 
 	resp, err := c.client.RegisterUser(ctx, req)
@@ -68,7 +72,7 @@ func (c *UserClient) RegisterUser(ctx context.Context, login, password string) (
 	return resp.UserId, nil
 }
 
-// LoginResponse содержит данные пользователя после аутентификации 
+// LoginResponse содержит данные пользователя после аутентификации
 type LoginResponse struct {
 	UserID   string
 	Login    string

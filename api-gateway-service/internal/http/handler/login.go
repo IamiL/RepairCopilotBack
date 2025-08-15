@@ -28,6 +28,7 @@ func LoginHandler(
 	userServiceClient *userserviceclient.UserClient,
 	sessionRepo *repository.SessionRepository,
 	tzBotClient *client.Client,
+	actionLogRepo repository.ActionLogRepository,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -118,6 +119,12 @@ func LoginHandler(
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.With(slog.String("op", op)).Error("failed to encode response", slog.String("error", err.Error()))
 			return
+		}
+
+		// Логируем действие входа в систему
+		err = actionLogRepo.CreateActionLog(r.Context(), "User login: "+req.Login, uid)
+		if err != nil {
+			log.With(slog.String("op", op)).Error("failed to create action log", slog.String("error", err.Error()))
 		}
 
 		log.With(slog.String("op", op)).Info("user logged in successfully", 

@@ -28,6 +28,7 @@ func main() {
 		&cfg.Tg,
 		&cfg.TzBotService,
 		&cfg.Redis,
+		&cfg.Postgres,
 		cfg.UserService.Address,
 	)
 

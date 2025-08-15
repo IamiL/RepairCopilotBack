@@ -27,6 +27,7 @@ func main() {
 		&cfg.Llm,
 		&cfg.WordParser,
 		&cfg.MarkdownService,
+		&cfg.PromtBuilder,
 		&cfg.Tg,
 		&cfg.S3minio,
 		&cfg.Postgres,

@@ -26,6 +26,9 @@ type RegisterUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Login         string                 `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`       // Логин пользователя
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"` // Пароль пользователя
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`         // Имя пользователя
+	Surname       string                 `protobuf:"bytes,4,opt,name=surname,proto3" json:"surname,omitempty"`   // Фамилия пользователя
+	Email         string                 `protobuf:"bytes,5,opt,name=email,proto3" json:"email,omitempty"`       // Email пользователя
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -70,6 +73,27 @@ func (x *RegisterUserRequest) GetLogin() string {
 func (x *RegisterUserRequest) GetPassword() string {
 	if x != nil {
 		return x.Password
+	}
+	return ""
+}
+
+func (x *RegisterUserRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *RegisterUserRequest) GetSurname() string {
+	if x != nil {
+		return x.Surname
+	}
+	return ""
+}
+
+func (x *RegisterUserRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
 	}
 	return ""
 }
@@ -375,6 +399,9 @@ type GetUserByLoginResponse struct {
 	Login         string                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`                        // Логин пользователя
 	IsAdmin1      bool                   `protobuf:"varint,3,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"` // Флаг администратора 1
 	IsAdmin2      bool                   `protobuf:"varint,4,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"` // Флаг администратора 2
+	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`                          // Имя пользователя
+	Surname       string                 `protobuf:"bytes,6,opt,name=surname,proto3" json:"surname,omitempty"`                    // Фамилия пользователя
+	Email         string                 `protobuf:"bytes,7,opt,name=email,proto3" json:"email,omitempty"`                        // Email пользователя
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -437,6 +464,27 @@ func (x *GetUserByLoginResponse) GetIsAdmin2() bool {
 	return false
 }
 
+func (x *GetUserByLoginResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetUserByLoginResponse) GetSurname() string {
+	if x != nil {
+		return x.Surname
+	}
+	return ""
+}
+
+func (x *GetUserByLoginResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
 // GetAllUsersRequest запрос для получения всех пользователей
 type GetAllUsersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -481,6 +529,9 @@ type UserInfo struct {
 	Login         string                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`                        // Логин пользователя
 	IsAdmin1      bool                   `protobuf:"varint,3,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"` // Флаг администратора 1
 	IsAdmin2      bool                   `protobuf:"varint,4,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"` // Флаг администратора 2
+	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`                          // Имя пользователя
+	Surname       string                 `protobuf:"bytes,6,opt,name=surname,proto3" json:"surname,omitempty"`                    // Фамилия пользователя
+	Email         string                 `protobuf:"bytes,7,opt,name=email,proto3" json:"email,omitempty"`                        // Email пользователя
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -541,6 +592,27 @@ func (x *UserInfo) GetIsAdmin2() bool {
 		return x.IsAdmin2
 	}
 	return false
+}
+
+func (x *UserInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UserInfo) GetSurname() string {
+	if x != nil {
+		return x.Surname
+	}
+	return ""
+}
+
+func (x *UserInfo) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
 }
 
 // GetAllUsersResponse ответ со списком всех пользователей
@@ -641,6 +713,9 @@ type GetUserInfoResponse struct {
 	IsAdmin1      bool                   `protobuf:"varint,3,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"`   // Флаг администратора 1
 	IsAdmin2      bool                   `protobuf:"varint,4,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"`   // Флаг администратора 2
 	CreatedAt     string                 `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // Дата и время регистрации в RFC3339 формате
+	Name          string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`                            // Имя пользователя
+	Surname       string                 `protobuf:"bytes,7,opt,name=surname,proto3" json:"surname,omitempty"`                      // Фамилия пользователя
+	Email         string                 `protobuf:"bytes,8,opt,name=email,proto3" json:"email,omitempty"`                          // Email пользователя
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -710,14 +785,192 @@ func (x *GetUserInfoResponse) GetCreatedAt() string {
 	return ""
 }
 
+func (x *GetUserInfoResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetSurname() string {
+	if x != nil {
+		return x.Surname
+	}
+	return ""
+}
+
+func (x *GetUserInfoResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+// GetUserDetailsByIdRequest запрос для получения всех полей пользователя по ID
+type GetUserDetailsByIdRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID пользователя
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserDetailsByIdRequest) Reset() {
+	*x = GetUserDetailsByIdRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserDetailsByIdRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserDetailsByIdRequest) ProtoMessage() {}
+
+func (x *GetUserDetailsByIdRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserDetailsByIdRequest.ProtoReflect.Descriptor instead.
+func (*GetUserDetailsByIdRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetUserDetailsByIdRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+// GetUserDetailsByIdResponse ответ со всеми полями пользователя
+type GetUserDetailsByIdResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // UUID пользователя
+	Login         string                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`                          // Логин пользователя
+	IsAdmin1      bool                   `protobuf:"varint,3,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"`   // Флаг администратора 1
+	IsAdmin2      bool                   `protobuf:"varint,4,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"`   // Флаг администратора 2
+	CreatedAt     string                 `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // Дата и время регистрации в RFC3339 формате
+	UpdatedAt     string                 `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // Дата и время последнего обновления в RFC3339 формате
+	Name          string                 `protobuf:"bytes,7,opt,name=name,proto3" json:"name,omitempty"`                            // Имя пользователя
+	Surname       string                 `protobuf:"bytes,8,opt,name=surname,proto3" json:"surname,omitempty"`                      // Фамилия пользователя
+	Email         string                 `protobuf:"bytes,9,opt,name=email,proto3" json:"email,omitempty"`                          // Email пользователя
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserDetailsByIdResponse) Reset() {
+	*x = GetUserDetailsByIdResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserDetailsByIdResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserDetailsByIdResponse) ProtoMessage() {}
+
+func (x *GetUserDetailsByIdResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserDetailsByIdResponse.ProtoReflect.Descriptor instead.
+func (*GetUserDetailsByIdResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetUserDetailsByIdResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetUserDetailsByIdResponse) GetLogin() string {
+	if x != nil {
+		return x.Login
+	}
+	return ""
+}
+
+func (x *GetUserDetailsByIdResponse) GetIsAdmin1() bool {
+	if x != nil {
+		return x.IsAdmin1
+	}
+	return false
+}
+
+func (x *GetUserDetailsByIdResponse) GetIsAdmin2() bool {
+	if x != nil {
+		return x.IsAdmin2
+	}
+	return false
+}
+
+func (x *GetUserDetailsByIdResponse) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *GetUserDetailsByIdResponse) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *GetUserDetailsByIdResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetUserDetailsByIdResponse) GetSurname() string {
+	if x != nil {
+		return x.Surname
+	}
+	return ""
+}
+
+func (x *GetUserDetailsByIdResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x12user/v1/user.proto\x12\auser.v1\"G\n" +
+	"\x12user/v1/user.proto\x12\auser.v1\"\x8b\x01\n" +
 	"\x13RegisterUserRequest\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"/\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x18\n" +
+	"\asurname\x18\x04 \x01(\tR\asurname\x12\x14\n" +
+	"\x05email\x18\x05 \x01(\tR\x05email\"/\n" +
 	"\x14RegisterUserResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
@@ -732,36 +985,60 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x14GetLoginByIdResponse\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\"-\n" +
 	"\x15GetUserByLoginRequest\x12\x14\n" +
-	"\x05login\x18\x01 \x01(\tR\x05login\"\x81\x01\n" +
+	"\x05login\x18\x01 \x01(\tR\x05login\"\xc5\x01\n" +
 	"\x16GetUserByLoginResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05login\x18\x02 \x01(\tR\x05login\x12\x1b\n" +
 	"\tis_admin1\x18\x03 \x01(\bR\bisAdmin1\x12\x1b\n" +
-	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\"\x14\n" +
-	"\x12GetAllUsersRequest\"s\n" +
+	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\x12\x12\n" +
+	"\x04name\x18\x05 \x01(\tR\x04name\x12\x18\n" +
+	"\asurname\x18\x06 \x01(\tR\asurname\x12\x14\n" +
+	"\x05email\x18\a \x01(\tR\x05email\"\x14\n" +
+	"\x12GetAllUsersRequest\"\xb7\x01\n" +
 	"\bUserInfo\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05login\x18\x02 \x01(\tR\x05login\x12\x1b\n" +
 	"\tis_admin1\x18\x03 \x01(\bR\bisAdmin1\x12\x1b\n" +
-	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\">\n" +
+	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\x12\x12\n" +
+	"\x04name\x18\x05 \x01(\tR\x04name\x12\x18\n" +
+	"\asurname\x18\x06 \x01(\tR\asurname\x12\x14\n" +
+	"\x05email\x18\a \x01(\tR\x05email\">\n" +
 	"\x13GetAllUsersResponse\x12'\n" +
 	"\x05users\x18\x01 \x03(\v2\x11.user.v1.UserInfoR\x05users\"-\n" +
 	"\x12GetUserInfoRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x9d\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xe1\x01\n" +
 	"\x13GetUserInfoResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
 	"\x05login\x18\x02 \x01(\tR\x05login\x12\x1b\n" +
 	"\tis_admin1\x18\x03 \x01(\bR\bisAdmin1\x12\x1b\n" +
 	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\tR\tcreatedAt2\xc6\x03\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt\x12\x12\n" +
+	"\x04name\x18\x06 \x01(\tR\x04name\x12\x18\n" +
+	"\asurname\x18\a \x01(\tR\asurname\x12\x14\n" +
+	"\x05email\x18\b \x01(\tR\x05email\"4\n" +
+	"\x19GetUserDetailsByIdRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x87\x02\n" +
+	"\x1aGetUserDetailsByIdResponse\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05login\x18\x02 \x01(\tR\x05login\x12\x1b\n" +
+	"\tis_admin1\x18\x03 \x01(\bR\bisAdmin1\x12\x1b\n" +
+	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\x06 \x01(\tR\tupdatedAt\x12\x12\n" +
+	"\x04name\x18\a \x01(\tR\x04name\x12\x18\n" +
+	"\asurname\x18\b \x01(\tR\asurname\x12\x14\n" +
+	"\x05email\x18\t \x01(\tR\x05email2\xa5\x04\n" +
 	"\vUserService\x12K\n" +
 	"\fRegisterUser\x12\x1c.user.v1.RegisterUserRequest\x1a\x1d.user.v1.RegisterUserResponse\x126\n" +
 	"\x05Login\x12\x15.user.v1.LoginRequest\x1a\x16.user.v1.LoginResponse\x12K\n" +
 	"\fGetLoginById\x12\x1c.user.v1.GetLoginByIdRequest\x1a\x1d.user.v1.GetLoginByIdResponse\x12Q\n" +
 	"\x0eGetUserByLogin\x12\x1e.user.v1.GetUserByLoginRequest\x1a\x1f.user.v1.GetUserByLoginResponse\x12H\n" +
 	"\vGetAllUsers\x12\x1b.user.v1.GetAllUsersRequest\x1a\x1c.user.v1.GetAllUsersResponse\x12H\n" +
-	"\vGetUserInfo\x12\x1b.user.v1.GetUserInfoRequest\x1a\x1c.user.v1.GetUserInfoResponseB\tZ\auser/v1b\x06proto3"
+	"\vGetUserInfo\x12\x1b.user.v1.GetUserInfoRequest\x1a\x1c.user.v1.GetUserInfoResponse\x12]\n" +
+	"\x12GetUserDetailsById\x12\".user.v1.GetUserDetailsByIdRequest\x1a#.user.v1.GetUserDetailsByIdResponseB\tZ\auser/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
@@ -775,21 +1052,23 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_user_v1_user_proto_rawDescData
 }
 
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_user_v1_user_proto_goTypes = []any{
-	(*RegisterUserRequest)(nil),    // 0: user.v1.RegisterUserRequest
-	(*RegisterUserResponse)(nil),   // 1: user.v1.RegisterUserResponse
-	(*LoginRequest)(nil),           // 2: user.v1.LoginRequest
-	(*LoginResponse)(nil),          // 3: user.v1.LoginResponse
-	(*GetLoginByIdRequest)(nil),    // 4: user.v1.GetLoginByIdRequest
-	(*GetLoginByIdResponse)(nil),   // 5: user.v1.GetLoginByIdResponse
-	(*GetUserByLoginRequest)(nil),  // 6: user.v1.GetUserByLoginRequest
-	(*GetUserByLoginResponse)(nil), // 7: user.v1.GetUserByLoginResponse
-	(*GetAllUsersRequest)(nil),     // 8: user.v1.GetAllUsersRequest
-	(*UserInfo)(nil),               // 9: user.v1.UserInfo
-	(*GetAllUsersResponse)(nil),    // 10: user.v1.GetAllUsersResponse
-	(*GetUserInfoRequest)(nil),     // 11: user.v1.GetUserInfoRequest
-	(*GetUserInfoResponse)(nil),    // 12: user.v1.GetUserInfoResponse
+	(*RegisterUserRequest)(nil),        // 0: user.v1.RegisterUserRequest
+	(*RegisterUserResponse)(nil),       // 1: user.v1.RegisterUserResponse
+	(*LoginRequest)(nil),               // 2: user.v1.LoginRequest
+	(*LoginResponse)(nil),              // 3: user.v1.LoginResponse
+	(*GetLoginByIdRequest)(nil),        // 4: user.v1.GetLoginByIdRequest
+	(*GetLoginByIdResponse)(nil),       // 5: user.v1.GetLoginByIdResponse
+	(*GetUserByLoginRequest)(nil),      // 6: user.v1.GetUserByLoginRequest
+	(*GetUserByLoginResponse)(nil),     // 7: user.v1.GetUserByLoginResponse
+	(*GetAllUsersRequest)(nil),         // 8: user.v1.GetAllUsersRequest
+	(*UserInfo)(nil),                   // 9: user.v1.UserInfo
+	(*GetAllUsersResponse)(nil),        // 10: user.v1.GetAllUsersResponse
+	(*GetUserInfoRequest)(nil),         // 11: user.v1.GetUserInfoRequest
+	(*GetUserInfoResponse)(nil),        // 12: user.v1.GetUserInfoResponse
+	(*GetUserDetailsByIdRequest)(nil),  // 13: user.v1.GetUserDetailsByIdRequest
+	(*GetUserDetailsByIdResponse)(nil), // 14: user.v1.GetUserDetailsByIdResponse
 }
 var file_user_v1_user_proto_depIdxs = []int32{
 	9,  // 0: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
@@ -799,14 +1078,16 @@ var file_user_v1_user_proto_depIdxs = []int32{
 	6,  // 4: user.v1.UserService.GetUserByLogin:input_type -> user.v1.GetUserByLoginRequest
 	8,  // 5: user.v1.UserService.GetAllUsers:input_type -> user.v1.GetAllUsersRequest
 	11, // 6: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
-	1,  // 7: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	3,  // 8: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	5,  // 9: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
-	7,  // 10: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
-	10, // 11: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
-	12, // 12: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
-	7,  // [7:13] is the sub-list for method output_type
-	1,  // [1:7] is the sub-list for method input_type
+	13, // 7: user.v1.UserService.GetUserDetailsById:input_type -> user.v1.GetUserDetailsByIdRequest
+	1,  // 8: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	3,  // 9: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	5,  // 10: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	7,  // 11: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
+	10, // 12: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
+	12, // 13: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
+	14, // 14: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
+	8,  // [8:15] is the sub-list for method output_type
+	1,  // [1:8] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -823,7 +1104,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

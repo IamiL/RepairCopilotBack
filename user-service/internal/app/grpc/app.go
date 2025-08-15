@@ -77,9 +77,18 @@ func (s *serverAPI) RegisterUser(ctx context.Context, req *pb.RegisterUserReques
 	if req.Password == "" {
 		return nil, status.Error(codes.InvalidArgument, "password is required")
 	}
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "name is required")
+	}
+	if req.Surname == "" {
+		return nil, status.Error(codes.InvalidArgument, "surname is required")
+	}
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
 
 	// Вызов вашего существующего метода
-	userID, err := s.userService.RegisterNewUser(ctx, req.Login, req.Password)
+	userID, err := s.userService.RegisterNewUser(ctx, req.Login, req.Password, req.Name, req.Surname, req.Email)
 	if err != nil {
 		// Обработка различных типов ошибок
 		if errors.Is(err, service.ErrUserAlreadyExists) {
@@ -140,8 +149,24 @@ func (s *serverAPI) GetLoginById(ctx context.Context, req *pb.GetLoginByIdReques
 }
 
 func (s *serverAPI) GetUserByLogin(ctx context.Context, req *pb.GetUserByLoginRequest) (*pb.GetUserByLoginResponse, error) {
-	s.log.Error("GetUserByLogin not implemented")
-	return nil, status.Error(codes.Unimplemented, "")
+	if req.Login == "" {
+		return nil, status.Error(codes.InvalidArgument, "login is required")
+	}
+
+	userID, login, name, surname, email, isAdmin1, isAdmin2, err := s.userService.GetUserByLogin(ctx, req.Login)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get user by login")
+	}
+
+	return &pb.GetUserByLoginResponse{
+		UserId:   userID.String(),
+		Login:    login,
+		Name:     name,
+		Surname:  surname,
+		Email:    email,
+		IsAdmin1: isAdmin1,
+		IsAdmin2: isAdmin2,
+	}, nil
 }
 
 func (s *serverAPI) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest) (*pb.GetAllUsersResponse, error) {
@@ -155,6 +180,9 @@ func (s *serverAPI) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest)
 		pbUsers = append(pbUsers, &pb.UserInfo{
 			UserId:   user.ID,
 			Login:    user.Login,
+			Name:     user.Name,
+			Surname:  user.Surname,
+			Email:    user.Email,
 			IsAdmin1: user.IsAdmin1,
 			IsAdmin2: user.IsAdmin2,
 		})
@@ -178,9 +206,35 @@ func (s *serverAPI) GetUserInfo(ctx context.Context, req *pb.GetUserInfoRequest)
 	return &pb.GetUserInfoResponse{
 		UserId:    userInfo.ID,
 		Login:     userInfo.Login,
+		Name:      userInfo.Name,
+		Surname:   userInfo.Surname,
+		Email:     userInfo.Email,
 		IsAdmin1:  userInfo.IsAdmin1,
 		IsAdmin2:  userInfo.IsAdmin2,
 		CreatedAt: userInfo.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
+}
+
+func (s *serverAPI) GetUserDetailsById(ctx context.Context, req *pb.GetUserDetailsByIdRequest) (*pb.GetUserDetailsByIdResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	userDetails, err := s.userService.GetUserDetailsById(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get user details")
+	}
+
+	return &pb.GetUserDetailsByIdResponse{
+		UserId:    userDetails.ID,
+		Login:     userDetails.Login,
+		Name:      userDetails.Name,
+		Surname:   userDetails.Surname,
+		Email:     userDetails.Email,
+		IsAdmin1:  userDetails.IsAdmin1,
+		IsAdmin2:  userDetails.IsAdmin2,
+		CreatedAt: userDetails.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: userDetails.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
 }
 

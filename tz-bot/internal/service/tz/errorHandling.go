@@ -30,40 +30,43 @@ type OutInvalidError struct {
 
 type OutMissingError struct {
 	Id           uint32
-	IdStr        string `json:"id"`
-	GroupID      string `json:"group_id"`
-	ErrorCode    string `json:"error_code"`
-	Analysis     string `json:"analysis"`
-	Critique     string `json:"critique"`
-	Verification string `json:"verification"`
-	SuggestedFix string `json:"suggested_fix"`
-	Rationale    string `json:"rational"`
+	IdStr        string   `json:"id"`
+	GroupID      string   `json:"group_id"`
+	ErrorCode    string   `json:"error_code"`
+	Analysis     string   `json:"analysis"`
+	Critique     string   `json:"critique"`
+	Verification string   `json:"verification"`
+	SuggestedFix string   `json:"suggested_fix"`
+	Rationale    string   `json:"rational"`
 	Retrieval    []string `json:"retrieval"`
 }
 
 func HandleErrors(report *[]tz_llm_client.GroupReport, htmlBlocks *[]markdown_service_client.Mapping) (*[]OutInvalidError, *[]OutMissingError, string) {
 	startId := uint32(1)
-
+	fmt.Println("отладка 21")
 	outInvalidErrors, lastId := NewInvalidErrorsSet(startId, report)
-
+	fmt.Println("отладка 22")
 	missingErrors, lastId := NewIMissingErrorsSet(lastId, report)
-
+	fmt.Println("отладка 23")
 	errors := InjectInvalidErrorsToHtmlBlocks(outInvalidErrors, htmlBlocks)
 	if len(errors) > 0 {
+		fmt.Println("отладка 24")
 		for _, err := range errors {
 			fmt.Println(err.Error())
 		}
 	}
-
+	fmt.Println("отладка 25")
 	html := ""
+	fmt.Println("отладка 26")
 
 	for i := range *htmlBlocks {
 		html = html + (*htmlBlocks)[i].HtmlContent
 	}
+	fmt.Println("отладка 27")
 
 	// Сортируем ошибки по порядку их появления в HTML тексте
 	sortedInvalidErrors := sortInvalidErrorsByHtmlOrder(outInvalidErrors, html)
-
+	fmt.Println("отладка 28")
 	return sortedInvalidErrors, missingErrors, html
 }
 

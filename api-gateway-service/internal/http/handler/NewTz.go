@@ -9,6 +9,7 @@ import (
 	"os"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
+	userserviceclient "repairCopilotBot/user-service/client"
 	"strings"
 
 	"github.com/google/uuid"
@@ -56,6 +57,8 @@ func NewTzHandler(
 	log *slog.Logger,
 	tzBotClient *client.Client,
 	sessionRepo *repository.SessionRepository,
+	userServiceClient *userserviceclient.UserClient,
+	actionLogRepo repository.ActionLogRepository,
 ) func(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -154,6 +157,15 @@ func NewTzHandler(
 			slog.Int("invalid_errors_count", len(checkTzResult.InvalidErrors)),
 			slog.Int("missing_errors_count", len(checkTzResult.MissingErrors)),
 			slog.String("doc_id", checkTzResult.DocId))
+
+		// Логируем событие отправки документа
+		userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), session.UserID)
+		if userInfoErr == nil {
+			actionText := "Пользователь " + userInfo.Login + " отправил документ " + filename + " на проверку"
+			if err := actionLogRepo.CreateActionLog(r.Context(), actionText, uid); err != nil {
+				log.Error("failed to create action log for TZ submission", slog.String("error", err.Error()))
+			}
+		}
 
 		// Конвертация OutInvalidError в HTTP response структуры (ошибки уже отсортированы в tz-bot сервисе)
 		invalidErrorsResp := make([]NewTzInvalidErrorResponse, len(checkTzResult.InvalidErrors))

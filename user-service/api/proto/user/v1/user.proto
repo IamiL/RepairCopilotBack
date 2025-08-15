@@ -23,12 +23,18 @@ service UserService {
 
   // GetUserInfo получает информацию о пользователе по ID
   rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+  
+  // GetUserDetailsById получает все поля пользователя по ID (включая updated_at)
+  rpc GetUserDetailsById(GetUserDetailsByIdRequest) returns (GetUserDetailsByIdResponse);
 }
 
 // RegisterUserRequest содержит данные для регистрации пользователя
 message RegisterUserRequest {
   string login = 1;         // Логин пользователя
   string password = 2;      // Пароль пользователя
+  string name = 3;          // Имя пользователя
+  string surname = 4;       // Фамилия пользователя
+  string email = 5;         // Email пользователя
 }
 
 // RegisterUserResponse содержит результат регистрации
@@ -70,6 +76,9 @@ message GetUserByLoginResponse {
   string login = 2;         // Логин пользователя
   bool is_admin1 = 3;       // Флаг администратора 1
   bool is_admin2 = 4;       // Флаг администратора 2
+  string name = 5;          // Имя пользователя
+  string surname = 6;       // Фамилия пользователя
+  string email = 7;         // Email пользователя
 }
 
 // GetAllUsersRequest запрос для получения всех пользователей
@@ -83,6 +92,9 @@ message UserInfo {
   string login = 2;         // Логин пользователя
   bool is_admin1 = 3;       // Флаг администратора 1
   bool is_admin2 = 4;       // Флаг администратора 2
+  string name = 5;          // Имя пользователя
+  string surname = 6;       // Фамилия пользователя
+  string email = 7;         // Email пользователя
 }
 
 // GetAllUsersResponse ответ со списком всех пользователей
@@ -102,4 +114,25 @@ message GetUserInfoResponse {
   bool is_admin1 = 3;           // Флаг администратора 1
   bool is_admin2 = 4;           // Флаг администратора 2
   string created_at = 5;        // Дата и время регистрации в RFC3339 формате
+  string name = 6;              // Имя пользователя
+  string surname = 7;           // Фамилия пользователя
+  string email = 8;             // Email пользователя
+}
+
+// GetUserDetailsByIdRequest запрос для получения всех полей пользователя по ID
+message GetUserDetailsByIdRequest {
+  string user_id = 1;           // UUID пользователя
+}
+
+// GetUserDetailsByIdResponse ответ со всеми полями пользователя
+message GetUserDetailsByIdResponse {
+  string user_id = 1;           // UUID пользователя
+  string login = 2;             // Логин пользователя
+  bool is_admin1 = 3;           // Флаг администратора 1
+  bool is_admin2 = 4;           // Флаг администратора 2
+  string created_at = 5;        // Дата и время регистрации в RFC3339 формате
+  string updated_at = 6;        // Дата и время последнего обновления в RFC3339 формате
+  string name = 7;              // Имя пользователя
+  string surname = 8;           // Фамилия пользователя
+  string email = 9;             // Email пользователя
 }

@@ -12,6 +12,8 @@ var (
 	ErrTechnicalSpecificationNotFound = errors.New("technical specification not found")
 	ErrVersionNotFound                = errors.New("version not found")
 	ErrDuplicateVersion               = errors.New("version with this number already exists for this technical specification")
+	ErrErrorFeedbackNotFound          = errors.New("error feedback not found")
+	ErrLLMCacheNotFound               = errors.New("llm cache not found")
 )
 
 // TechnicalSpecificationRepository defines the interface for technical specification operations
@@ -49,6 +51,12 @@ type VersionRepository interface {
 	// GetVersionsByUserID retrieves all versions with minimal data for a user
 	GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]*VersionSummary, error)
 
+	// GetAllVersions retrieves all versions with complete data and error counts
+	GetAllVersions(ctx context.Context) ([]*VersionWithErrorCounts, error)
+
+	// GetVersionStatistics retrieves aggregated statistics for all versions
+	GetVersionStatistics(ctx context.Context) (*VersionStatistics, error)
+
 	// GetLatestVersion retrieves the latest version for a technical specification
 	GetLatestVersion(ctx context.Context, technicalSpecificationID uuid.UUID) (*Version, error)
 
@@ -83,10 +91,42 @@ type MissingErrorRepository interface {
 	DeleteMissingErrorsByVersionID(ctx context.Context, versionID uuid.UUID) error
 }
 
+// ErrorFeedbackRepository defines the interface for error feedback operations
+type ErrorFeedbackRepository interface {
+	// CreateErrorFeedback creates new feedback for an error
+	CreateErrorFeedback(ctx context.Context, req *CreateErrorFeedbackRequest) (*ErrorFeedback, error)
+
+	// GetErrorFeedback retrieves feedback by ID
+	GetErrorFeedback(ctx context.Context, id uuid.UUID) (*ErrorFeedback, error)
+
+	// GetErrorFeedbackByErrorID retrieves feedback by error ID
+	GetErrorFeedbackByErrorID(ctx context.Context, errorID uuid.UUID) (*ErrorFeedback, error)
+
+	// GetErrorFeedbacksByVersionID retrieves all feedback for a version
+	GetErrorFeedbacksByVersionID(ctx context.Context, versionID uuid.UUID) ([]*ErrorFeedback, error)
+
+	// UpdateErrorFeedback updates existing feedback
+	UpdateErrorFeedback(ctx context.Context, id uuid.UUID, isGoodError bool, comment *string, updatedAt time.Time) error
+
+	// DeleteErrorFeedback deletes feedback
+	DeleteErrorFeedback(ctx context.Context, id uuid.UUID) error
+}
+
+// LLMCacheRepository defines the interface for LLM cache operations
+type LLMCacheRepository interface {
+	// GetCachedResponse retrieves cached response by messages hash
+	GetCachedResponse(ctx context.Context, messagesHash string) (*LLMCache, error)
+
+	// SaveCachedResponse saves a new cached response
+	SaveCachedResponse(ctx context.Context, req *CreateLLMCacheRequest) (*LLMCache, error)
+}
+
 // Repository combines all repository interfaces
 type Repository interface {
 	TechnicalSpecificationRepository
 	VersionRepository
 	InvalidErrorRepository
 	MissingErrorRepository
+	ErrorFeedbackRepository
+	LLMCacheRepository
 }

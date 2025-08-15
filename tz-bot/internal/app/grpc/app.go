@@ -158,21 +158,21 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		}
 
 		grpcInvalidErrors[i] = &tzv1.OutInvalidError{
-			Id:                   invalidError.Id,
-			IdStr:                sanitizeString(invalidError.IdStr),
-			GroupId:              sanitizeString(invalidError.GroupID),
-			ErrorCode:            sanitizeString(invalidError.ErrorCode),
-			Quote:                sanitizeString(invalidError.Quote),
-			Analysis:             sanitizeString(invalidError.Analysis),
-			Critique:             sanitizeString(invalidError.Critique),
-			Verification:         sanitizeString(invalidError.Verification),
-			SuggestedFix:         sanitizeString(invalidError.SuggestedFix),
-			Rationale:            sanitizeString(invalidError.Rationale),
-			OriginalQuote:        sanitizeString(invalidError.OriginalQuote),
-			QuoteLines:           quoteLines,
+			Id:                    invalidError.Id,
+			IdStr:                 sanitizeString(invalidError.IdStr),
+			GroupId:               sanitizeString(invalidError.GroupID),
+			ErrorCode:             sanitizeString(invalidError.ErrorCode),
+			Quote:                 sanitizeString(invalidError.Quote),
+			Analysis:              sanitizeString(invalidError.Analysis),
+			Critique:              sanitizeString(invalidError.Critique),
+			Verification:          sanitizeString(invalidError.Verification),
+			SuggestedFix:          sanitizeString(invalidError.SuggestedFix),
+			Rationale:             sanitizeString(invalidError.Rationale),
+			OriginalQuote:         sanitizeString(invalidError.OriginalQuote),
+			QuoteLines:            quoteLines,
 			UntilTheEndOfSentence: invalidError.UntilTheEndOfSentence,
-			StartLineNumber:      startLine,
-			EndLineNumber:        endLine,
+			StartLineNumber:       startLine,
+			EndLineNumber:         endLine,
 		}
 	}
 
@@ -249,10 +249,10 @@ func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *
 	grpcVersions := make([]*tzv1.TechnicalSpecificationVersion, len(versions))
 	for i, version := range versions {
 		grpcVersions[i] = &tzv1.TechnicalSpecificationVersion{
-			VersionId:                 version.ID.String(),
+			VersionId:                  version.ID.String(),
 			TechnicalSpecificationName: version.TechnicalSpecificationName,
-			VersionNumber:             int32(version.VersionNumber),
-			CreatedAt:                 version.CreatedAt.Format(time.RFC3339),
+			VersionNumber:              int32(version.VersionNumber),
+			CreatedAt:                  version.CreatedAt.Format(time.RFC3339),
 		}
 	}
 
@@ -260,6 +260,100 @@ func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *
 
 	return &tzv1.GetTechnicalSpecificationVersionsResponse{
 		Versions: grpcVersions,
+	}, nil
+}
+
+func (s *serverAPI) GetAllVersions(ctx context.Context, req *tzv1.GetAllVersionsRequest) (*tzv1.GetAllVersionsResponse, error) {
+	const op = "grpc.tz.GetAllVersions"
+
+	log := s.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("processing GetAllVersions request")
+
+	versions, err := s.tzService.GetAllVersions(ctx)
+	if err != nil {
+		log.Error("failed to get all versions", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to get all versions")
+	}
+
+	// Конвертируем repository.VersionWithErrorCounts в proto сообщения
+	grpcVersions := make([]*tzv1.VersionWithErrorCounts, len(versions))
+	for i, version := range versions {
+		grpcVersion := &tzv1.VersionWithErrorCounts{
+			VersionId:                  version.ID.String(),
+			TechnicalSpecificationId:   version.TechnicalSpecificationID.String(),
+			TechnicalSpecificationName: version.TechnicalSpecificationName,
+			UserId:                     version.UserID.String(),
+			VersionNumber:              int32(version.VersionNumber),
+			CreatedAt:                  version.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:                  version.UpdatedAt.Format(time.RFC3339),
+			OriginalFileId:             version.OriginalFileID,
+			OutHtml:                    version.OutHTML,
+			Css:                        version.CSS,
+			CheckedFileId:              version.CheckedFileID,
+			InvalidErrorCount:          int32(version.InvalidErrorCount),
+			MissingErrorCount:          int32(version.MissingErrorCount),
+		}
+
+		// Устанавливаем опциональные поля
+		if version.AllRubs != nil {
+			grpcVersion.AllRubs = version.AllRubs
+		}
+		if version.AllTokens != nil {
+			grpcVersion.AllTokens = version.AllTokens
+		}
+		if version.InspectionTime != nil {
+			grpcVersion.InspectionTimeNanoseconds = (*int64)(version.InspectionTime)
+		}
+
+		grpcVersions[i] = grpcVersion
+	}
+
+	log.Info("GetAllVersions request processed successfully", slog.Int("versions_count", len(versions)))
+
+	return &tzv1.GetAllVersionsResponse{
+		Versions: grpcVersions,
+	}, nil
+}
+
+func (s *serverAPI) GetVersionStatistics(ctx context.Context, req *tzv1.GetVersionStatisticsRequest) (*tzv1.GetVersionStatisticsResponse, error) {
+	const op = "grpc.tz.GetVersionStatistics"
+
+	log := s.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("processing GetVersionStatistics request")
+
+	stats, err := s.tzService.GetVersionStatistics(ctx)
+	if err != nil {
+		log.Error("failed to get version statistics", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to get version statistics")
+	}
+
+	// Конвертируем repository.VersionStatistics в proto сообщение
+	grpcStats := &tzv1.VersionStatistics{
+		TotalVersions: stats.TotalVersions,
+	}
+
+	// Устанавливаем опциональные поля
+	if stats.TotalTokens != nil {
+		grpcStats.TotalTokens = stats.TotalTokens
+	}
+	if stats.TotalRubs != nil {
+		grpcStats.TotalRubs = stats.TotalRubs
+	}
+	if stats.AverageInspectionTime != nil {
+		grpcStats.AverageInspectionTimeNanoseconds = (*int64)(stats.AverageInspectionTime)
+	}
+
+	log.Info("GetVersionStatistics request processed successfully",
+		slog.Int64("total_versions", stats.TotalVersions))
+
+	return &tzv1.GetVersionStatisticsResponse{
+		Statistics: grpcStats,
 	}, nil
 }
 
@@ -309,21 +403,21 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		}
 
 		grpcInvalidErrors[i] = &tzv1.OutInvalidError{
-			Id:                   invalidError.Id,
-			IdStr:                sanitizeString(invalidError.IdStr),
-			GroupId:              sanitizeString(invalidError.GroupID),
-			ErrorCode:            sanitizeString(invalidError.ErrorCode),
-			Quote:                sanitizeString(invalidError.Quote),
-			Analysis:             sanitizeString(invalidError.Analysis),
-			Critique:             sanitizeString(invalidError.Critique),
-			Verification:         sanitizeString(invalidError.Verification),
-			SuggestedFix:         sanitizeString(invalidError.SuggestedFix),
-			Rationale:            sanitizeString(invalidError.Rationale),
-			OriginalQuote:        sanitizeString(invalidError.OriginalQuote),
-			QuoteLines:           quoteLines,
+			Id:                    invalidError.Id,
+			IdStr:                 sanitizeString(invalidError.IdStr),
+			GroupId:               sanitizeString(invalidError.GroupID),
+			ErrorCode:             sanitizeString(invalidError.ErrorCode),
+			Quote:                 sanitizeString(invalidError.Quote),
+			Analysis:              sanitizeString(invalidError.Analysis),
+			Critique:              sanitizeString(invalidError.Critique),
+			Verification:          sanitizeString(invalidError.Verification),
+			SuggestedFix:          sanitizeString(invalidError.SuggestedFix),
+			Rationale:             sanitizeString(invalidError.Rationale),
+			OriginalQuote:         sanitizeString(invalidError.OriginalQuote),
+			QuoteLines:            quoteLines,
 			UntilTheEndOfSentence: invalidError.UntilTheEndOfSentence,
-			StartLineNumber:      startLine,
-			EndLineNumber:        endLine,
+			StartLineNumber:       startLine,
+			EndLineNumber:         endLine,
 		}
 	}
 

@@ -6,14 +6,16 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
+	userserviceclient "repairCopilotBot/user-service/client"
+
 	"github.com/google/uuid"
 )
 
 type TechnicalSpecificationVersion struct {
-	VersionId                 string `json:"version_id"`
+	VersionId                  string `json:"version_id"`
 	TechnicalSpecificationName string `json:"technical_specification_name"`
-	VersionNumber             int32  `json:"version_number"`
-	CreatedAt                 string `json:"created_at"`
+	VersionNumber              int32  `json:"version_number"`
+	CreatedAt                  string `json:"created_at"`
 }
 
 type MeResponse struct {
@@ -26,6 +28,8 @@ func MeHandler(
 	log *slog.Logger,
 	sessionRepo *repository.SessionRepository,
 	tzBotClient *client.Client,
+	userServiceClient *userserviceclient.UserClient,
+	actionLogRepo repository.ActionLogRepository,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.MeHandler"
@@ -83,6 +87,16 @@ func MeHandler(
 			if err != nil {
 				log.Error("invalid user ID format in session", slog.String("user_id", session.UserID), slog.String("error", err.Error()))
 			} else {
+				// Получаем информацию о пользователе для логирования
+				userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), session.UserID)
+				if userInfoErr == nil {
+					// Логируем событие входа на сайт
+					actionText := "Пользователь " + userInfo.Login + " зашёл на сайт"
+					if err := actionLogRepo.CreateActionLog(r.Context(), actionText, userID); err != nil {
+						log.Error("failed to create action log for site access", slog.String("error", err.Error()))
+					}
+				}
+
 				tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
 				if err != nil {
 					log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
@@ -92,10 +106,10 @@ func MeHandler(
 					versions = make([]TechnicalSpecificationVersion, len(tzVersions))
 					for i, tzVersion := range tzVersions {
 						versions[i] = TechnicalSpecificationVersion{
-							VersionId:                 tzVersion.VersionId,
+							VersionId:                  tzVersion.VersionId,
 							TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
-							VersionNumber:             tzVersion.VersionNumber,
-							CreatedAt:                 tzVersion.CreatedAt,
+							VersionNumber:              tzVersion.VersionNumber,
+							CreatedAt:                  tzVersion.CreatedAt,
 						}
 					}
 				}

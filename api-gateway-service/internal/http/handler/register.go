@@ -12,8 +12,11 @@ import (
 )
 
 type RegisterRequest struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Login     string `json:"login"`
+	Password  string `json:"password"`
 }
 
 type RegisterResponse struct {
@@ -26,6 +29,7 @@ func RegisterHandler(
 	log *slog.Logger,
 	userServiceClient *userserviceclient.UserClient,
 	sessionRepo *repository.SessionRepository,
+	actionLogRepo repository.ActionLogRepository,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.RegisterHandler"
@@ -56,7 +60,7 @@ func RegisterHandler(
 		log.Info("registering new user", slog.String("login", req.Login))
 
 		// Регистрируем пользователя в user-service
-		userID, err := userServiceClient.RegisterUser(r.Context(), req.Login, req.Password)
+		userID, err := userServiceClient.RegisterUser(r.Context(), req.Email, req.FirstName, req.LastName, req.Login, req.Password)
 		if err != nil {
 			log.Error("failed to register user", slog.String("error", err.Error()), slog.String("login", req.Login))
 			http.Error(w, "Registration failed: "+err.Error(), http.StatusConflict)
@@ -65,11 +69,21 @@ func RegisterHandler(
 
 		log.Info("user registered successfully", slog.String("user_id", userID), slog.String("login", req.Login))
 
+		// Парсим userID из строки в UUID для логирования
+		userUUID, parseErr := uuid.Parse(userID)
+		if parseErr == nil {
+			// Логируем событие регистрации
+			actionText := "зарегистрирован пользователь - " + req.FirstName + " " + req.LastName + " ; логин - " + req.Login
+			if err := actionLogRepo.CreateActionLog(r.Context(), actionText, userUUID); err != nil {
+				log.Error("failed to create action log", slog.String("error", err.Error()))
+			}
+		}
+
 		// Генерируем новый UUID для сессии
 		sessionID := uuid.New()
 
 		// Парсим userID из строки в UUID
-		userUUID, err := uuid.Parse(userID)
+		userUUID, err = uuid.Parse(userID)
 		if err != nil {
 			log.Error("failed to parse user ID as UUID", slog.String("error", err.Error()), slog.String("user_id", userID))
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -84,7 +98,7 @@ func RegisterHandler(
 			return
 		}
 
-		log.Info("session created successfully", 
+		log.Info("session created successfully",
 			slog.String("session_id", sessionID.String()),
 			slog.String("user_id", userID))
 
@@ -115,7 +129,7 @@ func RegisterHandler(
 			return
 		}
 
-		log.Info("register request processed successfully", 
+		log.Info("register request processed successfully",
 			slog.String("login", req.Login),
 			slog.String("user_id", userID),
 			slog.String("session_id", sessionID.String()))

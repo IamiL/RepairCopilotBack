@@ -10,8 +10,10 @@ postgres:
   max_connections: 1
 grpc_server:
   port: localhost:8081
+promt_builder:
+  url: http://localhost:8010/v1/prompt-builder/build
 llm_client:
- url: http://localhost:8000/analyze
+ url: http://localhost:8020/v1/structured/run
  model: "qwen3-235b-a22b-fp8/latest"
 word_parser_client:
   url: http://localhost:8082

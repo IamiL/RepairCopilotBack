@@ -2,6 +2,7 @@ package app
 
 import (
 	"log/slog"
+	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 
@@ -29,6 +30,7 @@ func New(
 	LlmConfig *tz_llm_client.Config,
 	WordParserConfig *word_parser_client.Config,
 	MarkdownServiceConfig *markdown_service_client.Config,
+	PromtBuilderConfig *promt_builder.Config,
 	TgConfig *tg_client.Config,
 	s3Config *s3minio.Config,
 	postgresConfig *postgres.Config,
@@ -43,11 +45,13 @@ func New(
 		panic(err)
 	}
 
-	llmClient := tz_llm_client.New(LlmConfig.Url, LlmConfig.Model)
+	llmClient := tz_llm_client.NewWithCache(LlmConfig.Url, LlmConfig.Model, postgres)
 
 	wordParserClient := word_parser_client.New(WordParserConfig.Url)
 
 	markdownClient := markdown_service_client.New(MarkdownServiceConfig.Url)
+
+	prompBuilderClient := promt_builder.New(PromtBuilderConfig.Url)
 
 	tgBot, err := tg_client.NewBot(TgConfig.Token)
 	if err != nil {
@@ -63,7 +67,7 @@ func New(
 
 	s3Client := s3minio.New(s3Conn)
 
-	tzService := tzservice.New(log, wordParserClient, markdownClient, llmClient, tgClient, s3Client, postgres)
+	tzService := tzservice.New(log, wordParserClient, markdownClient, llmClient, prompBuilderClient, tgClient, s3Client, postgres)
 
 	grpcApp := grpcapp.New(log, tzService, grpcConfig)
 

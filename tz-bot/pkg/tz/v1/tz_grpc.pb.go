@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	TzService_CheckTz_FullMethodName                           = "/tz.v1.TzService/CheckTz"
 	TzService_GetTechnicalSpecificationVersions_FullMethodName = "/tz.v1.TzService/GetTechnicalSpecificationVersions"
+	TzService_GetAllVersions_FullMethodName                    = "/tz.v1.TzService/GetAllVersions"
+	TzService_GetVersionStatistics_FullMethodName              = "/tz.v1.TzService/GetVersionStatistics"
 	TzService_GetVersion_FullMethodName                        = "/tz.v1.TzService/GetVersion"
 )
 
@@ -30,6 +32,8 @@ const (
 type TzServiceClient interface {
 	CheckTz(ctx context.Context, in *CheckTzRequest, opts ...grpc.CallOption) (*CheckTzResponse, error)
 	GetTechnicalSpecificationVersions(ctx context.Context, in *GetTechnicalSpecificationVersionsRequest, opts ...grpc.CallOption) (*GetTechnicalSpecificationVersionsResponse, error)
+	GetAllVersions(ctx context.Context, in *GetAllVersionsRequest, opts ...grpc.CallOption) (*GetAllVersionsResponse, error)
+	GetVersionStatistics(ctx context.Context, in *GetVersionStatisticsRequest, opts ...grpc.CallOption) (*GetVersionStatisticsResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
 }
 
@@ -61,6 +65,26 @@ func (c *tzServiceClient) GetTechnicalSpecificationVersions(ctx context.Context,
 	return out, nil
 }
 
+func (c *tzServiceClient) GetAllVersions(ctx context.Context, in *GetAllVersionsRequest, opts ...grpc.CallOption) (*GetAllVersionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAllVersionsResponse)
+	err := c.cc.Invoke(ctx, TzService_GetAllVersions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tzServiceClient) GetVersionStatistics(ctx context.Context, in *GetVersionStatisticsRequest, opts ...grpc.CallOption) (*GetVersionStatisticsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVersionStatisticsResponse)
+	err := c.cc.Invoke(ctx, TzService_GetVersionStatistics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tzServiceClient) GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetVersionResponse)
@@ -77,6 +101,8 @@ func (c *tzServiceClient) GetVersion(ctx context.Context, in *GetVersionRequest,
 type TzServiceServer interface {
 	CheckTz(context.Context, *CheckTzRequest) (*CheckTzResponse, error)
 	GetTechnicalSpecificationVersions(context.Context, *GetTechnicalSpecificationVersionsRequest) (*GetTechnicalSpecificationVersionsResponse, error)
+	GetAllVersions(context.Context, *GetAllVersionsRequest) (*GetAllVersionsResponse, error)
+	GetVersionStatistics(context.Context, *GetVersionStatisticsRequest) (*GetVersionStatisticsResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
 	mustEmbedUnimplementedTzServiceServer()
 }
@@ -93,6 +119,12 @@ func (UnimplementedTzServiceServer) CheckTz(context.Context, *CheckTzRequest) (*
 }
 func (UnimplementedTzServiceServer) GetTechnicalSpecificationVersions(context.Context, *GetTechnicalSpecificationVersionsRequest) (*GetTechnicalSpecificationVersionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTechnicalSpecificationVersions not implemented")
+}
+func (UnimplementedTzServiceServer) GetAllVersions(context.Context, *GetAllVersionsRequest) (*GetAllVersionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllVersions not implemented")
+}
+func (UnimplementedTzServiceServer) GetVersionStatistics(context.Context, *GetVersionStatisticsRequest) (*GetVersionStatisticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVersionStatistics not implemented")
 }
 func (UnimplementedTzServiceServer) GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVersion not implemented")
@@ -154,6 +186,42 @@ func _TzService_GetTechnicalSpecificationVersions_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TzService_GetAllVersions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllVersionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TzServiceServer).GetAllVersions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TzService_GetAllVersions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TzServiceServer).GetAllVersions(ctx, req.(*GetAllVersionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TzService_GetVersionStatistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVersionStatisticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TzServiceServer).GetVersionStatistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TzService_GetVersionStatistics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TzServiceServer).GetVersionStatistics(ctx, req.(*GetVersionStatisticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TzService_GetVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVersionRequest)
 	if err := dec(in); err != nil {
@@ -186,6 +254,14 @@ var TzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTechnicalSpecificationVersions",
 			Handler:    _TzService_GetTechnicalSpecificationVersions_Handler,
+		},
+		{
+			MethodName: "GetAllVersions",
+			Handler:    _TzService_GetAllVersions_Handler,
+		},
+		{
+			MethodName: "GetVersionStatistics",
+			Handler:    _TzService_GetVersionStatistics_Handler,
 		},
 		{
 			MethodName: "GetVersion",

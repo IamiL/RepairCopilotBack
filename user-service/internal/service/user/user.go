@@ -29,6 +29,9 @@ type UserSaver interface {
 		ctx context.Context,
 		login string,
 		passHash []byte,
+		name string,
+		surname string,
+		email string,
 		isAdmin1 bool,
 		isAdmin2 bool,
 		uid uuid.UUID,
@@ -36,10 +39,11 @@ type UserSaver interface {
 }
 
 type UserProvider interface {
-	User(ctx context.Context, login string) (uuid.UUID, []byte, bool, bool, error)
+	User(ctx context.Context, login string) (uuid.UUID, []byte, string, string, string, bool, bool, error)
 	LoginById(ctx context.Context, uid string) (string, error)
 	GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error)
 	GetUserInfo(ctx context.Context, userID string) (*postgresUser.UserDetailedInfo, error)
+	GetUserDetailsById(ctx context.Context, userID string) (*postgresUser.UserFullDetails, error)
 }
 
 func New(
@@ -54,7 +58,7 @@ func New(
 	}
 }
 
-func (u *User) RegisterNewUser(ctx context.Context, login string, pass string) (uuid.UUID, error) {
+func (u *User) RegisterNewUser(ctx context.Context, login string, pass string, name string, surname string, email string) (uuid.UUID, error) {
 	const op = "User.RegisterNewUser"
 
 	log := u.log.With(
@@ -64,7 +68,7 @@ func (u *User) RegisterNewUser(ctx context.Context, login string, pass string) (
 
 	log.Info("registering user")
 
-	_, _, _, _, err := u.usrProvider.User(ctx, login)
+	_, _, _, _, _, _, _, err := u.usrProvider.User(ctx, login)
 	if err == nil {
 
 		u.log.Error("user already exists", sl.Err(err))
@@ -84,7 +88,7 @@ func (u *User) RegisterNewUser(ctx context.Context, login string, pass string) (
 		log.Error("failed to generate uuid", sl.Err(err))
 	}
 
-	err = u.usrSaver.SaveUser(ctx, login, passHash, false, false, uid)
+	err = u.usrSaver.SaveUser(ctx, login, passHash, name, surname, email, false, false, uid)
 	if err != nil {
 		log.Error("failed to save user", sl.Err(err))
 
@@ -104,7 +108,7 @@ func (u *User) Login(ctx context.Context, login string, password string) (uuid.U
 
 	log.Info("attempting to login user")
 
-	uid, passHash, isAdmin1, isAdmin2, err := u.usrProvider.User(ctx, login)
+	uid, passHash, _, _, _, isAdmin1, isAdmin2, err := u.usrProvider.User(ctx, login)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			u.log.Warn("user not found", sl.Err(err))
@@ -198,4 +202,56 @@ func (u *User) GetUserInfo(ctx context.Context, userID string) (*postgresUser.Us
 	log.Info("user info retrieved successfully", slog.String("login", userInfo.Login))
 
 	return userInfo, nil
+}
+
+func (u *User) GetUserByLogin(ctx context.Context, login string) (uuid.UUID, string, string, string, string, bool, bool, error) {
+	const op = "User.GetUserByLogin"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("login", login),
+	)
+
+	log.Info("getting user by login")
+
+	uid, _, name, surname, email, isAdmin1, isAdmin2, err := u.usrProvider.User(ctx, login)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+			return uuid.Nil, "", "", "", "", false, false, fmt.Errorf("%s: user not found", op)
+		}
+
+		u.log.Error("failed to get user by login", sl.Err(err))
+		return uuid.Nil, "", "", "", "", false, false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("user retrieved successfully by login")
+
+	return uid, login, name, surname, email, isAdmin1, isAdmin2, nil
+}
+
+func (u *User) GetUserDetailsById(ctx context.Context, userID string) (*postgresUser.UserFullDetails, error) {
+	const op = "User.GetUserDetailsById"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+	)
+
+	log.Info("getting user details by id")
+
+	userDetails, err := u.usrProvider.GetUserDetailsById(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+			return nil, fmt.Errorf("%s: user not found", op)
+		}
+
+		u.log.Error("failed to get user details by id", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("user details retrieved successfully", slog.String("login", userDetails.Login))
+
+	return userDetails, nil
 }

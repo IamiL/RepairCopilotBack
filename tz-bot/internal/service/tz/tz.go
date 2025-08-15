@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,9 +25,11 @@ type Tz struct {
 	wordConverterClient *word_parser_client.Client
 	markdownClient      *markdown_service_client.Client
 	llmClient           *tz_llm_client.Client
+	promtBuilderClient  *promt_builder.Client
 	tgClient            *tg_client.Client
 	s3                  *s3minio.MinioRepository
 	repo                repository.Repository
+	ggID                int
 }
 
 var (
@@ -69,11 +73,20 @@ type OutError struct {
 	Rationale    string  `json:"rationale"`
 }
 
+// llmRequestResult represents the result of a single LLM request
+type llmRequestResult struct {
+	groupReport *tz_llm_client.GroupReport
+	cost        *float64
+	tokens      *int64
+	err         error
+}
+
 func New(
 	log *slog.Logger,
 	wordConverterClient *word_parser_client.Client,
 	markdownClient *markdown_service_client.Client,
 	llmClient *tz_llm_client.Client,
+	promtBuilder *promt_builder.Client,
 	tgClient *tg_client.Client,
 	s3 *s3minio.MinioRepository,
 	repo repository.Repository,
@@ -83,9 +96,11 @@ func New(
 		wordConverterClient: wordConverterClient,
 		markdownClient:      markdownClient,
 		llmClient:           llmClient,
+		promtBuilderClient:  promtBuilder,
 		tgClient:            tgClient,
 		s3:                  s3,
 		repo:                repo,
+		ggID:                1,
 	}
 }
 
@@ -98,6 +113,8 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	)
 
 	log.Info("checking tz")
+
+	timeStart := time.Now()
 
 	htmlText, css, err := tz.wordConverterClient.Convert(file, filename)
 	if err != nil {
@@ -134,24 +151,148 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	//	log.Info("Markdown файл успешно отправлен в телеграм")
 	//}
 
-	llmAnalyzeResult, err := tz.llmClient.Analyze(markdownResponse.Markdown)
+	log.Info("запрос промтов в promt-builder")
+
+	//Генерируем запрос для нейронки
+	neuralRequest, err := tz.promtBuilderClient.GeneratePromts(markdownResponse.Markdown, tz.ggID)
 	if err != nil {
-		log.Error("Error: \n", err)
-	}
-	if llmAnalyzeResult == nil {
-		//tz.tgClient.SendMessage("ИСПРАВИТЬ: от llm пришёл пустой ответ, но код ответа не ошибочный.")
-
-		log.Info("пустой ответ от llm")
-		return "", "", "", &([]OutInvalidError{}), &([]OutMissingError{}), "", ErrLlmAnalyzeFile
-	}
-	if llmAnalyzeResult.Reports == nil || len(llmAnalyzeResult.Reports) == 0 {
-		//tz.tgClient.SendMessage("МБ ЧТО-ТО НЕ ТАК: от llm ответ без отчетов, но код ответа не ошибочный")
-
-		log.Info("0 отчетов в ответе от llm")
 		return "", "", "", &([]OutInvalidError{}), &([]OutMissingError{}), "", ErrLlmAnalyzeFile
 	}
 
-	outInvalidErrors, outMissingErrors, outHtml := HandleErrors(&llmAnalyzeResult.Reports, &markdownResponse.Mappings)
+	if neuralRequest.Schema == nil {
+		return "", "", "", &([]OutInvalidError{}), &([]OutMissingError{}), "", ErrLlmAnalyzeFile
+	}
+
+	//if len(*neuralRequest.Items) > 1 {
+	//	*neuralRequest.Items = (*neuralRequest.Items)[:1]
+	//}
+
+	groupReports := make([]tz_llm_client.GroupReport, 0, len(*neuralRequest.Items))
+
+	allRubs := float64(0)
+	allTokens := int64(0)
+
+	// Создаем канал для результатов и waitgroup для синхронизации
+	resultChan := make(chan llmRequestResult, len(*neuralRequest.Items))
+	var wg sync.WaitGroup
+
+	// Запускаем горутины для параллельной обработки запросов
+	for _, v := range *neuralRequest.Items {
+		wg.Add(1)
+		go func(messages *[]struct {
+			Role    *string `json:"role"`
+			Content *string `json:"content"`
+		}, schema map[string]interface{}) {
+			defer wg.Done()
+
+			// Гарантируем, что всегда отправляем результат в канал
+			defer func() {
+				if r := recover(); r != nil {
+					log.Error("паника в goroutine: ", slog.Any("panic", r))
+					resultChan <- llmRequestResult{err: fmt.Errorf("паника в goroutine: %v", r)}
+				}
+			}()
+
+			llmResp, err := tz.llmClient.SendMessage(*messages, schema)
+			if err != nil {
+				log.Error("ошибка от llm request: ", sl.Err(err))
+				resultChan <- llmRequestResult{err: err}
+				return
+			}
+
+			if llmResp.Result == nil {
+				log.Error("ошибка: в ответе от llm поле result пустое")
+				resultChan <- llmRequestResult{err: fmt.Errorf("пустое поле result в ответе от llm")}
+				return
+			}
+
+			result := llmRequestResult{
+				groupReport: llmResp.Result,
+			}
+
+			if llmResp.Cost != nil {
+				result.cost = llmResp.Cost.TotalRub
+			}
+
+			if llmResp.Usage != nil && llmResp.Usage.TotalTokens != nil {
+				tokens := int64(*llmResp.Usage.TotalTokens)
+				result.tokens = &tokens
+			}
+
+			resultChan <- result
+		}(v.Messages, neuralRequest.Schema)
+	}
+
+	fmt.Println(" отладка 5")
+
+	// Закрываем канал после завершения всех горутин
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	fmt.Println(" отладка 6")
+
+	// Собираем результаты
+	expectedResults := len(*neuralRequest.Items)
+	receivedResults := 0
+
+	for result := range resultChan {
+		receivedResults++
+		fmt.Printf(" отладка: получен результат %d из %d\n", receivedResults, expectedResults)
+
+		if result.err != nil {
+			log.Error("ошибка в результате: ", sl.Err(result.err))
+			continue
+		}
+
+		fmt.Println(" отладка 7")
+
+		if result.groupReport != nil {
+			groupReports = append(groupReports, *result.groupReport)
+		}
+
+		fmt.Println(" отладка 8")
+
+		if result.cost != nil {
+			allRubs += *result.cost
+		}
+
+		fmt.Println(" отладка 9")
+
+		if result.tokens != nil {
+			allTokens += *result.tokens
+		}
+
+		// Выходим из цикла, когда получили все ожидаемые результаты
+		if receivedResults >= expectedResults {
+			break
+		}
+	}
+
+	fmt.Println(" отладка 10")
+
+	inspectionTime := time.Since(timeStart)
+
+	//llmAnalyzeResult, err := tz.llmClient.Analyze(markdownResponse.Markdown)
+
+	//if err != nil {
+	//	log.Error("Error: \n", err)
+	//}
+	//if llmAnalyzeResult == nil {
+	//	//tz.tgClient.SendMessage("ИСПРАВИТЬ: от llm пришёл пустой ответ, но код ответа не ошибочный.")
+	//
+	//	log.Info("пустой ответ от llm")
+	//	return "", "", "", &([]OutInvalidError{}), &([]OutMissingError{}), "", ErrLlmAnalyzeFile
+	//}
+	//if llmAnalyzeResult.Reports == nil || len(llmAnalyzeResult.Reports) == 0 {
+	//	//tz.tgClient.SendMessage("МБ ЧТО-ТО НЕ ТАК: от llm ответ без отчетов, но код ответа не ошибочный")
+	//
+	//	log.Info("0 отчетов в ответе от llm")
+	//	return "", "", "", &([]OutInvalidError{}), &([]OutMissingError{}), "", ErrLlmAnalyzeFile
+	//}
+
+	outInvalidErrors, outMissingErrors, outHtml := HandleErrors(&groupReports, &markdownResponse.Mappings)
 
 	LogOutInvalidErrors(log, outInvalidErrors, "После сортировки")
 
@@ -166,7 +307,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	log.Info("оригинальный файл успешно сохранён в S3", slog.String("file_id", originalFileID))
 
 	// Сохраняем данные в БД
-	err = tz.saveTechnicalSpecificationData(ctx, filename, userID, outHtml, *css, originalFileID, outInvalidErrors, outMissingErrors, log)
+	err = tz.saveTechnicalSpecificationData(ctx, filename, userID, outHtml, *css, originalFileID, outInvalidErrors, outMissingErrors, allRubs, allTokens, inspectionTime, log)
 	if err != nil {
 		log.Error("ошибка сохранения данных в БД: ", sl.Err(err))
 		// Не возвращаем ошибку, чтобы не блокировать ответ пользователю
@@ -185,6 +326,9 @@ func (tz *Tz) saveTechnicalSpecificationData(
 	originalFileID string,
 	invalidErrors *[]OutInvalidError,
 	missingErrors *[]OutMissingError,
+	allRubs float64,
+	allTokens int64,
+	inspectionTime time.Duration,
 	log *slog.Logger,
 ) error {
 	now := time.Now()
@@ -218,6 +362,9 @@ func (tz *Tz) saveTechnicalSpecificationData(
 		OutHTML:                  outHTML,
 		CSS:                      css,
 		CheckedFileID:            "", // Пока пустое
+		AllRubs:                  allRubs,
+		AllTokens:                allTokens,
+		InspectionTime:           inspectionTime,
 	}
 
 	version, err := tz.repo.CreateVersion(ctx, versionReq)
@@ -232,19 +379,19 @@ func (tz *Tz) saveTechnicalSpecificationData(
 		invalidErrorData := make([]repository.InvalidErrorData, 0, len(*invalidErrors))
 		for i, err := range *invalidErrors {
 			invalidErrorData = append(invalidErrorData, repository.InvalidErrorData{
-				ID:          uuid.New(),
-				ErrorID:     int(err.Id),
-				ErrorIDStr:  err.IdStr,
-				GroupID:     err.GroupID,
-				ErrorCode:   err.ErrorCode,
-				Quote:       err.Quote,
-				Analysis:    err.Analysis,
-				Critique:    err.Critique,
+				ID:           uuid.New(),
+				ErrorID:      int(err.Id),
+				ErrorIDStr:   err.IdStr,
+				GroupID:      err.GroupID,
+				ErrorCode:    err.ErrorCode,
+				Quote:        err.Quote,
+				Analysis:     err.Analysis,
+				Critique:     err.Critique,
 				Verification: err.Verification,
 				SuggestedFix: err.SuggestedFix,
-				Rationale:   err.Rationale,
-				OrderNumber: i, // Порядковый номер (индекс в массиве)
-				CreatedAt:   now,
+				Rationale:    err.Rationale,
+				OrderNumber:  i, // Порядковый номер (индекс в массиве)
+				CreatedAt:    now,
 			})
 		}
 
@@ -317,6 +464,49 @@ func (tz *Tz) GetTechnicalSpecificationVersions(ctx context.Context, userID uuid
 	return versions, nil
 }
 
+func (tz *Tz) GetAllVersions(ctx context.Context) ([]*repository.VersionWithErrorCounts, error) {
+	const op = "Tz.GetAllVersions"
+
+	log := tz.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("getting all versions with error counts")
+
+	versions, err := tz.repo.GetAllVersions(ctx)
+	if err != nil {
+		log.Error("failed to get all versions: ", sl.Err(err))
+		return nil, fmt.Errorf("failed to get all versions: %w", err)
+	}
+
+	log.Info("all versions retrieved successfully", slog.Int("count", len(versions)))
+	return versions, nil
+}
+
+func (tz *Tz) GetVersionStatistics(ctx context.Context) (*repository.VersionStatistics, error) {
+	const op = "Tz.GetVersionStatistics"
+
+	log := tz.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("getting version statistics")
+
+	stats, err := tz.repo.GetVersionStatistics(ctx)
+	if err != nil {
+		log.Error("failed to get version statistics: ", sl.Err(err))
+		return nil, fmt.Errorf("failed to get version statistics: %w", err)
+	}
+
+	log.Info("version statistics retrieved successfully",
+		slog.Int64("total_versions", stats.TotalVersions),
+		slog.Any("total_tokens", stats.TotalTokens),
+		slog.Any("total_rubs", stats.TotalRubs),
+		slog.Any("average_inspection_time", stats.AverageInspectionTime))
+
+	return stats, nil
+}
+
 func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, string, string, *[]OutInvalidError, *[]OutMissingError, string, error) {
 	const op = "Tz.GetVersion"
 
@@ -366,9 +556,9 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, stri
 		}
 	}
 
-	log.Info("version with errors retrieved successfully", 
+	log.Info("version with errors retrieved successfully",
 		slog.Int("invalid_errors_count", len(outInvalidErrors)),
 		slog.Int("missing_errors_count", len(outMissingErrors)))
-	
+
 	return version.OutHTML, version.CSS, version.CheckedFileID, &outInvalidErrors, &outMissingErrors, version.CheckedFileID, nil
 }

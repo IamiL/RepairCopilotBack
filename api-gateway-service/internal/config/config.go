@@ -7,6 +7,7 @@ import (
 	httpapp "repairCopilotBot/api-gateway-service/internal/app/http"
 	"repairCopilotBot/api-gateway-service/internal/pkg/tg"
 	"repairCopilotBot/api-gateway-service/internal/repository"
+	"repairCopilotBot/api-gateway-service/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/client"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -19,6 +20,7 @@ type Config struct {
 	Tg           tg_client.Config       `yaml:"tg_client"`
 	TzBotService client.Config          `yaml:"tz_bot_service"`
 	Redis        repository.RedisConfig `yaml:"redis"`
+	Postgres     postgres.Config        `yaml:"postgres"`
 	UserService  UserServiceConfig      `yaml:"user_service"`
 }
 

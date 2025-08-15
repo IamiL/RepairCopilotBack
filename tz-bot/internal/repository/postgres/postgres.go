@@ -141,16 +141,16 @@ func (s *Storage) DeleteTechnicalSpecification(ctx context.Context, id uuid.UUID
 // Version operations
 func (s *Storage) CreateVersion(ctx context.Context, req *repo.CreateVersionRequest) (*repo.Version, error) {
 	query := `
-		INSERT INTO versions (id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id`
+		INSERT INTO versions (id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time`
 
 	var version repo.Version
 	err := s.db.QueryRow(ctx, query, req.ID, req.TechnicalSpecificationID, req.VersionNumber, req.CreatedAt, req.UpdatedAt,
-		req.OriginalFileID, req.OutHTML, req.CSS, req.CheckedFileID).
+		req.OriginalFileID, req.OutHTML, req.CSS, req.CheckedFileID, &req.AllRubs, &req.AllTokens, int64(req.InspectionTime)).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID)
+			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create version: %w", err)
 	}
@@ -159,13 +159,13 @@ func (s *Storage) CreateVersion(ctx context.Context, req *repo.CreateVersionRequ
 }
 
 func (s *Storage) GetVersion(ctx context.Context, id uuid.UUID) (*repo.Version, error) {
-	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id FROM versions WHERE id = $1`
+	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time FROM versions WHERE id = $1`
 
 	var version repo.Version
 	err := s.db.QueryRow(ctx, query, id).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID)
+			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repo.ErrVersionNotFound
@@ -199,7 +199,7 @@ func (s *Storage) GetVersionWithErrors(ctx context.Context, versionID uuid.UUID)
 }
 
 func (s *Storage) GetVersionsByTechnicalSpecificationID(ctx context.Context, technicalSpecificationID uuid.UUID) ([]*repo.Version, error) {
-	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id FROM versions WHERE technical_specification_id = $1 ORDER BY version_number DESC`
+	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time FROM versions WHERE technical_specification_id = $1 ORDER BY version_number DESC`
 
 	rows, err := s.db.Query(ctx, query, technicalSpecificationID)
 	if err != nil {
@@ -212,7 +212,7 @@ func (s *Storage) GetVersionsByTechnicalSpecificationID(ctx context.Context, tec
 		var version repo.Version
 		err := rows.Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID)
+			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan version: %w", err)
 		}
@@ -223,13 +223,13 @@ func (s *Storage) GetVersionsByTechnicalSpecificationID(ctx context.Context, tec
 }
 
 func (s *Storage) GetLatestVersion(ctx context.Context, technicalSpecificationID uuid.UUID) (*repo.Version, error) {
-	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id FROM versions WHERE technical_specification_id = $1 ORDER BY version_number DESC LIMIT 1`
+	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time FROM versions WHERE technical_specification_id = $1 ORDER BY version_number DESC LIMIT 1`
 
 	var version repo.Version
 	err := s.db.QueryRow(ctx, query, technicalSpecificationID).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID)
+			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repo.ErrVersionNotFound
@@ -267,6 +267,103 @@ func (s *Storage) GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]
 	}
 
 	return versions, nil
+}
+
+func (s *Storage) GetAllVersions(ctx context.Context) ([]*repo.VersionWithErrorCounts, error) {
+	query := `
+		SELECT 
+			v.id, 
+			v.technical_specification_id,
+			ts.name,
+			ts.user_id,
+			v.version_number, 
+			v.created_at,
+			v.updated_at,
+			v.original_file_id,
+			v.out_html,
+			v.css,
+			v.checked_file_id,
+			v.all_rubs,
+			v.all_tokens,
+			v.inspection_time,
+			COALESCE(ie_count.count, 0) as invalid_error_count,
+			COALESCE(me_count.count, 0) as missing_error_count
+		FROM versions v
+		JOIN technical_specifications ts ON v.technical_specification_id = ts.id
+		LEFT JOIN (
+			SELECT version_id, COUNT(*) as count 
+			FROM invalid_errors 
+			GROUP BY version_id
+		) ie_count ON v.id = ie_count.version_id
+		LEFT JOIN (
+			SELECT version_id, COUNT(*) as count 
+			FROM missing_errors 
+			GROUP BY version_id
+		) me_count ON v.id = me_count.version_id
+		ORDER BY v.created_at DESC
+	`
+
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all versions: %w", err)
+	}
+	defer rows.Close()
+
+	var versions []*repo.VersionWithErrorCounts
+	for rows.Next() {
+		var version repo.VersionWithErrorCounts
+		err := rows.Scan(
+			&version.ID, 
+			&version.TechnicalSpecificationID,
+			&version.TechnicalSpecificationName,
+			&version.UserID,
+			&version.VersionNumber, 
+			&version.CreatedAt,
+			&version.UpdatedAt,
+			&version.OriginalFileID,
+			&version.OutHTML,
+			&version.CSS,
+			&version.CheckedFileID,
+			&version.AllRubs,
+			&version.AllTokens,
+			&version.InspectionTime,
+			&version.InvalidErrorCount,
+			&version.MissingErrorCount,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan version with error counts: %w", err)
+		}
+		versions = append(versions, &version)
+	}
+
+	return versions, nil
+}
+
+func (s *Storage) GetVersionStatistics(ctx context.Context) (*repo.VersionStatistics, error) {
+	query := `
+		SELECT 
+			COUNT(*) as total_versions,
+			SUM(all_tokens) as total_tokens,
+			SUM(all_rubs) as total_rubs,
+			AVG(inspection_time) as average_inspection_time
+		FROM versions
+		WHERE all_tokens IS NOT NULL 
+		   OR all_rubs IS NOT NULL 
+		   OR inspection_time IS NOT NULL
+	`
+
+	var stats repo.VersionStatistics
+	err := s.db.QueryRow(ctx, query).Scan(
+		&stats.TotalVersions,
+		&stats.TotalTokens,
+		&stats.TotalRubs,
+		&stats.AverageInspectionTime,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get version statistics: %w", err)
+	}
+
+	return &stats, nil
 }
 
 func (s *Storage) UpdateVersion(ctx context.Context, id uuid.UUID, outHTML, css, checkedFileID string, updatedAt time.Time) error {
@@ -428,4 +525,139 @@ func (s *Storage) DeleteMissingErrorsByVersionID(ctx context.Context, versionID 
 	}
 
 	return nil
+}
+
+// CreateErrorFeedback creates new feedback for an error
+func (s *Storage) CreateErrorFeedback(ctx context.Context, req *repo.CreateErrorFeedbackRequest) (*repo.ErrorFeedback, error) {
+	query := `
+		INSERT INTO error_feedback (id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at`
+
+	var feedback repo.ErrorFeedback
+	err := s.db.QueryRow(ctx, query, req.ID, req.VersionID, req.ErrorID, req.ErrorType, req.IsGoodError, req.Comment, req.CreatedAt, req.UpdatedAt).
+		Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType, &feedback.IsGoodError, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create error feedback: %w", err)
+	}
+
+	return &feedback, nil
+}
+
+func (s *Storage) GetErrorFeedback(ctx context.Context, id uuid.UUID) (*repo.ErrorFeedback, error) {
+	query := `SELECT id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at FROM error_feedback WHERE id = $1`
+
+	var feedback repo.ErrorFeedback
+	err := s.db.QueryRow(ctx, query, id).
+		Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType, &feedback.IsGoodError, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repo.ErrErrorFeedbackNotFound
+		}
+		return nil, fmt.Errorf("failed to get error feedback: %w", err)
+	}
+
+	return &feedback, nil
+}
+
+func (s *Storage) GetErrorFeedbackByErrorID(ctx context.Context, errorID uuid.UUID) (*repo.ErrorFeedback, error) {
+	query := `SELECT id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at FROM error_feedback WHERE error_id = $1`
+
+	var feedback repo.ErrorFeedback
+	err := s.db.QueryRow(ctx, query, errorID).
+		Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType, &feedback.IsGoodError, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repo.ErrErrorFeedbackNotFound
+		}
+		return nil, fmt.Errorf("failed to get error feedback by error ID: %w", err)
+	}
+
+	return &feedback, nil
+}
+
+func (s *Storage) UpdateErrorFeedback(ctx context.Context, id uuid.UUID, isGoodError bool, comment *string, updatedAt time.Time) error {
+	query := `UPDATE error_feedback SET is_good_error = $1, comment = $2, updated_at = $3 WHERE id = $4`
+
+	result, err := s.db.Exec(ctx, query, isGoodError, comment, updatedAt, id)
+	if err != nil {
+		return fmt.Errorf("failed to update error feedback: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrErrorFeedbackNotFound
+	}
+
+	return nil
+}
+
+func (s *Storage) GetErrorFeedbacksByVersionID(ctx context.Context, versionID uuid.UUID) ([]*repo.ErrorFeedback, error) {
+	query := `SELECT id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at FROM error_feedback WHERE version_id = $1 ORDER BY created_at DESC`
+
+	rows, err := s.db.Query(ctx, query, versionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get error feedbacks by version ID: %w", err)
+	}
+	defer rows.Close()
+
+	var feedbacks []*repo.ErrorFeedback
+	for rows.Next() {
+		var feedback repo.ErrorFeedback
+		err := rows.Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType,
+			&feedback.IsGoodError, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan error feedback: %w", err)
+		}
+		feedbacks = append(feedbacks, &feedback)
+	}
+
+	return feedbacks, nil
+}
+
+func (s *Storage) DeleteErrorFeedback(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM error_feedback WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete error feedback: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrErrorFeedbackNotFound
+	}
+
+	return nil
+}
+
+// LLMCacheRepository implementation
+
+func (s *Storage) GetCachedResponse(ctx context.Context, messagesHash string) (*repo.LLMCache, error) {
+	query := `SELECT id, messages_hash, response_data, created_at, updated_at FROM llm_cache WHERE messages_hash = $1`
+
+	var cache repo.LLMCache
+	err := s.db.QueryRow(ctx, query, messagesHash).Scan(
+		&cache.ID, &cache.MessagesHash, &cache.ResponseData, &cache.CreatedAt, &cache.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repo.ErrLLMCacheNotFound
+		}
+		return nil, fmt.Errorf("failed to get cached response: %w", err)
+	}
+
+	return &cache, nil
+}
+
+func (s *Storage) SaveCachedResponse(ctx context.Context, req *repo.CreateLLMCacheRequest) (*repo.LLMCache, error) {
+	id := uuid.New()
+	query := `INSERT INTO llm_cache (id, messages_hash, response_data, created_at, updated_at) 
+			  VALUES ($1, $2, $3, $4, $5) RETURNING id, messages_hash, response_data, created_at, updated_at`
+
+	var cache repo.LLMCache
+	err := s.db.QueryRow(ctx, query, id, req.MessagesHash, req.ResponseData, req.CreatedAt, req.UpdatedAt).Scan(
+		&cache.ID, &cache.MessagesHash, &cache.ResponseData, &cache.CreatedAt, &cache.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save cached response: %w", err)
+	}
+
+	return &cache, nil
 }

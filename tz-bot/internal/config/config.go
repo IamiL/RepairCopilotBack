@@ -7,6 +7,7 @@ import (
 	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
+	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
@@ -20,6 +21,7 @@ type Config struct {
 	App             app.Config                     `yaml:"app"`
 	GRPC            grpcapp.Config                 `yaml:"grpc_server"`
 	Llm             tz_llm_client.Config           `yaml:"llm_client"`
+	PromtBuilder    promt_builder.Config           `yaml:"promt_builder"`
 	Tg              tg_client.Config               `yaml:"tg_client"`
 	WordParser      word_parser_client.Config      `yaml:"word_parser_client"`
 	MarkdownService markdown_service_client.Config `yaml:"markdown_service_client"`

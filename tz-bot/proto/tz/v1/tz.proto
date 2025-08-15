@@ -8,6 +8,8 @@ option go_package = "repairCopilotBot/tz-bot/proto/tz/v1;tzv1";
 service TzService {
   rpc CheckTz(CheckTzRequest) returns (CheckTzResponse);
   rpc GetTechnicalSpecificationVersions(GetTechnicalSpecificationVersionsRequest) returns (GetTechnicalSpecificationVersionsResponse);
+  rpc GetAllVersions(GetAllVersionsRequest) returns (GetAllVersionsResponse);
+  rpc GetVersionStatistics(GetVersionStatisticsRequest) returns (GetVersionStatisticsResponse);
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
 }
 
@@ -82,4 +84,46 @@ message GetVersionResponse {
   repeated OutInvalidError invalid_errors = 4;
   repeated OutMissingError missing_errors = 5;
   string fileId = 6;
+}
+
+message GetAllVersionsRequest {
+  // No parameters needed - returns all versions
+}
+
+message GetAllVersionsResponse {
+  repeated VersionWithErrorCounts versions = 1;
+}
+
+message VersionWithErrorCounts {
+  string version_id = 1;
+  string technical_specification_id = 2;
+  string technical_specification_name = 3;
+  string user_id = 4;
+  int32 version_number = 5;
+  string created_at = 6;
+  string updated_at = 7;
+  string original_file_id = 8;
+  string out_html = 9;
+  string css = 10;
+  string checked_file_id = 11;
+  optional double all_rubs = 12;
+  optional int64 all_tokens = 13;
+  optional int64 inspection_time_nanoseconds = 14;
+  int32 invalid_error_count = 15;
+  int32 missing_error_count = 16;
+}
+
+message GetVersionStatisticsRequest {
+  // No parameters needed - returns statistics for all versions
+}
+
+message GetVersionStatisticsResponse {
+  VersionStatistics statistics = 1;
+}
+
+message VersionStatistics {
+  int64 total_versions = 1;
+  optional int64 total_tokens = 2;
+  optional double total_rubs = 3;
+  optional int64 average_inspection_time_nanoseconds = 4;
 }

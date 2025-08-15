@@ -33,27 +33,28 @@ func New(
 	tzBotClient *client.Client,
 	userServiceClient *userserviceclient.UserClient,
 	sessionRepo *repository.SessionRepository,
+	actionLogRepo repository.ActionLogRepository,
 ) *App {
 	router := http.NewServeMux()
 
 	router.HandleFunc(
 		"POST /api/tz",
-		handler.NewTzHandler(log, tzBotClient, sessionRepo),
+		handler.NewTzHandler(log, tzBotClient, sessionRepo, userServiceClient, actionLogRepo),
 	)
 
 	router.HandleFunc(
 		"POST /api/users/login",
-		handler.LoginHandler(log, userServiceClient, sessionRepo, tzBotClient),
+		handler.LoginHandler(log, userServiceClient, sessionRepo, tzBotClient, actionLogRepo),
 	)
 
 	router.HandleFunc(
 		"POST /api/register",
-		handler.RegisterHandler(log, userServiceClient, sessionRepo),
+		handler.RegisterHandler(log, userServiceClient, sessionRepo, actionLogRepo),
 	)
 
 	router.HandleFunc(
 		"GET /api/me",
-		handler.MeHandler(log, sessionRepo, tzBotClient),
+		handler.MeHandler(log, sessionRepo, tzBotClient, userServiceClient, actionLogRepo),
 	)
 
 	router.HandleFunc(
@@ -69,6 +70,16 @@ func New(
 	router.HandleFunc(
 		"GET /api/users/{user_id}/info",
 		handler.GetUserInfoHandler(log, sessionRepo, tzBotClient, userServiceClient),
+	)
+
+	router.HandleFunc(
+		"GET /api/action-logs",
+		handler.GetActionLogsHandler(log, actionLogRepo, sessionRepo),
+	)
+
+	router.HandleFunc(
+		"GET /api/admin/dashboard",
+		handler.GetAdminDashboardHandler(log, userServiceClient, tzBotClient, sessionRepo, actionLogRepo),
 	)
 
 	routerWithCorsHandler := corsMiddleware(log, router)

@@ -66,6 +66,32 @@ type TechnicalSpecificationVersion struct {
 	CreatedAt                 string
 }
 
+type VersionWithErrorCounts struct {
+	VersionId                     string
+	TechnicalSpecificationId      string
+	TechnicalSpecificationName    string
+	UserId                        string
+	VersionNumber                 int32
+	CreatedAt                     string
+	UpdatedAt                     string
+	OriginalFileId                string
+	OutHtml                       string
+	Css                           string
+	CheckedFileId                 string
+	AllRubs                       *float64
+	AllTokens                     *int64
+	InspectionTimeNanoseconds     *int64
+	InvalidErrorCount             int32
+	MissingErrorCount             int32
+}
+
+type VersionStatistics struct {
+	TotalVersions                    int64
+	TotalTokens                      *int64
+	TotalRubs                        *float64
+	AverageInspectionTimeNanoseconds *int64
+}
+
 func New(ctx context.Context, addr string) (*Client, error) {
 	const op = "tz_client.New"
 
@@ -267,6 +293,55 @@ func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*CheckTzR
 		FileId:        resp.FileId,
 		Css:           resp.Css,
 		DocId:         resp.DocId,
+	}, nil
+}
+
+func (c *Client) GetAllVersions(ctx context.Context) ([]VersionWithErrorCounts, error) {
+	const op = "tz_client.GetAllVersions"
+
+	resp, err := c.api.GetAllVersions(ctx, &tzv1.GetAllVersionsRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	versions := make([]VersionWithErrorCounts, len(resp.Versions))
+	for i, version := range resp.Versions {
+		versions[i] = VersionWithErrorCounts{
+			VersionId:                     version.VersionId,
+			TechnicalSpecificationId:      version.TechnicalSpecificationId,
+			TechnicalSpecificationName:    version.TechnicalSpecificationName,
+			UserId:                        version.UserId,
+			VersionNumber:                 version.VersionNumber,
+			CreatedAt:                     version.CreatedAt,
+			UpdatedAt:                     version.UpdatedAt,
+			OriginalFileId:                version.OriginalFileId,
+			OutHtml:                       version.OutHtml,
+			Css:                           version.Css,
+			CheckedFileId:                 version.CheckedFileId,
+			AllRubs:                       version.AllRubs,
+			AllTokens:                     version.AllTokens,
+			InspectionTimeNanoseconds:     version.InspectionTimeNanoseconds,
+			InvalidErrorCount:             version.InvalidErrorCount,
+			MissingErrorCount:             version.MissingErrorCount,
+		}
+	}
+
+	return versions, nil
+}
+
+func (c *Client) GetVersionStatistics(ctx context.Context) (*VersionStatistics, error) {
+	const op = "tz_client.GetVersionStatistics"
+
+	resp, err := c.api.GetVersionStatistics(ctx, &tzv1.GetVersionStatisticsRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return &VersionStatistics{
+		TotalVersions:                    resp.Statistics.TotalVersions,
+		TotalTokens:                      resp.Statistics.TotalTokens,
+		TotalRubs:                        resp.Statistics.TotalRubs,
+		AverageInspectionTimeNanoseconds: resp.Statistics.AverageInspectionTimeNanoseconds,
 	}, nil
 }
 
