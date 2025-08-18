@@ -345,6 +345,24 @@ func (c *Client) GetVersionStatistics(ctx context.Context) (*VersionStatistics, 
 	}, nil
 }
 
+func (c *Client) NewFeedbackError(ctx context.Context, versionID, errorID, errorType string, feedbackType uint32, comment, userID string) error {
+	const op = "tz_client.NewFeedbackError"
+
+	_, err := c.api.NewFeedbackError(ctx, &tzv1.NewFeedbackErrorRequest{
+		VersionId:    versionID,
+		ErrorId:      errorID,
+		ErrorType:    errorType,
+		FeedbackType: feedbackType,
+		Comment:      comment,
+		UserId:       userID,
+	})
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func (c *Client) Close() error {
 	return c.cc.Close()
 }

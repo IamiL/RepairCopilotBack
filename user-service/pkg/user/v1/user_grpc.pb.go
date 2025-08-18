@@ -19,12 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	UserService_GetUserInfo_FullMethodName        = "/user.v1.UserService/GetUserInfo"
 	UserService_RegisterUser_FullMethodName       = "/user.v1.UserService/RegisterUser"
 	UserService_Login_FullMethodName              = "/user.v1.UserService/Login"
 	UserService_GetLoginById_FullMethodName       = "/user.v1.UserService/GetLoginById"
 	UserService_GetUserByLogin_FullMethodName     = "/user.v1.UserService/GetUserByLogin"
 	UserService_GetAllUsers_FullMethodName        = "/user.v1.UserService/GetAllUsers"
-	UserService_GetUserInfo_FullMethodName        = "/user.v1.UserService/GetUserInfo"
 	UserService_GetUserDetailsById_FullMethodName = "/user.v1.UserService/GetUserDetailsById"
 )
 
@@ -34,6 +34,8 @@ const (
 //
 // UserService определяет сервис для работы с пользователями
 type UserServiceClient interface {
+	// GetUserInfo получает информацию о пользователе по ID
+	GetUserInfo(ctx context.Context, in *GetUserInfoRequest, opts ...grpc.CallOption) (*GetUserInfoResponse, error)
 	// RegisterUser регистрирует нового пользователя
 	RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error)
 	// Login выполняет аутентификацию пользователя
@@ -44,8 +46,6 @@ type UserServiceClient interface {
 	GetUserByLogin(ctx context.Context, in *GetUserByLoginRequest, opts ...grpc.CallOption) (*GetUserByLoginResponse, error)
 	// GetAllUsers получает список всех пользователей
 	GetAllUsers(ctx context.Context, in *GetAllUsersRequest, opts ...grpc.CallOption) (*GetAllUsersResponse, error)
-	// GetUserInfo получает информацию о пользователе по ID
-	GetUserInfo(ctx context.Context, in *GetUserInfoRequest, opts ...grpc.CallOption) (*GetUserInfoResponse, error)
 	// GetUserDetailsById получает все поля пользователя по ID (включая updated_at)
 	GetUserDetailsById(ctx context.Context, in *GetUserDetailsByIdRequest, opts ...grpc.CallOption) (*GetUserDetailsByIdResponse, error)
 }
@@ -56,6 +56,16 @@ type userServiceClient struct {
 
 func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 	return &userServiceClient{cc}
+}
+
+func (c *userServiceClient) GetUserInfo(ctx context.Context, in *GetUserInfoRequest, opts ...grpc.CallOption) (*GetUserInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserInfoResponse)
+	err := c.cc.Invoke(ctx, UserService_GetUserInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *userServiceClient) RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error) {
@@ -108,16 +118,6 @@ func (c *userServiceClient) GetAllUsers(ctx context.Context, in *GetAllUsersRequ
 	return out, nil
 }
 
-func (c *userServiceClient) GetUserInfo(ctx context.Context, in *GetUserInfoRequest, opts ...grpc.CallOption) (*GetUserInfoResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetUserInfoResponse)
-	err := c.cc.Invoke(ctx, UserService_GetUserInfo_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *userServiceClient) GetUserDetailsById(ctx context.Context, in *GetUserDetailsByIdRequest, opts ...grpc.CallOption) (*GetUserDetailsByIdResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetUserDetailsByIdResponse)
@@ -134,6 +134,8 @@ func (c *userServiceClient) GetUserDetailsById(ctx context.Context, in *GetUserD
 //
 // UserService определяет сервис для работы с пользователями
 type UserServiceServer interface {
+	// GetUserInfo получает информацию о пользователе по ID
+	GetUserInfo(context.Context, *GetUserInfoRequest) (*GetUserInfoResponse, error)
 	// RegisterUser регистрирует нового пользователя
 	RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error)
 	// Login выполняет аутентификацию пользователя
@@ -144,8 +146,6 @@ type UserServiceServer interface {
 	GetUserByLogin(context.Context, *GetUserByLoginRequest) (*GetUserByLoginResponse, error)
 	// GetAllUsers получает список всех пользователей
 	GetAllUsers(context.Context, *GetAllUsersRequest) (*GetAllUsersResponse, error)
-	// GetUserInfo получает информацию о пользователе по ID
-	GetUserInfo(context.Context, *GetUserInfoRequest) (*GetUserInfoResponse, error)
 	// GetUserDetailsById получает все поля пользователя по ID (включая updated_at)
 	GetUserDetailsById(context.Context, *GetUserDetailsByIdRequest) (*GetUserDetailsByIdResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
@@ -158,6 +158,9 @@ type UserServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUserServiceServer struct{}
 
+func (UnimplementedUserServiceServer) GetUserInfo(context.Context, *GetUserInfoRequest) (*GetUserInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
+}
 func (UnimplementedUserServiceServer) RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterUser not implemented")
 }
@@ -172,9 +175,6 @@ func (UnimplementedUserServiceServer) GetUserByLogin(context.Context, *GetUserBy
 }
 func (UnimplementedUserServiceServer) GetAllUsers(context.Context, *GetAllUsersRequest) (*GetAllUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllUsers not implemented")
-}
-func (UnimplementedUserServiceServer) GetUserInfo(context.Context, *GetUserInfoRequest) (*GetUserInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
 }
 func (UnimplementedUserServiceServer) GetUserDetailsById(context.Context, *GetUserDetailsByIdRequest) (*GetUserDetailsByIdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserDetailsById not implemented")
@@ -198,6 +198,24 @@ func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&UserService_ServiceDesc, srv)
+}
+
+func _UserService_GetUserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetUserInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserInfo(ctx, req.(*GetUserInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _UserService_RegisterUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -290,24 +308,6 @@ func _UserService_GetAllUsers_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_GetUserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUserInfoRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServiceServer).GetUserInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: UserService_GetUserInfo_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).GetUserInfo(ctx, req.(*GetUserInfoRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _UserService_GetUserDetailsById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUserDetailsByIdRequest)
 	if err := dec(in); err != nil {
@@ -334,6 +334,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*UserServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetUserInfo",
+			Handler:    _UserService_GetUserInfo_Handler,
+		},
+		{
 			MethodName: "RegisterUser",
 			Handler:    _UserService_RegisterUser_Handler,
 		},
@@ -352,10 +356,6 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAllUsers",
 			Handler:    _UserService_GetAllUsers_Handler,
-		},
-		{
-			MethodName: "GetUserInfo",
-			Handler:    _UserService_GetUserInfo_Handler,
 		},
 		{
 			MethodName: "GetUserDetailsById",

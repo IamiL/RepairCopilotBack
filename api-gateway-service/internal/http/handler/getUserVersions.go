@@ -80,7 +80,7 @@ func GetUserInfoHandler(
 		log = log.With(slog.String("target_user_id", userIDStr))
 
 		// Получаем информацию о пользователе из user-service
-		userInfo, err := userServiceClient.GetUserInfo(r.Context(), userIDStr)
+		userInfo, err := userServiceClient.GetUserInfo(r.Context(), userID)
 		if err != nil {
 			log.Error("failed to get user info", slog.String("error", err.Error()))
 			http.Error(w, "Failed to get user info", http.StatusInternalServerError)
@@ -100,19 +100,19 @@ func GetUserInfoHandler(
 		versions = make([]TechnicalSpecificationVersion, len(tzVersions))
 		for i, tzVersion := range tzVersions {
 			versions[i] = TechnicalSpecificationVersion{
-				VersionId:                 tzVersion.VersionId,
+				VersionId:                  tzVersion.VersionId,
 				TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
-				VersionNumber:             tzVersion.VersionNumber,
-				CreatedAt:                 tzVersion.CreatedAt,
+				VersionNumber:              tzVersion.VersionNumber,
+				CreatedAt:                  tzVersion.CreatedAt,
 			}
 		}
 
 		response := GetUserInfoResponse{
-			UserID:    userInfo.UserID,
+			UserID:    userIDStr,
 			Login:     userInfo.Login,
 			IsAdmin1:  userInfo.IsAdmin1,
 			IsAdmin2:  userInfo.IsAdmin2,
-			CreatedAt: userInfo.CreatedAt,
+			CreatedAt: userInfo.RegisteredAt.String(),
 			Versions:  versions,
 		}
 

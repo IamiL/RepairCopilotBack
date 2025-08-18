@@ -5,12 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand"
+	"net/smtp"
+	"repairCopilotBot/user-service/internal/domain/models"
 	"repairCopilotBot/user-service/internal/pkg/logger/sl"
 	"repairCopilotBot/user-service/internal/repository"
+	"strconv"
+	"time"
+
+	postgresUser "repairCopilotBot/user-service/internal/repository/postgres/user"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	postgresUser "repairCopilotBot/user-service/internal/repository/postgres/user"
 )
 
 type User struct {
@@ -27,23 +33,34 @@ var (
 type UserSaver interface {
 	SaveUser(
 		ctx context.Context,
+		uid uuid.UUID,
 		login string,
 		passHash []byte,
-		name string,
-		surname string,
+		firstName string,
+		lastName string,
 		email string,
 		isAdmin1 bool,
 		isAdmin2 bool,
-		uid uuid.UUID,
+		createdAt time.Time,
+		updatedAt time.Time,
+		lastVisitAt time.Time,
+		inspectionsPerDay int,
+		inspectionsForToday int,
+		inspectionsCount int,
+		errorFeedbacksCount int,
+		isConfirmed bool,
+		confirmationCode string,
 	) error
 }
 
 type UserProvider interface {
-	User(ctx context.Context, login string) (uuid.UUID, []byte, string, string, string, bool, bool, error)
+	User(ctx context.Context, userID uuid.UUID) (*models.User, error)
 	LoginById(ctx context.Context, uid string) (string, error)
 	GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error)
 	GetUserInfo(ctx context.Context, userID string) (*postgresUser.UserDetailedInfo, error)
 	GetUserDetailsById(ctx context.Context, userID string) (*postgresUser.UserFullDetails, error)
+	GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID, error)
+	GetUserAuthDataByLogin(ctx context.Context, login string) (*postgresUser.UserAuthData, error)
 }
 
 func New(
@@ -58,20 +75,21 @@ func New(
 	}
 }
 
-func (u *User) RegisterNewUser(ctx context.Context, login string, pass string, name string, surname string, email string) (uuid.UUID, error) {
+func (u *User) RegisterNewUser(ctx context.Context, login string, pass string, firstName string, lastName string, email string) (uuid.UUID, error) {
 	const op = "User.RegisterNewUser"
 
 	log := u.log.With(
 		slog.String("op", op),
 		slog.String("login", login),
+		slog.String("firstName", firstName),
+		slog.String("lastName", lastName),
 	)
 
 	log.Info("registering user")
 
-	_, _, _, _, _, _, _, err := u.usrProvider.User(ctx, login)
+	_, err := u.usrProvider.GetUserIDByLogin(ctx, login)
 	if err == nil {
-
-		u.log.Error("user already exists", sl.Err(err))
+		u.log.Error("user already exists")
 
 		return uuid.Nil, ErrUserAlreadyExists
 	}
@@ -88,12 +106,44 @@ func (u *User) RegisterNewUser(ctx context.Context, login string, pass string, n
 		log.Error("failed to generate uuid", sl.Err(err))
 	}
 
-	err = u.usrSaver.SaveUser(ctx, login, passHash, name, surname, email, false, false, uid)
+	// Генерируем 6-значный код подтверждения
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	confirmationCode := strconv.Itoa(r.Intn(900000) + 100000)
+
+	err = u.usrSaver.SaveUser(
+		ctx,
+		uid,
+		login,
+		passHash,
+		firstName,
+		lastName,
+		email,
+		false,
+		false,
+		time.Now(),
+		time.Now(),
+		time.Now(),
+		3,
+		0,
+		0,
+		0,
+		false,
+		confirmationCode,
+	)
 	if err != nil {
 		log.Error("failed to save user", sl.Err(err))
 
 		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
 	}
+
+	// Отправляем код подтверждения на почту
+	err = u.sendConfirmationEmail(email, confirmationCode)
+	if err != nil {
+		log.Error("failed to send confirmation email", sl.Err(err))
+		// Не возвращаем ошибку, так как пользователь уже создан
+	}
+
+	log.Info("user registered successfully, confirmation code sent")
 
 	return uid, nil
 }
@@ -108,7 +158,7 @@ func (u *User) Login(ctx context.Context, login string, password string) (uuid.U
 
 	log.Info("attempting to login user")
 
-	uid, passHash, _, _, _, isAdmin1, isAdmin2, err := u.usrProvider.User(ctx, login)
+	authData, err := u.usrProvider.GetUserAuthDataByLogin(ctx, login)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			u.log.Warn("user not found", sl.Err(err))
@@ -121,7 +171,7 @@ func (u *User) Login(ctx context.Context, login string, password string) (uuid.U
 		return uuid.Nil, false, false, fmt.Errorf("%s: %w", op, err)
 	}
 
-	if err := bcrypt.CompareHashAndPassword(passHash, []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(authData.PassHash, []byte(password)); err != nil {
 		u.log.Info("invalid credentials", sl.Err(err))
 
 		return uuid.Nil, false, false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
@@ -129,7 +179,30 @@ func (u *User) Login(ctx context.Context, login string, password string) (uuid.U
 
 	log.Info("user logged in successfully")
 
-	return uid, isAdmin1, isAdmin2, nil
+	return authData.ID, authData.IsAdmin1, authData.IsAdmin2, nil
+}
+
+func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
+	// Конфигурация SMTP для Gmail
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+	auth := smtp.PlainAuth("", "ivan2011avatar@gmail.com", "tsep nuqs bmvy dcbr", smtpHost)
+
+	// Адрес отправителя
+	from := "ivan2011avatar@gmail.com"
+
+	// Тело письма
+	subject := "Код подтверждения регистрации"
+	body := fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации.", confirmationCode)
+	message := []byte(fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s\r\n", email, subject, body))
+
+	// Отправка письма через Gmail
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{email}, message)
+	if err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
 }
 
 func (u *User) GetLoginById(ctx context.Context, userId string) (string, error) {
@@ -178,17 +251,17 @@ func (u *User) GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error)
 	return users, nil
 }
 
-func (u *User) GetUserInfo(ctx context.Context, userID string) (*postgresUser.UserDetailedInfo, error) {
-	const op = "User.GetUserInfo"
+func (u *User) User(ctx context.Context, userID uuid.UUID) (*models.User, error) {
+	const op = "User.User"
 
 	log := u.log.With(
 		slog.String("op", op),
-		slog.String("userID", userID),
+		slog.String("userID", userID.String()),
 	)
 
 	log.Info("getting user info")
 
-	userInfo, err := u.usrProvider.GetUserInfo(ctx, userID)
+	user, err := u.usrProvider.User(ctx, userID)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			u.log.Warn("user not found", sl.Err(err))
@@ -199,36 +272,36 @@ func (u *User) GetUserInfo(ctx context.Context, userID string) (*postgresUser.Us
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Info("user info retrieved successfully", slog.String("login", userInfo.Login))
+	log.Info("user info retrieved successfully", slog.String("login", user.Login))
 
-	return userInfo, nil
+	return user, nil
 }
 
-func (u *User) GetUserByLogin(ctx context.Context, login string) (uuid.UUID, string, string, string, string, bool, bool, error) {
-	const op = "User.GetUserByLogin"
-
-	log := u.log.With(
-		slog.String("op", op),
-		slog.String("login", login),
-	)
-
-	log.Info("getting user by login")
-
-	uid, _, name, surname, email, isAdmin1, isAdmin2, err := u.usrProvider.User(ctx, login)
-	if err != nil {
-		if errors.Is(err, repository.ErrUserNotFound) {
-			u.log.Warn("user not found", sl.Err(err))
-			return uuid.Nil, "", "", "", "", false, false, fmt.Errorf("%s: user not found", op)
-		}
-
-		u.log.Error("failed to get user by login", sl.Err(err))
-		return uuid.Nil, "", "", "", "", false, false, fmt.Errorf("%s: %w", op, err)
-	}
-
-	log.Info("user retrieved successfully by login")
-
-	return uid, login, name, surname, email, isAdmin1, isAdmin2, nil
-}
+//func (u *User) GetUserByLogin(ctx context.Context, login string) (uuid.UUID, string, string, string, string, bool, bool, error) {
+//	const op = "User.GetUserByLogin"
+//
+//	log := u.log.With(
+//		slog.String("op", op),
+//		slog.String("login", login),
+//	)
+//
+//	log.Info("getting user by login")
+//
+//	uid, _, name, surname, email, isAdmin1, isAdmin2, err := u.usrProvider.User(ctx, login)
+//	if err != nil {
+//		if errors.Is(err, repository.ErrUserNotFound) {
+//			u.log.Warn("user not found", sl.Err(err))
+//			return uuid.Nil, "", "", "", "", false, false, fmt.Errorf("%s: user not found", op)
+//		}
+//
+//		u.log.Error("failed to get user by login", sl.Err(err))
+//		return uuid.Nil, "", "", "", "", false, false, fmt.Errorf("%s: %w", op, err)
+//	}
+//
+//	log.Info("user retrieved successfully by login")
+//
+//	return uid, login, name, surname, email, isAdmin1, isAdmin2, nil
+//}
 
 func (u *User) GetUserDetailsById(ctx context.Context, userID string) (*postgresUser.UserFullDetails, error) {
 	const op = "User.GetUserDetailsById"

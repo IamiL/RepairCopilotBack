@@ -159,7 +159,7 @@ func NewTzHandler(
 			slog.String("doc_id", checkTzResult.DocId))
 
 		// Логируем событие отправки документа
-		userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), session.UserID)
+		userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), uid)
 		if userInfoErr == nil {
 			actionText := "Пользователь " + userInfo.Login + " отправил документ " + filename + " на проверку"
 			if err := actionLogRepo.CreateActionLog(r.Context(), actionText, uid); err != nil {

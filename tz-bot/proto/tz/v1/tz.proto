@@ -11,6 +11,7 @@ service TzService {
   rpc GetAllVersions(GetAllVersionsRequest) returns (GetAllVersionsResponse);
   rpc GetVersionStatistics(GetVersionStatisticsRequest) returns (GetVersionStatisticsResponse);
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
+  rpc NewFeedbackError(NewFeedbackErrorRequest) returns (NewFeedbackErrorResponse);
 }
 
 message CheckTzRequest {
@@ -126,4 +127,17 @@ message VersionStatistics {
   optional int64 total_tokens = 2;
   optional double total_rubs = 3;
   optional int64 average_inspection_time_nanoseconds = 4;
+}
+
+message NewFeedbackErrorRequest {
+  string version_id = 1;
+  string error_id = 2;
+  string error_type = 3;
+  uint32 feedback_type = 4;
+  string comment = 5;
+  string user_id = 6;
+}
+
+message NewFeedbackErrorResponse {
+
 }

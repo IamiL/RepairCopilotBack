@@ -448,3 +448,44 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		DocId:         docId,
 	}, nil
 }
+
+func (s *serverAPI) NewFeedbackError(ctx context.Context, req *tzv1.NewFeedbackErrorRequest) (*tzv1.NewFeedbackErrorResponse, error) {
+	const op = "grpc.tz.NewFeedbackError"
+
+	log := s.log.With(
+		slog.String("op", op),
+		slog.String("version_id", req.VersionId),
+		slog.String("error_id", req.ErrorId),
+		slog.String("error_type", req.ErrorType),
+		slog.String("user_id", req.UserId),
+	)
+
+	log.Info("processing NewFeedbackError request")
+
+	versionID, err := uuid.Parse(req.VersionId)
+	if err != nil {
+		log.Error("invalid version ID format", slog.String("error", err.Error()))
+		return nil, status.Error(codes.InvalidArgument, "invalid version ID format")
+	}
+
+	userID, err := uuid.Parse(req.UserId)
+	if err != nil {
+		log.Error("invalid user ID format", slog.String("error", err.Error()))
+		return nil, status.Error(codes.InvalidArgument, "invalid user ID format")
+	}
+
+	if req.ErrorType != "invalid" && req.ErrorType != "missing" {
+		log.Error("invalid error type", slog.String("error_type", req.ErrorType))
+		return nil, status.Error(codes.InvalidArgument, "error type must be 'invalid' or 'missing'")
+	}
+
+	err = s.tzService.NewFeedbackError(ctx, versionID, req.ErrorId, req.ErrorType, req.FeedbackType, req.Comment, userID)
+	if err != nil {
+		log.Error("failed to create feedback error", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to create feedback error")
+	}
+
+	log.Info("NewFeedbackError request processed successfully")
+
+	return &tzv1.NewFeedbackErrorResponse{}, nil
+}

@@ -24,6 +24,7 @@ const (
 	TzService_GetAllVersions_FullMethodName                    = "/tz.v1.TzService/GetAllVersions"
 	TzService_GetVersionStatistics_FullMethodName              = "/tz.v1.TzService/GetVersionStatistics"
 	TzService_GetVersion_FullMethodName                        = "/tz.v1.TzService/GetVersion"
+	TzService_NewFeedbackError_FullMethodName                  = "/tz.v1.TzService/NewFeedbackError"
 )
 
 // TzServiceClient is the client API for TzService service.
@@ -35,6 +36,7 @@ type TzServiceClient interface {
 	GetAllVersions(ctx context.Context, in *GetAllVersionsRequest, opts ...grpc.CallOption) (*GetAllVersionsResponse, error)
 	GetVersionStatistics(ctx context.Context, in *GetVersionStatisticsRequest, opts ...grpc.CallOption) (*GetVersionStatisticsResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
+	NewFeedbackError(ctx context.Context, in *NewFeedbackErrorRequest, opts ...grpc.CallOption) (*NewFeedbackErrorResponse, error)
 }
 
 type tzServiceClient struct {
@@ -95,6 +97,16 @@ func (c *tzServiceClient) GetVersion(ctx context.Context, in *GetVersionRequest,
 	return out, nil
 }
 
+func (c *tzServiceClient) NewFeedbackError(ctx context.Context, in *NewFeedbackErrorRequest, opts ...grpc.CallOption) (*NewFeedbackErrorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NewFeedbackErrorResponse)
+	err := c.cc.Invoke(ctx, TzService_NewFeedbackError_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TzServiceServer is the server API for TzService service.
 // All implementations must embed UnimplementedTzServiceServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type TzServiceServer interface {
 	GetAllVersions(context.Context, *GetAllVersionsRequest) (*GetAllVersionsResponse, error)
 	GetVersionStatistics(context.Context, *GetVersionStatisticsRequest) (*GetVersionStatisticsResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
+	NewFeedbackError(context.Context, *NewFeedbackErrorRequest) (*NewFeedbackErrorResponse, error)
 	mustEmbedUnimplementedTzServiceServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedTzServiceServer) GetVersionStatistics(context.Context, *GetVe
 }
 func (UnimplementedTzServiceServer) GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVersion not implemented")
+}
+func (UnimplementedTzServiceServer) NewFeedbackError(context.Context, *NewFeedbackErrorRequest) (*NewFeedbackErrorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewFeedbackError not implemented")
 }
 func (UnimplementedTzServiceServer) mustEmbedUnimplementedTzServiceServer() {}
 func (UnimplementedTzServiceServer) testEmbeddedByValue()                   {}
@@ -240,6 +256,24 @@ func _TzService_GetVersion_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TzService_NewFeedbackError_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewFeedbackErrorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TzServiceServer).NewFeedbackError(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TzService_NewFeedbackError_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TzServiceServer).NewFeedbackError(ctx, req.(*NewFeedbackErrorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TzService_ServiceDesc is the grpc.ServiceDesc for TzService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +300,10 @@ var TzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVersion",
 			Handler:    _TzService_GetVersion_Handler,
+		},
+		{
+			MethodName: "NewFeedbackError",
+			Handler:    _TzService_NewFeedbackError_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

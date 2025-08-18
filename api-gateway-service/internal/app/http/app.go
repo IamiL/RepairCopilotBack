@@ -87,6 +87,11 @@ func New(
 		handler.GetAdminDashboardHandler(log, userServiceClient, tzBotClient, sessionRepo, actionLogRepo),
 	)
 
+	router.HandleFunc(
+		"POST /api/feedback-error",
+		handler.NewFeedbackErrorHandler(log, tzBotClient, sessionRepo, actionLogRepo),
+	)
+
 	routerWithCorsHandler := corsMiddleware(log, router)
 
 	srv := &http.Server{

@@ -67,31 +67,31 @@ func RegisterHandler(
 			return
 		}
 
-		log.Info("user registered successfully", slog.String("user_id", userID), slog.String("login", req.Login))
+		log.Info("user registered successfully", slog.String("user_id", userID.String()), slog.String("login", req.Login))
 
 		// Парсим userID из строки в UUID для логирования
-		userUUID, parseErr := uuid.Parse(userID)
-		if parseErr == nil {
-			// Логируем событие регистрации
-			actionText := "зарегистрирован пользователь - " + req.FirstName + " " + req.LastName + " ; логин - " + req.Login
-			if err := actionLogRepo.CreateActionLog(r.Context(), actionText, userUUID); err != nil {
-				log.Error("failed to create action log", slog.String("error", err.Error()))
-			}
-		}
+		//userUUID, parseErr := uuid.Parse(userID)
+		//if parseErr == nil {
+		//	// Логируем событие регистрации
+		//	actionText := "зарегистрирован пользователь - " + req.FirstName + " " + req.LastName + " ; логин - " + req.Login
+		//	if err := actionLogRepo.CreateActionLog(r.Context(), actionText, userUUID); err != nil {
+		//		log.Error("failed to create action log", slog.String("error", err.Error()))
+		//	}
+		//}
 
 		// Генерируем новый UUID для сессии
 		sessionID := uuid.New()
 
 		// Парсим userID из строки в UUID
-		userUUID, err = uuid.Parse(userID)
-		if err != nil {
-			log.Error("failed to parse user ID as UUID", slog.String("error", err.Error()), slog.String("user_id", userID))
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
+		//userUUID, err = uuid.Parse(userID)
+		//if err != nil {
+		//	log.Error("failed to parse user ID as UUID", slog.String("error", err.Error()), slog.String("user_id", userID))
+		//	http.Error(w, "Internal server error", http.StatusInternalServerError)
+		//	return
+		//}
 
 		// Создаем сессию в Redis (новый пользователь не админ)
-		err = sessionRepo.CreateSession(sessionID, userUUID, req.Login, false, false)
+		err = sessionRepo.CreateSession(sessionID, userID, req.Login, false, false)
 		if err != nil {
 			log.Error("failed to create session", slog.String("error", err.Error()))
 			http.Error(w, "Failed to create session", http.StatusInternalServerError)
@@ -100,7 +100,7 @@ func RegisterHandler(
 
 		log.Info("session created successfully",
 			slog.String("session_id", sessionID.String()),
-			slog.String("user_id", userID))
+			slog.String("user_id", userID.String()))
 
 		// Устанавливаем cookie с токеном сессии
 		cookie := &http.Cookie{
@@ -118,7 +118,7 @@ func RegisterHandler(
 		response := RegisterResponse{
 			Message: "User registered successfully",
 			Login:   req.Login,
-			UserID:  userID,
+			UserID:  userID.String(),
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -131,7 +131,7 @@ func RegisterHandler(
 
 		log.Info("register request processed successfully",
 			slog.String("login", req.Login),
-			slog.String("user_id", userID),
+			slog.String("user_id", userID.String()),
 			slog.String("session_id", sessionID.String()))
 	}
 }

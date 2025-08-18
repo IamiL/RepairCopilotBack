@@ -201,26 +201,28 @@ const (
 
 // ErrorFeedback represents user feedback on error analysis
 type ErrorFeedback struct {
-	ID          uuid.UUID `db:"id"`
-	VersionID   uuid.UUID `db:"version_id"`
-	ErrorID     uuid.UUID `db:"error_id"`
-	ErrorType   ErrorType `db:"error_type"`
-	IsGoodError bool      `db:"is_good_error"`
-	Comment     *string   `db:"comment"`
-	CreatedAt   time.Time `db:"created_at"`
-	UpdatedAt   time.Time `db:"updated_at"`
+	ID           uuid.UUID `db:"id"`
+	VersionID    uuid.UUID `db:"version_id"`
+	ErrorID      uuid.UUID `db:"error_id"`
+	ErrorType    ErrorType `db:"error_type"`
+	UserID       uuid.UUID `db:"user_id"`
+	FeedbackType int       `db:"feedback_type"`
+	Comment      *string   `db:"comment"`
+	CreatedAt    time.Time `db:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at"`
 }
 
 // CreateErrorFeedbackRequest represents request to create error feedback
 type CreateErrorFeedbackRequest struct {
-	ID          uuid.UUID
-	VersionID   uuid.UUID
-	ErrorID     uuid.UUID
-	ErrorType   ErrorType
-	IsGoodError bool
-	Comment     *string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID           uuid.UUID
+	VersionID    uuid.UUID
+	ErrorID      uuid.UUID
+	ErrorType    ErrorType
+	UserID       uuid.UUID
+	FeedbackType int
+	Comment      *string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 // LLMCache represents a cached LLM request and response

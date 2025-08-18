@@ -7,6 +7,7 @@ import (
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
+	grpcUserModel "repairCopilotBot/user-service/pkg/user/v1"
 
 	"github.com/google/uuid"
 )
@@ -19,15 +20,20 @@ type UserTechnicalSpecificationVersion struct {
 }
 
 type GetUserByIdResponse struct {
-	UserID    string                              `json:"user_id"`
-	Login     string                              `json:"login"`
-	IsAdmin1  bool                                `json:"is_admin1"`
-	IsAdmin2  bool                                `json:"is_admin2"`
-	CreatedAt string                              `json:"created_at"`
-	Name      string                              `json:"firstName"`
-	Surname   string                              `json:"lastName"`
-	Email     string                              `json:"email"`
-	Versions  []UserTechnicalSpecificationVersion `json:"versions"`
+	*grpcUserModel.GetUserInfoResponse
+	//Name                string                              `json:"firstName"`
+	//Surname             string                              `json:"lastName"`
+	//Email               string                              `json:"email"`
+	//Login               string                              `json:"login"`
+	//IsAdmin1            bool                                `json:"isAdmin1"`
+	//IsAdmin2            bool                                `json:"isAdmin2"`
+	//RegisteredAt        string                              `json:"registeredAt"`
+	//LastVisitAt         string                              `json:"lastVisitAt"`
+	//InspectionsCount    int                                 `json:"inspectionsCount"`
+	//ErrorFeedbackCount  int                                 `json:"errorFeedbackCount"`
+	//InspectionsPerDay   int                                 `json:"inspectionsPerDay"`
+	//InspectionsForToday int                                 `json:"inspectionsForToday"`
+	Versions []UserTechnicalSpecificationVersion `json:"versions"`
 }
 
 func GetUserByIdHandler(
@@ -72,14 +78,22 @@ func GetUserByIdHandler(
 		}
 
 		// Получаем user_id из URL параметров
-		userID := r.PathValue("user_id")
-		if userID == "" {
+		userIDStr := r.PathValue("user_id")
+		if userIDStr == "" {
 			log.Info("user_id parameter is missing")
 			http.Error(w, "User ID is required", http.StatusBadRequest)
 			return
 		}
 
-		log.Info("fetching user info", slog.String("user_id", userID))
+		// Парсим userID в UUID
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			log.Error("invalid user ID format", slog.String("user_id", userIDStr), slog.String("error", err.Error()))
+			http.Error(w, "Invalid user ID format", http.StatusBadRequest)
+			return
+		}
+
+		log.Info("fetching user info", slog.String("user_id", userIDStr))
 
 		// Получаем информацию о пользователе из user-service
 		userInfo, err := userServiceClient.GetUserInfo(r.Context(), userID)
@@ -89,17 +103,9 @@ func GetUserByIdHandler(
 			return
 		}
 
-		// Парсим userID в UUID для получения версий
-		userUUID, err := uuid.Parse(userID)
-		if err != nil {
-			log.Error("invalid user ID format", slog.String("user_id", userID), slog.String("error", err.Error()))
-			http.Error(w, "Invalid user ID format", http.StatusBadRequest)
-			return
-		}
-
 		// Получаем версии технических заданий пользователя
 		var versions []UserTechnicalSpecificationVersion
-		tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userUUID)
+		tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
 		if err != nil {
 			log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
 			// Не возвращаем ошибку, продолжаем с пустым массивом версий
@@ -120,17 +126,8 @@ func GetUserByIdHandler(
 		log.Info("user versions fetched", slog.Int("versions_count", len(versions)))
 
 		// Конвертируем в response структуру с правильными JSON тегами
-		response := GetUserByIdResponse{
-			UserID:    userInfo.UserID,
-			Login:     userInfo.Login,
-			IsAdmin1:  userInfo.IsAdmin1,
-			IsAdmin2:  userInfo.IsAdmin2,
-			CreatedAt: userInfo.CreatedAt,
-			Name:      userInfo.FirstName,
-			Surname:   userInfo.LastName,
-			Email:     userInfo.Email,
-			Versions:  versions,
-		}
+		response := GetUserByIdResponse{userInfo,
+			versions}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -141,7 +138,7 @@ func GetUserByIdHandler(
 		}
 
 		log.Info("get user by id request completed successfully",
-			slog.String("user_id", userID),
+			slog.String("user_id", userIDStr),
 			slog.String("login", userInfo.Login),
 			slog.Int("versions_count", len(versions)))
 	}

@@ -462,6 +462,31 @@ func (s *Storage) DeleteInvalidErrorsByVersionID(ctx context.Context, versionID 
 	return nil
 }
 
+func (s *Storage) GetUUIDByErrorID(ctx context.Context, errorID int) (uuid.UUID, error) {
+	queryInvalid := `SELECT id FROM invalid_errors WHERE error_id = $1 LIMIT 1`
+	queryMissing := `SELECT id FROM missing_errors WHERE error_id = $1 LIMIT 1`
+
+	var errorUUID uuid.UUID
+	
+	err := s.db.QueryRow(ctx, queryInvalid, errorID).Scan(&errorUUID)
+	if err == nil {
+		return errorUUID, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return uuid.Nil, fmt.Errorf("failed to query invalid_errors: %w", err)
+	}
+
+	err = s.db.QueryRow(ctx, queryMissing, errorID).Scan(&errorUUID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return uuid.Nil, repo.ErrErrorNotFound
+		}
+		return uuid.Nil, fmt.Errorf("failed to query missing_errors: %w", err)
+	}
+
+	return errorUUID, nil
+}
+
 // CreateMissingErrors creates multiple missing errors for a version
 func (s *Storage) CreateMissingErrors(ctx context.Context, req *repo.CreateMissingErrorsRequest) error {
 	if len(req.Errors) == 0 {
@@ -530,103 +555,18 @@ func (s *Storage) DeleteMissingErrorsByVersionID(ctx context.Context, versionID 
 // CreateErrorFeedback creates new feedback for an error
 func (s *Storage) CreateErrorFeedback(ctx context.Context, req *repo.CreateErrorFeedbackRequest) (*repo.ErrorFeedback, error) {
 	query := `
-		INSERT INTO error_feedback (id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at`
+		INSERT INTO error_feedback (id, version_id, error_id, error_type, user_id, feedback_type, comment, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id, version_id, error_id, error_type, user_id, feedback_type, comment, created_at, updated_at`
 
 	var feedback repo.ErrorFeedback
-	err := s.db.QueryRow(ctx, query, req.ID, req.VersionID, req.ErrorID, req.ErrorType, req.IsGoodError, req.Comment, req.CreatedAt, req.UpdatedAt).
-		Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType, &feedback.IsGoodError, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
+	err := s.db.QueryRow(ctx, query, req.ID, req.VersionID, req.ErrorID, req.ErrorType, req.UserID, req.FeedbackType, req.Comment, req.CreatedAt, req.UpdatedAt).
+		Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType, &feedback.UserID, &feedback.FeedbackType, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create error feedback: %w", err)
 	}
 
 	return &feedback, nil
-}
-
-func (s *Storage) GetErrorFeedback(ctx context.Context, id uuid.UUID) (*repo.ErrorFeedback, error) {
-	query := `SELECT id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at FROM error_feedback WHERE id = $1`
-
-	var feedback repo.ErrorFeedback
-	err := s.db.QueryRow(ctx, query, id).
-		Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType, &feedback.IsGoodError, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repo.ErrErrorFeedbackNotFound
-		}
-		return nil, fmt.Errorf("failed to get error feedback: %w", err)
-	}
-
-	return &feedback, nil
-}
-
-func (s *Storage) GetErrorFeedbackByErrorID(ctx context.Context, errorID uuid.UUID) (*repo.ErrorFeedback, error) {
-	query := `SELECT id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at FROM error_feedback WHERE error_id = $1`
-
-	var feedback repo.ErrorFeedback
-	err := s.db.QueryRow(ctx, query, errorID).
-		Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType, &feedback.IsGoodError, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repo.ErrErrorFeedbackNotFound
-		}
-		return nil, fmt.Errorf("failed to get error feedback by error ID: %w", err)
-	}
-
-	return &feedback, nil
-}
-
-func (s *Storage) UpdateErrorFeedback(ctx context.Context, id uuid.UUID, isGoodError bool, comment *string, updatedAt time.Time) error {
-	query := `UPDATE error_feedback SET is_good_error = $1, comment = $2, updated_at = $3 WHERE id = $4`
-
-	result, err := s.db.Exec(ctx, query, isGoodError, comment, updatedAt, id)
-	if err != nil {
-		return fmt.Errorf("failed to update error feedback: %w", err)
-	}
-
-	if result.RowsAffected() == 0 {
-		return repo.ErrErrorFeedbackNotFound
-	}
-
-	return nil
-}
-
-func (s *Storage) GetErrorFeedbacksByVersionID(ctx context.Context, versionID uuid.UUID) ([]*repo.ErrorFeedback, error) {
-	query := `SELECT id, version_id, error_id, error_type, is_good_error, comment, created_at, updated_at FROM error_feedback WHERE version_id = $1 ORDER BY created_at DESC`
-
-	rows, err := s.db.Query(ctx, query, versionID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get error feedbacks by version ID: %w", err)
-	}
-	defer rows.Close()
-
-	var feedbacks []*repo.ErrorFeedback
-	for rows.Next() {
-		var feedback repo.ErrorFeedback
-		err := rows.Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType,
-			&feedback.IsGoodError, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan error feedback: %w", err)
-		}
-		feedbacks = append(feedbacks, &feedback)
-	}
-
-	return feedbacks, nil
-}
-
-func (s *Storage) DeleteErrorFeedback(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM error_feedback WHERE id = $1`
-
-	result, err := s.db.Exec(ctx, query, id)
-	if err != nil {
-		return fmt.Errorf("failed to delete error feedback: %w", err)
-	}
-
-	if result.RowsAffected() == 0 {
-		return repo.ErrErrorFeedbackNotFound
-	}
-
-	return nil
 }
 
 // LLMCacheRepository implementation

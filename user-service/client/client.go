@@ -6,6 +6,7 @@ import (
 	pb "repairCopilotBot/user-service/pkg/user/v1"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -42,13 +43,13 @@ func (c *UserClient) Close() error {
 }
 
 // RegisterUser регистрирует нового пользователя
-func (c *UserClient) RegisterUser(ctx context.Context, email, firstName, lastName, login, password string) (string, error) {
+func (c *UserClient) RegisterUser(ctx context.Context, email, firstName, lastName, login, password string) (uuid.UUID, error) {
 	req := &pb.RegisterUserRequest{
-		Login:    login,
-		Password: password,
-		Name:     firstName,
-		Email:    email,
-		Surname:  lastName,
+		Login:     login,
+		Password:  password,
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
 	}
 
 	resp, err := c.client.RegisterUser(ctx, req)
@@ -57,19 +58,19 @@ func (c *UserClient) RegisterUser(ctx context.Context, email, firstName, lastNam
 		if st, ok := status.FromError(err); ok {
 			switch st.Code() {
 			case codes.InvalidArgument:
-				return "", fmt.Errorf("invalid input: %s", st.Message())
+				return uuid.Nil, fmt.Errorf("invalid input: %s", st.Message())
 			case codes.AlreadyExists:
-				return "", fmt.Errorf("user already exists")
+				return uuid.Nil, fmt.Errorf("user already exists")
 			case codes.Internal:
-				return "", fmt.Errorf("internal server error")
+				return uuid.Nil, fmt.Errorf("internal server error")
 			default:
-				return "", fmt.Errorf("registration failed: %s", st.Message())
+				return uuid.Nil, fmt.Errorf("registration failed: %s", st.Message())
 			}
 		}
-		return "", err
+		return uuid.Nil, err
 	}
 
-	return resp.UserId, nil
+	return uuid.MustParse(resp.UserId), nil
 }
 
 // LoginResponse содержит данные пользователя после аутентификации
@@ -152,22 +153,10 @@ func (c *UserClient) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
 	return users, nil
 }
 
-// UserDetailedInfo информация о пользователе с подробностями
-type UserDetailedInfo struct {
-	UserID    string `json:"user_id"`
-	Login     string `json:"login"`
-	IsAdmin1  bool   `json:"is_admin1"`
-	IsAdmin2  bool   `json:"is_admin2"`
-	CreatedAt string `json:"created_at"`
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-}
-
 // GetUserInfo получает подробную информацию о пользователе по ID
-func (c *UserClient) GetUserInfo(ctx context.Context, userID string) (*UserDetailedInfo, error) {
+func (c *UserClient) GetUserInfo(ctx context.Context, userID uuid.UUID) (*pb.GetUserInfoResponse, error) {
 	req := &pb.GetUserInfoRequest{
-		UserId: userID,
+		UserId: userID.String(),
 	}
 
 	resp, err := c.client.GetUserInfo(ctx, req)
@@ -186,14 +175,5 @@ func (c *UserClient) GetUserInfo(ctx context.Context, userID string) (*UserDetai
 		return nil, err
 	}
 
-	return &UserDetailedInfo{
-		UserID:    resp.UserId,
-		Login:     resp.Login,
-		IsAdmin1:  resp.IsAdmin1,
-		IsAdmin2:  resp.IsAdmin2,
-		CreatedAt: resp.CreatedAt,
-		Email:     resp.Email,
-		FirstName: resp.Name,
-		LastName:  resp.Surname,
-	}, nil
+	return resp, nil
 }

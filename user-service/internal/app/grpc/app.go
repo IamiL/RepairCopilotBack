@@ -11,10 +11,12 @@ import (
 	service "repairCopilotBot/user-service/internal/service/user"
 	pb "repairCopilotBot/user-service/pkg/user/v1"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type App struct {
@@ -77,10 +79,10 @@ func (s *serverAPI) RegisterUser(ctx context.Context, req *pb.RegisterUserReques
 	if req.Password == "" {
 		return nil, status.Error(codes.InvalidArgument, "password is required")
 	}
-	if req.Name == "" {
+	if req.FirstName == "" {
 		return nil, status.Error(codes.InvalidArgument, "name is required")
 	}
-	if req.Surname == "" {
+	if req.LastName == "" {
 		return nil, status.Error(codes.InvalidArgument, "surname is required")
 	}
 	if req.Email == "" {
@@ -88,7 +90,7 @@ func (s *serverAPI) RegisterUser(ctx context.Context, req *pb.RegisterUserReques
 	}
 
 	// Вызов вашего существующего метода
-	userID, err := s.userService.RegisterNewUser(ctx, req.Login, req.Password, req.Name, req.Surname, req.Email)
+	userID, err := s.userService.RegisterNewUser(ctx, req.Login, req.Password, req.FirstName, req.LastName, req.Email)
 	if err != nil {
 		// Обработка различных типов ошибок
 		if errors.Is(err, service.ErrUserAlreadyExists) {
@@ -148,26 +150,26 @@ func (s *serverAPI) GetLoginById(ctx context.Context, req *pb.GetLoginByIdReques
 	}, nil
 }
 
-func (s *serverAPI) GetUserByLogin(ctx context.Context, req *pb.GetUserByLoginRequest) (*pb.GetUserByLoginResponse, error) {
-	if req.Login == "" {
-		return nil, status.Error(codes.InvalidArgument, "login is required")
-	}
-
-	userID, login, name, surname, email, isAdmin1, isAdmin2, err := s.userService.GetUserByLogin(ctx, req.Login)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to get user by login")
-	}
-
-	return &pb.GetUserByLoginResponse{
-		UserId:   userID.String(),
-		Login:    login,
-		Name:     name,
-		Surname:  surname,
-		Email:    email,
-		IsAdmin1: isAdmin1,
-		IsAdmin2: isAdmin2,
-	}, nil
-}
+//func (s *serverAPI) GetUserByLogin(ctx context.Context, req *pb.GetUserByLoginRequest) (*pb.GetUserByLoginResponse, error) {
+//	if req.Login == "" {
+//		return nil, status.Error(codes.InvalidArgument, "login is required")
+//	}
+//
+//	userID, login, name, surname, email, isAdmin1, isAdmin2, err := s.userService.GetUserByLogin(ctx, req.Login)
+//	if err != nil {
+//		return nil, status.Error(codes.Internal, "failed to get user by login")
+//	}
+//
+//	return &pb.GetUserByLoginResponse{
+//		UserId:   userID.String(),
+//		Login:    login,
+//		Name:     name,
+//		Surname:  surname,
+//		Email:    email,
+//		IsAdmin1: isAdmin1,
+//		IsAdmin2: isAdmin2,
+//	}, nil
+//}
 
 func (s *serverAPI) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest) (*pb.GetAllUsersResponse, error) {
 	users, err := s.userService.GetAllUsers(ctx)
@@ -198,20 +200,24 @@ func (s *serverAPI) GetUserInfo(ctx context.Context, req *pb.GetUserInfoRequest)
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
 
-	userInfo, err := s.userService.GetUserInfo(ctx, req.UserId)
+	user, err := s.userService.User(ctx, uuid.MustParse(req.UserId))
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to get user info")
 	}
 
 	return &pb.GetUserInfoResponse{
-		UserId:    userInfo.ID,
-		Login:     userInfo.Login,
-		Name:      userInfo.Name,
-		Surname:   userInfo.Surname,
-		Email:     userInfo.Email,
-		IsAdmin1:  userInfo.IsAdmin1,
-		IsAdmin2:  userInfo.IsAdmin2,
-		CreatedAt: userInfo.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		FirstName:           user.FirstName,
+		LastName:            user.LastName,
+		Email:               user.Email,
+		Login:               user.Login,
+		IsAdmin1:            user.IsAdmin1,
+		IsAdmin2:            user.IsAdmin2,
+		RegisteredAt:        timestamppb.New(user.CreatedAt),
+		LastVisitAt:         timestamppb.New(user.LastVisitAt),
+		InspectionsCount:    uint32(user.InspectionsCount),
+		ErrorFeedbackCount:  uint32(user.ErrorFeedbacksCount),
+		InspectionsPerDay:   uint32(user.InspectionsPerDay),
+		InspectionsForToday: uint32(user.InspectionsForToday),
 	}, nil
 }
 

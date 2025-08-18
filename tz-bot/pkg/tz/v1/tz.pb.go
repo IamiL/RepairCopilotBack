@@ -1105,6 +1105,126 @@ func (x *VersionStatistics) GetAverageInspectionTimeNanoseconds() int64 {
 	return 0
 }
 
+type NewFeedbackErrorRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VersionId     string                 `protobuf:"bytes,1,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
+	ErrorId       string                 `protobuf:"bytes,2,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`
+	ErrorType     string                 `protobuf:"bytes,3,opt,name=error_type,json=errorType,proto3" json:"error_type,omitempty"`
+	FeedbackType  uint32                 `protobuf:"varint,4,opt,name=feedback_type,json=feedbackType,proto3" json:"feedback_type,omitempty"`
+	Comment       string                 `protobuf:"bytes,5,opt,name=comment,proto3" json:"comment,omitempty"`
+	UserId        string                 `protobuf:"bytes,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NewFeedbackErrorRequest) Reset() {
+	*x = NewFeedbackErrorRequest{}
+	mi := &file_tz_v1_tz_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NewFeedbackErrorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NewFeedbackErrorRequest) ProtoMessage() {}
+
+func (x *NewFeedbackErrorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NewFeedbackErrorRequest.ProtoReflect.Descriptor instead.
+func (*NewFeedbackErrorRequest) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *NewFeedbackErrorRequest) GetVersionId() string {
+	if x != nil {
+		return x.VersionId
+	}
+	return ""
+}
+
+func (x *NewFeedbackErrorRequest) GetErrorId() string {
+	if x != nil {
+		return x.ErrorId
+	}
+	return ""
+}
+
+func (x *NewFeedbackErrorRequest) GetErrorType() string {
+	if x != nil {
+		return x.ErrorType
+	}
+	return ""
+}
+
+func (x *NewFeedbackErrorRequest) GetFeedbackType() uint32 {
+	if x != nil {
+		return x.FeedbackType
+	}
+	return 0
+}
+
+func (x *NewFeedbackErrorRequest) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+func (x *NewFeedbackErrorRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type NewFeedbackErrorResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NewFeedbackErrorResponse) Reset() {
+	*x = NewFeedbackErrorResponse{}
+	mi := &file_tz_v1_tz_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NewFeedbackErrorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NewFeedbackErrorResponse) ProtoMessage() {}
+
+func (x *NewFeedbackErrorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NewFeedbackErrorResponse.ProtoReflect.Descriptor instead.
+func (*NewFeedbackErrorResponse) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{16}
+}
+
 var File_tz_v1_tz_proto protoreflect.FileDescriptor
 
 const file_tz_v1_tz_proto_rawDesc = "" +
@@ -1216,14 +1336,25 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"#average_inspection_time_nanoseconds\x18\x04 \x01(\x03H\x02R averageInspectionTimeNanoseconds\x88\x01\x01B\x0f\n" +
 	"\r_total_tokensB\r\n" +
 	"\v_total_rubsB&\n" +
-	"$_average_inspection_time_nanoseconds2\xc1\x03\n" +
+	"$_average_inspection_time_nanoseconds\"\xca\x01\n" +
+	"\x17NewFeedbackErrorRequest\x12\x1d\n" +
+	"\n" +
+	"version_id\x18\x01 \x01(\tR\tversionId\x12\x19\n" +
+	"\berror_id\x18\x02 \x01(\tR\aerrorId\x12\x1d\n" +
+	"\n" +
+	"error_type\x18\x03 \x01(\tR\terrorType\x12#\n" +
+	"\rfeedback_type\x18\x04 \x01(\rR\ffeedbackType\x12\x18\n" +
+	"\acomment\x18\x05 \x01(\tR\acomment\x12\x17\n" +
+	"\auser_id\x18\x06 \x01(\tR\x06userId\"\x1a\n" +
+	"\x18NewFeedbackErrorResponse2\x96\x04\n" +
 	"\tTzService\x128\n" +
 	"\aCheckTz\x12\x15.tz.v1.CheckTzRequest\x1a\x16.tz.v1.CheckTzResponse\x12\x86\x01\n" +
 	"!GetTechnicalSpecificationVersions\x12/.tz.v1.GetTechnicalSpecificationVersionsRequest\x1a0.tz.v1.GetTechnicalSpecificationVersionsResponse\x12M\n" +
 	"\x0eGetAllVersions\x12\x1c.tz.v1.GetAllVersionsRequest\x1a\x1d.tz.v1.GetAllVersionsResponse\x12_\n" +
 	"\x14GetVersionStatistics\x12\".tz.v1.GetVersionStatisticsRequest\x1a#.tz.v1.GetVersionStatisticsResponse\x12A\n" +
 	"\n" +
-	"GetVersion\x12\x18.tz.v1.GetVersionRequest\x1a\x19.tz.v1.GetVersionResponseB*Z(repairCopilotBot/tz-bot/proto/tz/v1;tzv1b\x06proto3"
+	"GetVersion\x12\x18.tz.v1.GetVersionRequest\x1a\x19.tz.v1.GetVersionResponse\x12S\n" +
+	"\x10NewFeedbackError\x12\x1e.tz.v1.NewFeedbackErrorRequest\x1a\x1f.tz.v1.NewFeedbackErrorResponseB*Z(repairCopilotBot/tz-bot/proto/tz/v1;tzv1b\x06proto3"
 
 var (
 	file_tz_v1_tz_proto_rawDescOnce sync.Once
@@ -1237,7 +1368,7 @@ func file_tz_v1_tz_proto_rawDescGZIP() []byte {
 	return file_tz_v1_tz_proto_rawDescData
 }
 
-var file_tz_v1_tz_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_tz_v1_tz_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_tz_v1_tz_proto_goTypes = []any{
 	(*CheckTzRequest)(nil),                            // 0: tz.v1.CheckTzRequest
 	(*CheckTzResponse)(nil),                           // 1: tz.v1.CheckTzResponse
@@ -1254,6 +1385,8 @@ var file_tz_v1_tz_proto_goTypes = []any{
 	(*GetVersionStatisticsRequest)(nil),               // 12: tz.v1.GetVersionStatisticsRequest
 	(*GetVersionStatisticsResponse)(nil),              // 13: tz.v1.GetVersionStatisticsResponse
 	(*VersionStatistics)(nil),                         // 14: tz.v1.VersionStatistics
+	(*NewFeedbackErrorRequest)(nil),                   // 15: tz.v1.NewFeedbackErrorRequest
+	(*NewFeedbackErrorResponse)(nil),                  // 16: tz.v1.NewFeedbackErrorResponse
 }
 var file_tz_v1_tz_proto_depIdxs = []int32{
 	2,  // 0: tz.v1.CheckTzResponse.invalid_errors:type_name -> tz.v1.OutInvalidError
@@ -1268,13 +1401,15 @@ var file_tz_v1_tz_proto_depIdxs = []int32{
 	9,  // 9: tz.v1.TzService.GetAllVersions:input_type -> tz.v1.GetAllVersionsRequest
 	12, // 10: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
 	7,  // 11: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
-	1,  // 12: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
-	5,  // 13: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
-	10, // 14: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
-	13, // 15: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
-	8,  // 16: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
-	12, // [12:17] is the sub-list for method output_type
-	7,  // [7:12] is the sub-list for method input_type
+	15, // 12: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
+	1,  // 13: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
+	5,  // 14: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
+	10, // 15: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
+	13, // 16: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
+	8,  // 17: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
+	16, // 18: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
+	13, // [13:19] is the sub-list for method output_type
+	7,  // [7:13] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -1294,7 +1429,7 @@ func file_tz_v1_tz_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tz_v1_tz_proto_rawDesc), len(file_tz_v1_tz_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

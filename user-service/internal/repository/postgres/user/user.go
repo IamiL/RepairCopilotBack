@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"repairCopilotBot/user-service/internal/domain/models"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,28 +24,83 @@ func New(pool *pgxpool.Pool) (*Storage, error) {
 
 func (s *Storage) SaveUser(
 	ctx context.Context,
+	uid uuid.UUID,
 	login string,
 	passHash []byte,
-	name string,
-	surname string,
+	firstName string,
+	lastName string,
 	email string,
 	isAdmin1 bool,
 	isAdmin2 bool,
-	uid uuid.UUID,
+	createdAt time.Time,
+	updatedAt time.Time,
+	lastVisitAt time.Time,
+	inspectionsPerDay int,
+	inspectionsForToday int,
+	inspectionsCount int,
+	errorFeedbacksCount int,
+	isConfirmed bool,
+	confirmationCode string,
 ) error {
+	args := pgx.NamedArgs{
+		"id":                  uid,
+		"login":               login,
+		"passHash":            passHash,
+		"firstName":           firstName,
+		"lastName":            lastName,
+		"email":               email,
+		"isAdmin1":            isAdmin1,
+		"isAdmin2":            isAdmin2,
+		"createdAt":           createdAt,
+		"updatedAt":           updatedAt,
+		"lastVisitAt":         lastVisitAt,
+		"inspectionsPerDay":   inspectionsPerDay,
+		"inspectionsForToday": inspectionsForToday,
+		"inspectionsCount":    inspectionsCount,
+		"errorFeedbacksCount": errorFeedbacksCount,
+		"isConfirmed":         isConfirmed,
+		"confirmationCode":    confirmationCode,
+	}
+
 	_, err := s.db.Exec(
 		ctx,
-		"INSERT INTO users(id, login, pass_hash, name, surname, email, is_admin1, is_admin2, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-		uid,
-		login,
-		passHash,
-		name,
-		surname,
-		email,
-		isAdmin1,
-		isAdmin2,
-		time.Now(),
-		time.Now(),
+		`INSERT INTO users(
+                  id,
+                  login,
+                  pass_hash,
+                  first_name,
+                  last_name,
+                  email,
+                  is_admin1,
+                  is_admin2,
+                  created_at,
+                  updated_at,
+                  last_visit_at, 
+                inspections_per_day,
+                  inspections_for_today,
+                  inspections_count,
+                  error_feedbacks_count,
+                  is_confirmed,
+                  confirmation_code
+                  ) VALUES(
+                           @id,
+                           @login,
+                           @passHash,
+                           @firstName,
+                           @lastName,
+                           @email,
+                           @isAdmin1,
+                           @isAdmin2,
+                           @createdAt,
+                           @updatedAt,
+                           @lastVisitAt,
+                           @inspectionsPerDay,
+                           @inspectionsForToday,
+                           @inspectionsCount,
+                           @errorFeedbacksCount,
+                           @isConfirmed,
+                           @confirmationCode)`,
+		args,
 	)
 	if err != nil {
 		return err
@@ -53,37 +109,20 @@ func (s *Storage) SaveUser(
 	return nil
 }
 
-func (s *Storage) User(ctx context.Context, login string) (
-	uuid.UUID,
-	[]byte,
-	string,
-	string,
-	string,
-	bool,
-	bool,
-	error,
-) {
-	query := `SELECT id, pass_hash, name, surname, email, is_admin1, is_admin2 FROM users WHERE login = $1`
+func (s *Storage) User(ctx context.Context, userID uuid.UUID) (*models.User, error) {
+	query := `SELECT login, first_name, last_name, email, is_admin1, is_admin2, created_at, last_visit_at, inspections_per_day, inspections_for_today, inspections_count, error_feedbacks_count FROM users WHERE id = $1`
 
-	var id string
-	var passHash []byte
-	var name, surname, email string
-	var isAdmin1, isAdmin2 bool
+	var user models.User
 
-	err := s.db.QueryRow(ctx, query, login).Scan(&id, &passHash, &name, &surname, &email, &isAdmin1, &isAdmin2)
+	err := s.db.QueryRow(ctx, query, userID.String()).Scan(&user.Login, &user.FirstName, &user.LastName, &user.Email, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, nil, "", "", "", false, false, repo.ErrUserNotFound
+			return nil, repo.ErrUserNotFound
 		}
-		return uuid.Nil, nil, "", "", "", false, false, fmt.Errorf("database error: %w", err)
+		return nil, fmt.Errorf("database error: %w", err)
 	}
 
-	uid, err := uuid.Parse(id)
-	if err != nil {
-		return uuid.Nil, nil, "", "", "", false, false, fmt.Errorf("database error: %w", err)
-	}
-
-	return uid, passHash, name, surname, email, isAdmin1, isAdmin2, nil
+	return &user, nil
 }
 
 func (s *Storage) EditUser(
@@ -207,4 +246,46 @@ func (s *Storage) GetUserDetailsById(ctx context.Context, userID string) (*UserF
 	}
 
 	return &user, nil
+}
+
+func (s *Storage) GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID, error) {
+	query := `SELECT id FROM users WHERE login = $1`
+
+	var userID string
+	err := s.db.QueryRow(ctx, query, login).Scan(&userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return uuid.Nil, repo.ErrUserNotFound
+		}
+		return uuid.Nil, fmt.Errorf("database error: %w", err)
+	}
+
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid UUID format: %w", err)
+	}
+
+	return uid, nil
+}
+
+type UserAuthData struct {
+	ID       uuid.UUID
+	PassHash []byte
+	IsAdmin1 bool
+	IsAdmin2 bool
+}
+
+func (s *Storage) GetUserAuthDataByLogin(ctx context.Context, login string) (*UserAuthData, error) {
+	query := `SELECT id, pass_hash, is_admin1, is_admin2 FROM users WHERE login = $1`
+
+	var authData UserAuthData
+	err := s.db.QueryRow(ctx, query, login).Scan(&authData.ID, &authData.PassHash, &authData.IsAdmin1, &authData.IsAdmin2)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, repo.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+
+	return &authData, nil
 }

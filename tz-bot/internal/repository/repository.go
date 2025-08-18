@@ -12,8 +12,8 @@ var (
 	ErrTechnicalSpecificationNotFound = errors.New("technical specification not found")
 	ErrVersionNotFound                = errors.New("version not found")
 	ErrDuplicateVersion               = errors.New("version with this number already exists for this technical specification")
-	ErrErrorFeedbackNotFound          = errors.New("error feedback not found")
 	ErrLLMCacheNotFound               = errors.New("llm cache not found")
+	ErrErrorNotFound                  = errors.New("error not found")
 )
 
 // TechnicalSpecificationRepository defines the interface for technical specification operations
@@ -77,6 +77,9 @@ type InvalidErrorRepository interface {
 
 	// DeleteInvalidErrorsByVersionID deletes all invalid errors for a version
 	DeleteInvalidErrorsByVersionID(ctx context.Context, versionID uuid.UUID) error
+
+	// GetUUIDByErrorID retrieves UUID by numeric error ID from both invalid and missing errors
+	GetUUIDByErrorID(ctx context.Context, errorID int) (uuid.UUID, error)
 }
 
 // MissingErrorRepository defines the interface for missing error operations
@@ -95,21 +98,6 @@ type MissingErrorRepository interface {
 type ErrorFeedbackRepository interface {
 	// CreateErrorFeedback creates new feedback for an error
 	CreateErrorFeedback(ctx context.Context, req *CreateErrorFeedbackRequest) (*ErrorFeedback, error)
-
-	// GetErrorFeedback retrieves feedback by ID
-	GetErrorFeedback(ctx context.Context, id uuid.UUID) (*ErrorFeedback, error)
-
-	// GetErrorFeedbackByErrorID retrieves feedback by error ID
-	GetErrorFeedbackByErrorID(ctx context.Context, errorID uuid.UUID) (*ErrorFeedback, error)
-
-	// GetErrorFeedbacksByVersionID retrieves all feedback for a version
-	GetErrorFeedbacksByVersionID(ctx context.Context, versionID uuid.UUID) ([]*ErrorFeedback, error)
-
-	// UpdateErrorFeedback updates existing feedback
-	UpdateErrorFeedback(ctx context.Context, id uuid.UUID, isGoodError bool, comment *string, updatedAt time.Time) error
-
-	// DeleteErrorFeedback deletes feedback
-	DeleteErrorFeedback(ctx context.Context, id uuid.UUID) error
 }
 
 // LLMCacheRepository defines the interface for LLM cache operations
@@ -129,4 +117,7 @@ type Repository interface {
 	MissingErrorRepository
 	ErrorFeedbackRepository
 	LLMCacheRepository
+	
+	// GetUUIDByErrorID retrieves UUID by numeric error ID from both invalid and missing errors
+	GetUUIDByErrorID(ctx context.Context, errorID int) (uuid.UUID, error)
 }

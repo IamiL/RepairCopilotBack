@@ -93,7 +93,7 @@ func MeHandler(
 				log.Error("invalid user ID format in session", slog.String("user_id", session.UserID), slog.String("error", err.Error()))
 			} else {
 				// Получаем информацию о пользователе для логирования
-				userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), session.UserID)
+				userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), userID)
 				if userInfoErr == nil {
 					// Логируем событие входа на сайт
 					actionText := "Пользователь " + userInfo.FirstName + " " + userInfo.LastName + " зашёл на сайт"

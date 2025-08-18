@@ -4,8 +4,13 @@ package user.v1;
 
 option go_package = "user/v1";
 
+import "google/protobuf/timestamp.proto";
+
 // UserService определяет сервис для работы с пользователями
 service UserService {
+  // GetUserInfo получает информацию о пользователе по ID
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+
   // RegisterUser регистрирует нового пользователя
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
 
@@ -20,20 +25,38 @@ service UserService {
 
   // GetAllUsers получает список всех пользователей
   rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
-
-  // GetUserInfo получает информацию о пользователе по ID
-  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
   
   // GetUserDetailsById получает все поля пользователя по ID (включая updated_at)
   rpc GetUserDetailsById(GetUserDetailsByIdRequest) returns (GetUserDetailsByIdResponse);
+}
+
+// GetUserInfoRequest запрос для получения информации о пользователе по ID
+message GetUserInfoRequest {
+  string user_id = 1;           // UUID пользователя
+}
+
+// GetUserInfoResponse ответ с подробной информацией о пользователе
+message GetUserInfoResponse {
+  string first_name = 1;         // Имя пользователя
+  string last_name = 2;          // Фамилия пользователя
+  string email = 3;
+  string login = 4;
+  bool is_admin1 = 5;            // Флаг администратора 1
+  bool is_admin2 = 6;            // Флаг администратора 2
+  google.protobuf.Timestamp registered_at = 7;
+  google.protobuf.Timestamp last_visit_at = 8;
+  uint32 inspections_count = 9;
+  uint32 error_feedback_count = 10;
+  uint32 inspections_per_day = 11;
+  uint32 Inspections_for_today = 12;
 }
 
 // RegisterUserRequest содержит данные для регистрации пользователя
 message RegisterUserRequest {
   string login = 1;         // Логин пользователя
   string password = 2;      // Пароль пользователя
-  string name = 3;          // Имя пользователя
-  string surname = 4;       // Фамилия пользователя
+  string first_name = 3;          // Имя пользователя
+  string last_name = 4;       // Фамилия пользователя
   string email = 5;         // Email пользователя
 }
 
@@ -100,23 +123,6 @@ message UserInfo {
 // GetAllUsersResponse ответ со списком всех пользователей
 message GetAllUsersResponse {
   repeated UserInfo users = 1; // Массив пользователей
-}
-
-// GetUserInfoRequest запрос для получения информации о пользователе по ID
-message GetUserInfoRequest {
-  string user_id = 1;           // UUID пользователя
-}
-
-// GetUserInfoResponse ответ с подробной информацией о пользователе
-message GetUserInfoResponse {
-  string user_id = 1;           // UUID пользователя
-  string login = 2;             // Логин пользователя
-  bool is_admin1 = 3;           // Флаг администратора 1
-  bool is_admin2 = 4;           // Флаг администратора 2
-  string created_at = 5;        // Дата и время регистрации в RFC3339 формате
-  string name = 6;              // Имя пользователя
-  string surname = 7;           // Фамилия пользователя
-  string email = 8;             // Email пользователя
 }
 
 // GetUserDetailsByIdRequest запрос для получения всех полей пользователя по ID
