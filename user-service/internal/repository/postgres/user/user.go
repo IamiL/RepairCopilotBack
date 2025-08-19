@@ -110,11 +110,11 @@ func (s *Storage) SaveUser(
 }
 
 func (s *Storage) User(ctx context.Context, userID uuid.UUID) (*models.User, error) {
-	query := `SELECT login, first_name, last_name, email, is_admin1, is_admin2, created_at, last_visit_at, inspections_per_day, inspections_for_today, inspections_count, error_feedbacks_count FROM users WHERE id = $1`
+	query := `SELECT login, first_name, last_name, email, is_admin1, is_admin2, is_confirmed, created_at, last_visit_at, inspections_per_day, inspections_for_today, inspections_count, error_feedbacks_count FROM users WHERE id = $1`
 
 	var user models.User
 
-	err := s.db.QueryRow(ctx, query, userID.String()).Scan(&user.Login, &user.FirstName, &user.LastName, &user.Email, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt)
+	err := s.db.QueryRow(ctx, query, userID.String()).Scan(&user.Login, &user.FirstName, &user.LastName, &user.Email, &user.IsAdmin1, &user.IsAdmin2, &user.IsConfirmed, &user.CreatedAt, &user.LastVisitAt, &user.InspectionsPerDay, &user.InspectionsForToday, &user.InspectionsCount, &user.ErrorFeedbacksCount)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repo.ErrUserNotFound

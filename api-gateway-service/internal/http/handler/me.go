@@ -19,12 +19,13 @@ type TechnicalSpecificationVersion struct {
 }
 
 type MeResponse struct {
-	Login     string                          `json:"login"`
-	Level     int                             `json:"level"`
-	FirstName string                          `json:"firstName"`
-	LastName  string                          `json:"lastName"`
-	Versions  []TechnicalSpecificationVersion `json:"versions"`
-	Email     string                          `json:"email"`
+	Login       string                          `json:"login"`
+	Level       int                             `json:"level"`
+	FirstName   string                          `json:"firstName"`
+	LastName    string                          `json:"lastName"`
+	Versions    []TechnicalSpecificationVersion `json:"versions"`
+	Email       string                          `json:"email"`
+	IsConfirmed bool                            `json:"is_confirmed"`
 }
 
 func MeHandler(
@@ -85,6 +86,7 @@ func MeHandler(
 		firstName := ""
 		lastName := ""
 		email := ""
+		isConfirmed := false
 		// Получаем версии технических заданий от tz-bot
 		var versions []TechnicalSpecificationVersion
 		if session.UserID != "" {
@@ -105,19 +107,24 @@ func MeHandler(
 					email = userInfo.Email
 				}
 
-				tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
-				if err != nil {
-					log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
-					// Не возвращаем ошибку, продолжаем с пустым массивом версий
-				} else {
-					// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
-					versions = make([]TechnicalSpecificationVersion, len(tzVersions))
-					for i, tzVersion := range tzVersions {
-						versions[i] = TechnicalSpecificationVersion{
-							VersionId:                  tzVersion.VersionId,
-							TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
-							VersionNumber:              tzVersion.VersionNumber,
-							CreatedAt:                  tzVersion.CreatedAt,
+				var tzVersions []client.TechnicalSpecificationVersion
+
+				if userInfo.IsConfirmed {
+					isConfirmed = true
+					tzVersions, err = tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
+					if err != nil {
+						log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
+						// Не возвращаем ошибку, продолжаем с пустым массивом версий
+					} else {
+						// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
+						versions = make([]TechnicalSpecificationVersion, len(tzVersions))
+						for i, tzVersion := range tzVersions {
+							versions[i] = TechnicalSpecificationVersion{
+								VersionId:                  tzVersion.VersionId,
+								TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
+								VersionNumber:              tzVersion.VersionNumber,
+								CreatedAt:                  tzVersion.CreatedAt,
+							}
 						}
 					}
 				}
@@ -125,12 +132,13 @@ func MeHandler(
 		}
 
 		response := MeResponse{
-			Login:     session.Login,
-			Level:     level,
-			Versions:  versions,
-			FirstName: firstName,
-			LastName:  lastName,
-			Email:     email,
+			Login:       session.Login,
+			Level:       level,
+			Versions:    versions,
+			FirstName:   firstName,
+			LastName:    lastName,
+			Email:       email,
+			IsConfirmed: isConfirmed,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

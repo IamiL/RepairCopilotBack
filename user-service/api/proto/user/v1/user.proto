@@ -49,6 +49,7 @@ message GetUserInfoResponse {
   uint32 error_feedback_count = 10;
   uint32 inspections_per_day = 11;
   uint32 Inspections_for_today = 12;
+  bool is_confirmed = 13;
 }
 
 // RegisterUserRequest содержит данные для регистрации пользователя

@@ -22,4 +22,5 @@ type User struct {
 	ErrorFeedbacksCount int
 	InspectionsPerDay   int
 	InspectionsForToday int
+	IsConfirmed         bool
 }

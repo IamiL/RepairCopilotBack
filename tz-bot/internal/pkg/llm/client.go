@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"repairCopilotBot/tz-bot/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -72,6 +74,7 @@ type GroupReport struct {
 }
 
 type ErrorReport struct {
+	ID        uuid.UUID   `json:"id"`
 	Code      *string     `json:"code"`
 	Instances *[]Instance `json:"instances"`
 	Process   *Process    `json:"process"`

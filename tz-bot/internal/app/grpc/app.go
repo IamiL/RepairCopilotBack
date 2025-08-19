@@ -120,7 +120,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		return nil, status.Error(codes.InvalidArgument, "filename cannot be empty")
 	}
 
-	htmlText, css, docId, invalidErrors, missingErrors, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
+	htmlText, css, docId, errors, invalidErrors, missingErrors, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
 	if err != nil {
 		log.Error("failed to check tz", slog.String("error", err.Error()))
 
@@ -192,7 +192,88 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		}
 	}
 
-	log.Info("CheckTz request processed successfully", slog.Int("invalid_errors_count", len(*invalidErrors)), slog.Int("missing_errors_count", len(*missingErrors)))
+	// Конвертация Error в proto сообщения
+	var grpcErrors []*tzv1.Error
+	if errors != nil {
+		grpcErrors = make([]*tzv1.Error, len(*errors))
+		for i, err := range *errors {
+			// Конвертируем instances
+			var grpcInstances []*tzv1.Instance
+			if err.Instances != nil {
+				grpcInstances = make([]*tzv1.Instance, len(*err.Instances))
+				for j, instance := range *err.Instances {
+					grpcInstance := &tzv1.Instance{}
+					if instance.ErrType != nil {
+						grpcInstance.ErrType = instance.ErrType
+					}
+					if instance.Snippet != nil {
+						snippet := sanitizeString(*instance.Snippet)
+						grpcInstance.Snippet = &snippet
+					}
+					if instance.LineStart != nil {
+						lineStart := int32(*instance.LineStart)
+						grpcInstance.LineStart = &lineStart
+					}
+					if instance.LineEnd != nil {
+						lineEnd := int32(*instance.LineEnd)
+						grpcInstance.LineEnd = &lineEnd
+					}
+					if instance.SuggestedFix != nil {
+						suggestedFix := sanitizeString(*instance.SuggestedFix)
+						grpcInstance.SuggestedFix = &suggestedFix
+					}
+					if instance.Rationale != nil {
+						rationale := sanitizeString(*instance.Rationale)
+						grpcInstance.Rationale = &rationale
+					}
+					grpcInstances[j] = grpcInstance
+				}
+			}
+
+			// Конвертируем process_retrieval
+			var processRetrieval []string
+			if err.ProcessRetrieval != nil {
+				processRetrieval = make([]string, len(*err.ProcessRetrieval))
+				for j, retrieval := range *err.ProcessRetrieval {
+					processRetrieval[j] = sanitizeString(retrieval)
+				}
+			}
+
+			grpcError := &tzv1.Error{
+				Id:        err.ID.String(),
+				GroupId:   sanitizeString(err.GroupID),
+				ErrorCode: sanitizeString(err.ErrorCode),
+				Verdict:   sanitizeString(err.Verdict),
+				Instances: grpcInstances,
+				ProcessRetrieval: processRetrieval,
+			}
+
+			if err.PreliminaryNotes != nil {
+				notes := sanitizeString(*err.PreliminaryNotes)
+				grpcError.PreliminaryNotes = &notes
+			}
+			if err.OverallCritique != nil {
+				critique := sanitizeString(*err.OverallCritique)
+				grpcError.OverallCritique = &critique
+			}
+			if err.ProcessAnalysis != nil {
+				analysis := sanitizeString(*err.ProcessAnalysis)
+				grpcError.ProcessAnalysis = &analysis
+			}
+			if err.ProcessCritique != nil {
+				critique := sanitizeString(*err.ProcessCritique)
+				grpcError.ProcessCritique = &critique
+			}
+			if err.ProcessVerification != nil {
+				verification := sanitizeString(*err.ProcessVerification)
+				grpcError.ProcessVerification = &verification
+			}
+
+			grpcErrors[i] = grpcError
+		}
+	}
+
+	log.Info("CheckTz request processed successfully", slog.Int("invalid_errors_count", len(*invalidErrors)), slog.Int("missing_errors_count", len(*missingErrors)), slog.Int("errors_count", len(grpcErrors)))
 
 	return &tzv1.CheckTzResponse{
 		HtmlText:      sanitizeString(htmlText),
@@ -201,6 +282,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		FileId:        fileId,
 		Css:           css,
 		DocId:         docId,
+		Errors:        grpcErrors,
 	}, nil
 }
 

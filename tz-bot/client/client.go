@@ -3,10 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"time"
 
 	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 )
@@ -21,21 +22,21 @@ type Config struct {
 }
 
 type OutInvalidError struct {
-	Id                   uint32
-	IdStr                string
-	GroupID              string
-	ErrorCode            string
-	Quote                string
-	Analysis             string
-	Critique             string
-	Verification         string
-	SuggestedFix         string
-	Rationale            string
-	OriginalQuote        string
-	QuoteLines           *[]string
+	Id                    uint32
+	IdStr                 string
+	GroupID               string
+	ErrorCode             string
+	Quote                 string
+	Analysis              string
+	Critique              string
+	Verification          string
+	SuggestedFix          string
+	Rationale             string
+	OriginalQuote         string
+	QuoteLines            *[]string
 	UntilTheEndOfSentence bool
-	StartLineNumber      *int
-	EndLineNumber        *int
+	StartLineNumber       *int
+	EndLineNumber         *int
 }
 
 type OutMissingError struct {
@@ -60,29 +61,29 @@ type CheckTzResult struct {
 }
 
 type TechnicalSpecificationVersion struct {
-	VersionId                 string
+	VersionId                  string
 	TechnicalSpecificationName string
-	VersionNumber             int32
-	CreatedAt                 string
+	VersionNumber              int32
+	CreatedAt                  string
 }
 
 type VersionWithErrorCounts struct {
-	VersionId                     string
-	TechnicalSpecificationId      string
-	TechnicalSpecificationName    string
-	UserId                        string
-	VersionNumber                 int32
-	CreatedAt                     string
-	UpdatedAt                     string
-	OriginalFileId                string
-	OutHtml                       string
-	Css                           string
-	CheckedFileId                 string
-	AllRubs                       *float64
-	AllTokens                     *int64
-	InspectionTimeNanoseconds     *int64
-	InvalidErrorCount             int32
-	MissingErrorCount             int32
+	VersionId                  string
+	TechnicalSpecificationId   string
+	TechnicalSpecificationName string
+	UserId                     string
+	VersionNumber              int32
+	CreatedAt                  string
+	UpdatedAt                  string
+	OriginalFileId             string
+	OutHtml                    string
+	Css                        string
+	CheckedFileId              string
+	AllRubs                    *float64
+	AllTokens                  *int64
+	InspectionTimeNanoseconds  *int64
+	InvalidErrorCount          int32
+	MissingErrorCount          int32
 }
 
 type VersionStatistics struct {
@@ -110,7 +111,7 @@ func New(ctx context.Context, addr string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requestID uuid.UUID) (*CheckTzResult, error) {
+func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requestID uuid.UUID) (*tzv1.CheckTzResponse, error) {
 	const op = "tz_client.CheckTz"
 
 	// Создаем контекст с таймаутом 30 минут для gRPC запроса
@@ -129,72 +130,74 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 
 	fmt.Println("точка 12")
 
+	return resp, nil
+
 	// Конвертация OutInvalidError из proto в клиентские структуры
-	invalidErrors := make([]OutInvalidError, len(resp.InvalidErrors))
-	for i, grpcError := range resp.InvalidErrors {
-		var startLine, endLine *int
-		if grpcError.StartLineNumber != nil {
-			val := int(*grpcError.StartLineNumber)
-			startLine = &val
-		}
-		if grpcError.EndLineNumber != nil {
-			val := int(*grpcError.EndLineNumber)
-			endLine = &val
-		}
-
-		// Обработка QuoteLines (массив строк из proto)
-		var quoteLines *[]string
-		if len(grpcError.QuoteLines) > 0 {
-			quoteLinesSlice := make([]string, len(grpcError.QuoteLines))
-			copy(quoteLinesSlice, grpcError.QuoteLines)
-			quoteLines = &quoteLinesSlice
-		}
-
-		invalidErrors[i] = OutInvalidError{
-			Id:                   grpcError.Id,
-			IdStr:                grpcError.IdStr,
-			GroupID:              grpcError.GroupId,
-			ErrorCode:            grpcError.ErrorCode,
-			Quote:                grpcError.Quote,
-			Analysis:             grpcError.Analysis,
-			Critique:             grpcError.Critique,
-			Verification:         grpcError.Verification,
-			SuggestedFix:         grpcError.SuggestedFix,
-			Rationale:            grpcError.Rationale,
-			OriginalQuote:        grpcError.OriginalQuote,
-			QuoteLines:           quoteLines,
-			UntilTheEndOfSentence: grpcError.UntilTheEndOfSentence,
-			StartLineNumber:      startLine,
-			EndLineNumber:        endLine,
-		}
-	}
-
-	// Конвертация OutMissingError из proto в клиентские структуры
-	missingErrors := make([]OutMissingError, len(resp.MissingErrors))
-	for i, grpcError := range resp.MissingErrors {
-		missingErrors[i] = OutMissingError{
-			Id:           grpcError.Id,
-			IdStr:        grpcError.IdStr,
-			GroupID:      grpcError.GroupId,
-			ErrorCode:    grpcError.ErrorCode,
-			Analysis:     grpcError.Analysis,
-			Critique:     grpcError.Critique,
-			Verification: grpcError.Verification,
-			SuggestedFix: grpcError.SuggestedFix,
-			Rationale:    grpcError.Rationale,
-		}
-	}
-
-	fmt.Println("точка 13")
-
-	return &CheckTzResult{
-		HtmlText:      resp.HtmlText,
-		InvalidErrors: invalidErrors,
-		MissingErrors: missingErrors,
-		FileId:        resp.FileId,
-		Css:           resp.Css,
-		DocId:         resp.DocId,
-	}, nil
+	//invalidErrors := make([]OutInvalidError, len(resp.InvalidErrors))
+	//for i, grpcError := range resp.InvalidErrors {
+	//	var startLine, endLine *int
+	//	if grpcError.StartLineNumber != nil {
+	//		val := int(*grpcError.StartLineNumber)
+	//		startLine = &val
+	//	}
+	//	if grpcError.EndLineNumber != nil {
+	//		val := int(*grpcError.EndLineNumber)
+	//		endLine = &val
+	//	}
+	//
+	//	// Обработка QuoteLines (массив строк из proto)
+	//	var quoteLines *[]string
+	//	if len(grpcError.QuoteLines) > 0 {
+	//		quoteLinesSlice := make([]string, len(grpcError.QuoteLines))
+	//		copy(quoteLinesSlice, grpcError.QuoteLines)
+	//		quoteLines = &quoteLinesSlice
+	//	}
+	//
+	//	invalidErrors[i] = OutInvalidError{
+	//		Id:                    grpcError.Id,
+	//		IdStr:                 grpcError.IdStr,
+	//		GroupID:               grpcError.GroupId,
+	//		ErrorCode:             grpcError.ErrorCode,
+	//		Quote:                 grpcError.Quote,
+	//		Analysis:              grpcError.Analysis,
+	//		Critique:              grpcError.Critique,
+	//		Verification:          grpcError.Verification,
+	//		SuggestedFix:          grpcError.SuggestedFix,
+	//		Rationale:             grpcError.Rationale,
+	//		OriginalQuote:         grpcError.OriginalQuote,
+	//		QuoteLines:            quoteLines,
+	//		UntilTheEndOfSentence: grpcError.UntilTheEndOfSentence,
+	//		StartLineNumber:       startLine,
+	//		EndLineNumber:         endLine,
+	//	}
+	//}
+	//
+	//// Конвертация OutMissingError из proto в клиентские структуры
+	//missingErrors := make([]OutMissingError, len(resp.MissingErrors))
+	//for i, grpcError := range resp.MissingErrors {
+	//	missingErrors[i] = OutMissingError{
+	//		Id:           grpcError.Id,
+	//		IdStr:        grpcError.IdStr,
+	//		GroupID:      grpcError.GroupId,
+	//		ErrorCode:    grpcError.ErrorCode,
+	//		Analysis:     grpcError.Analysis,
+	//		Critique:     grpcError.Critique,
+	//		Verification: grpcError.Verification,
+	//		SuggestedFix: grpcError.SuggestedFix,
+	//		Rationale:    grpcError.Rationale,
+	//	}
+	//}
+	//
+	//fmt.Println("точка 13")
+	//
+	//return &CheckTzResult{
+	//	HtmlText:      resp.HtmlText,
+	//	InvalidErrors: invalidErrors,
+	//	MissingErrors: missingErrors,
+	//	FileId:        resp.FileId,
+	//	Css:           resp.Css,
+	//	DocId:         resp.DocId,
+	//}, nil
 }
 
 func (c *Client) GetTechnicalSpecificationVersions(ctx context.Context, userID uuid.UUID) ([]TechnicalSpecificationVersion, error) {
@@ -210,10 +213,10 @@ func (c *Client) GetTechnicalSpecificationVersions(ctx context.Context, userID u
 	versions := make([]TechnicalSpecificationVersion, len(resp.Versions))
 	for i, grpcVersion := range resp.Versions {
 		versions[i] = TechnicalSpecificationVersion{
-			VersionId:                 grpcVersion.VersionId,
+			VersionId:                  grpcVersion.VersionId,
 			TechnicalSpecificationName: grpcVersion.TechnicalSpecificationName,
-			VersionNumber:             grpcVersion.VersionNumber,
-			CreatedAt:                 grpcVersion.CreatedAt,
+			VersionNumber:              grpcVersion.VersionNumber,
+			CreatedAt:                  grpcVersion.CreatedAt,
 		}
 	}
 
@@ -252,21 +255,21 @@ func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*CheckTzR
 		}
 
 		invalidErrors[i] = OutInvalidError{
-			Id:                   grpcError.Id,
-			IdStr:                grpcError.IdStr,
-			GroupID:              grpcError.GroupId,
-			ErrorCode:            grpcError.ErrorCode,
-			Quote:                grpcError.Quote,
-			Analysis:             grpcError.Analysis,
-			Critique:             grpcError.Critique,
-			Verification:         grpcError.Verification,
-			SuggestedFix:         grpcError.SuggestedFix,
-			Rationale:            grpcError.Rationale,
-			OriginalQuote:        grpcError.OriginalQuote,
-			QuoteLines:           quoteLines,
+			Id:                    grpcError.Id,
+			IdStr:                 grpcError.IdStr,
+			GroupID:               grpcError.GroupId,
+			ErrorCode:             grpcError.ErrorCode,
+			Quote:                 grpcError.Quote,
+			Analysis:              grpcError.Analysis,
+			Critique:              grpcError.Critique,
+			Verification:          grpcError.Verification,
+			SuggestedFix:          grpcError.SuggestedFix,
+			Rationale:             grpcError.Rationale,
+			OriginalQuote:         grpcError.OriginalQuote,
+			QuoteLines:            quoteLines,
 			UntilTheEndOfSentence: grpcError.UntilTheEndOfSentence,
-			StartLineNumber:      startLine,
-			EndLineNumber:        endLine,
+			StartLineNumber:       startLine,
+			EndLineNumber:         endLine,
 		}
 	}
 
@@ -307,22 +310,22 @@ func (c *Client) GetAllVersions(ctx context.Context) ([]VersionWithErrorCounts, 
 	versions := make([]VersionWithErrorCounts, len(resp.Versions))
 	for i, version := range resp.Versions {
 		versions[i] = VersionWithErrorCounts{
-			VersionId:                     version.VersionId,
-			TechnicalSpecificationId:      version.TechnicalSpecificationId,
-			TechnicalSpecificationName:    version.TechnicalSpecificationName,
-			UserId:                        version.UserId,
-			VersionNumber:                 version.VersionNumber,
-			CreatedAt:                     version.CreatedAt,
-			UpdatedAt:                     version.UpdatedAt,
-			OriginalFileId:                version.OriginalFileId,
-			OutHtml:                       version.OutHtml,
-			Css:                           version.Css,
-			CheckedFileId:                 version.CheckedFileId,
-			AllRubs:                       version.AllRubs,
-			AllTokens:                     version.AllTokens,
-			InspectionTimeNanoseconds:     version.InspectionTimeNanoseconds,
-			InvalidErrorCount:             version.InvalidErrorCount,
-			MissingErrorCount:             version.MissingErrorCount,
+			VersionId:                  version.VersionId,
+			TechnicalSpecificationId:   version.TechnicalSpecificationId,
+			TechnicalSpecificationName: version.TechnicalSpecificationName,
+			UserId:                     version.UserId,
+			VersionNumber:              version.VersionNumber,
+			CreatedAt:                  version.CreatedAt,
+			UpdatedAt:                  version.UpdatedAt,
+			OriginalFileId:             version.OriginalFileId,
+			OutHtml:                    version.OutHtml,
+			Css:                        version.Css,
+			CheckedFileId:              version.CheckedFileId,
+			AllRubs:                    version.AllRubs,
+			AllTokens:                  version.AllTokens,
+			InspectionTimeNanoseconds:  version.InspectionTimeNanoseconds,
+			InvalidErrorCount:          version.InvalidErrorCount,
+			MissingErrorCount:          version.MissingErrorCount,
 		}
 	}
 

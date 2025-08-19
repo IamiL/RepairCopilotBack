@@ -27,6 +27,7 @@ message CheckTzResponse {
   repeated OutInvalidError invalid_errors = 4;
   repeated OutMissingError missing_errors = 5;
   string fileId = 6;
+  repeated Error errors = 7;
 }
 
 message OutInvalidError {
@@ -57,6 +58,29 @@ message OutMissingError {
   string verification = 7;
   string suggested_fix = 8;
   string rationale = 9;
+}
+
+message Instance {
+  optional string err_type = 1;
+  optional string snippet = 2;
+  optional int32 line_start = 3;
+  optional int32 line_end = 4;
+  optional string suggested_fix = 5;
+  optional string rationale = 6;
+}
+
+message Error {
+  string id = 1;
+  string group_id = 2;
+  string error_code = 3;
+  optional string preliminary_notes = 4;
+  optional string overall_critique = 5;
+  string verdict = 6;
+  optional string process_analysis = 7;
+  optional string process_critique = 8;
+  optional string process_verification = 9;
+  repeated string process_retrieval = 10;
+  repeated Instance instances = 11;
 }
 
 message GetTechnicalSpecificationVersionsRequest {

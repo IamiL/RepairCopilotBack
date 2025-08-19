@@ -15,43 +15,44 @@ import (
 	"github.com/google/uuid"
 )
 
-type NewTzResponse struct {
-	Text          string                      `json:"text"`
-	Css           string                      `json:"css"`
-	DocId         *string                     `json:"doc_id"`
-	InvalidErrors []NewTzInvalidErrorResponse `json:"invalid_errors"`
-	MissingErrors []NewTzMissingErrorResponse `json:"missing_errors"`
-}
-
-type NewTzInvalidErrorResponse struct {
-	Id                    uint32    `json:"numeric_id"`
-	IdStr                 string    `json:"id"`
-	GroupID               string    `json:"group_id"`
-	ErrorCode             string    `json:"error_code"`
-	Quote                 string    `json:"quote"`
-	Analysis              string    `json:"analysis"`
-	Critique              string    `json:"critique"`
-	Verification          string    `json:"verification"`
-	SuggestedFix          string    `json:"suggested_fix"`
-	Rationale             string    `json:"rationale"`
-	OriginalQuote         string    `json:"original_quote"`
-	QuoteLines            *[]string `json:"quote_lines"`
-	UntilTheEndOfSentence bool      `json:"until_the_end_of_sentence"`
-	StartLineNumber       *int      `json:"start_line_number"`
-	EndLineNumber         *int      `json:"end_line_number"`
-}
-
-type NewTzMissingErrorResponse struct {
-	Id           uint32 `json:"id"`
-	IdStr        string `json:"id_str"`
-	GroupID      string `json:"group_id"`
-	ErrorCode    string `json:"error_code"`
-	Analysis     string `json:"analysis"`
-	Critique     string `json:"critique"`
-	Verification string `json:"verification"`
-	SuggestedFix string `json:"suggested_fix"`
-	Rationale    string `json:"rationale"`
-}
+//type NewTzResponse struct {
+//	Text          string                      `json:"text"`
+//	Css           string                      `json:"css"`
+//	DocId         *string                     `json:"doc_id"`
+//	InvalidErrors []NewTzInvalidErrorResponse `json:"invalid_errors"`
+//	MissingErrors []NewTzMissingErrorResponse `json:"missing_errors"`
+//	Errors[]
+//}
+//
+//type NewTzInvalidErrorResponse struct {
+//	Id                    uint32    `json:"numeric_id"`
+//	IdStr                 string    `json:"id"`
+//	GroupID               string    `json:"group_id"`
+//	ErrorCode             string    `json:"error_code"`
+//	Quote                 string    `json:"quote"`
+//	Analysis              string    `json:"analysis"`
+//	Critique              string    `json:"critique"`
+//	Verification          string    `json:"verification"`
+//	SuggestedFix          string    `json:"suggested_fix"`
+//	Rationale             string    `json:"rationale"`
+//	OriginalQuote         string    `json:"original_quote"`
+//	QuoteLines            *[]string `json:"quote_lines"`
+//	UntilTheEndOfSentence bool      `json:"until_the_end_of_sentence"`
+//	StartLineNumber       *int      `json:"start_line_number"`
+//	EndLineNumber         *int      `json:"end_line_number"`
+//}
+//
+//type NewTzMissingErrorResponse struct {
+//	Id           uint32 `json:"id"`
+//	IdStr        string `json:"id_str"`
+//	GroupID      string `json:"group_id"`
+//	ErrorCode    string `json:"error_code"`
+//	Analysis     string `json:"analysis"`
+//	Critique     string `json:"critique"`
+//	Verification string `json:"verification"`
+//	SuggestedFix string `json:"suggested_fix"`
+//	Rationale    string `json:"rationale"`
+//}
 
 func NewTzHandler(
 	log *slog.Logger,
@@ -168,55 +169,55 @@ func NewTzHandler(
 		}
 
 		// Конвертация OutInvalidError в HTTP response структуры (ошибки уже отсортированы в tz-bot сервисе)
-		invalidErrorsResp := make([]NewTzInvalidErrorResponse, len(checkTzResult.InvalidErrors))
-		for i, e := range checkTzResult.InvalidErrors {
-			invalidErrorsResp[i] = NewTzInvalidErrorResponse{
-				Id:                    e.Id,
-				IdStr:                 e.IdStr,
-				GroupID:               e.GroupID,
-				ErrorCode:             e.ErrorCode,
-				Quote:                 e.Quote,
-				Analysis:              e.Analysis,
-				Critique:              e.Critique,
-				Verification:          e.Verification,
-				SuggestedFix:          e.SuggestedFix,
-				Rationale:             e.Rationale,
-				OriginalQuote:         e.OriginalQuote,
-				QuoteLines:            e.QuoteLines,
-				UntilTheEndOfSentence: e.UntilTheEndOfSentence,
-				StartLineNumber:       e.StartLineNumber,
-				EndLineNumber:         e.EndLineNumber,
-			}
-		}
-
-		// Конвертация OutMissingError в HTTP response структуры
-		missingErrorsResp := make([]NewTzMissingErrorResponse, len(checkTzResult.MissingErrors))
-		for i, e := range checkTzResult.MissingErrors {
-			missingErrorsResp[i] = NewTzMissingErrorResponse{
-				Id:           e.Id,
-				IdStr:        e.IdStr,
-				GroupID:      e.GroupID,
-				ErrorCode:    e.ErrorCode,
-				Analysis:     e.Analysis,
-				Critique:     e.Critique,
-				Verification: e.Verification,
-				SuggestedFix: e.SuggestedFix,
-				Rationale:    e.Rationale,
-			}
-		}
-
-		response := NewTzResponse{
-			Text:          checkTzResult.HtmlText,
-			InvalidErrors: invalidErrorsResp,
-			MissingErrors: missingErrorsResp,
-			Css:           checkTzResult.Css,
-			DocId:         &checkTzResult.DocId,
-		}
+		//invalidErrorsResp := make([]NewTzInvalidErrorResponse, len(checkTzResult.InvalidErrors))
+		//for i, e := range checkTzResult.InvalidErrors {
+		//	invalidErrorsResp[i] = NewTzInvalidErrorResponse{
+		//		Id:                    e.Id,
+		//		IdStr:                 e.IdStr,
+		//		GroupID:               e.GroupID,
+		//		ErrorCode:             e.ErrorCode,
+		//		Quote:                 e.Quote,
+		//		Analysis:              e.Analysis,
+		//		Critique:              e.Critique,
+		//		Verification:          e.Verification,
+		//		SuggestedFix:          e.SuggestedFix,
+		//		Rationale:             e.Rationale,
+		//		OriginalQuote:         e.OriginalQuote,
+		//		QuoteLines:            e.QuoteLines,
+		//		UntilTheEndOfSentence: e.UntilTheEndOfSentence,
+		//		StartLineNumber:       e.StartLineNumber,
+		//		EndLineNumber:         e.EndLineNumber,
+		//	}
+		//}
+		//
+		//// Конвертация OutMissingError в HTTP response структуры
+		//missingErrorsResp := make([]NewTzMissingErrorResponse, len(checkTzResult.MissingErrors))
+		//for i, e := range checkTzResult.MissingErrors {
+		//	missingErrorsResp[i] = NewTzMissingErrorResponse{
+		//		Id:           e.Id,
+		//		IdStr:        e.IdStr,
+		//		GroupID:      e.GroupID,
+		//		ErrorCode:    e.ErrorCode,
+		//		Analysis:     e.Analysis,
+		//		Critique:     e.Critique,
+		//		Verification: e.Verification,
+		//		SuggestedFix: e.SuggestedFix,
+		//		Rationale:    e.Rationale,
+		//	}
+		//}
+		//
+		//response := NewTzResponse{
+		//	Text:          checkTzResult.HtmlText,
+		//	InvalidErrors: invalidErrorsResp,
+		//	MissingErrors: missingErrorsResp,
+		//	Css:           checkTzResult.Css,
+		//	DocId:         &checkTzResult.DocId,
+		//}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
-		if err := json.NewEncoder(w).Encode(response); err != nil {
+		if err := json.NewEncoder(w).Encode(checkTzResult); err != nil {
 			log.Error("failed to encode response", slog.String("error", err.Error()))
 			return
 		}

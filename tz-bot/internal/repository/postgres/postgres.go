@@ -552,6 +552,32 @@ func (s *Storage) DeleteMissingErrorsByVersionID(ctx context.Context, versionID 
 	return nil
 }
 
+// ErrorRepository implementation
+
+// CreateErrors creates multiple errors for a version
+func (s *Storage) CreateErrors(ctx context.Context, req *repo.CreateErrorsRequest) error {
+	if len(req.Errors) == 0 {
+		return nil
+	}
+
+	query := `
+		INSERT INTO errors (id, version_id, group_id, error_code, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+
+	for _, errorData := range req.Errors {
+		_, err := s.db.Exec(ctx, query,
+			errorData.ID, req.VersionID, errorData.GroupID, errorData.ErrorCode,
+			errorData.PreliminaryNotes, errorData.OverallCritique, errorData.Verdict,
+			errorData.ProcessAnalysis, errorData.ProcessCritique, errorData.ProcessVerification,
+			errorData.ProcessRetrieval, errorData.Instances)
+		if err != nil {
+			return fmt.Errorf("failed to create error: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // CreateErrorFeedback creates new feedback for an error
 func (s *Storage) CreateErrorFeedback(ctx context.Context, req *repo.CreateErrorFeedbackRequest) (*repo.ErrorFeedback, error) {
 	query := `

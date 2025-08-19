@@ -113,6 +113,7 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 								//}
 
 								outInvalidErrors = append(outInvalidErrors, OutInvalidError{
+									ErrorID:               (*((*report)[i]).Errors)[j].ID,
 									Id:                    id,
 									IdStr:                 fmt.Sprintf("%d", id),
 									GroupID:               groupId,

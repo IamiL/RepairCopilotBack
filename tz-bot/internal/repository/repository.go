@@ -94,6 +94,12 @@ type MissingErrorRepository interface {
 	DeleteMissingErrorsByVersionID(ctx context.Context, versionID uuid.UUID) error
 }
 
+// ErrorRepository defines the interface for error operations
+type ErrorRepository interface {
+	// CreateErrors creates multiple errors for a version
+	CreateErrors(ctx context.Context, req *CreateErrorsRequest) error
+}
+
 // ErrorFeedbackRepository defines the interface for error feedback operations
 type ErrorFeedbackRepository interface {
 	// CreateErrorFeedback creates new feedback for an error
@@ -115,6 +121,7 @@ type Repository interface {
 	VersionRepository
 	InvalidErrorRepository
 	MissingErrorRepository
+	ErrorRepository
 	ErrorFeedbackRepository
 	LLMCacheRepository
 	

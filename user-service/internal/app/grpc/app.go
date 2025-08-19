@@ -212,6 +212,7 @@ func (s *serverAPI) GetUserInfo(ctx context.Context, req *pb.GetUserInfoRequest)
 		Login:               user.Login,
 		IsAdmin1:            user.IsAdmin1,
 		IsAdmin2:            user.IsAdmin2,
+		IsConfirmed:         user.IsConfirmed,
 		RegisteredAt:        timestamppb.New(user.CreatedAt),
 		LastVisitAt:         timestamppb.New(user.LastVisitAt),
 		InspectionsCount:    uint32(user.InspectionsCount),

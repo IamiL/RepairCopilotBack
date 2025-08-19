@@ -82,6 +82,7 @@ type GetUserInfoResponse struct {
 	ErrorFeedbackCount  uint32                 `protobuf:"varint,10,opt,name=error_feedback_count,json=errorFeedbackCount,proto3" json:"error_feedback_count,omitempty"`
 	InspectionsPerDay   uint32                 `protobuf:"varint,11,opt,name=inspections_per_day,json=inspectionsPerDay,proto3" json:"inspections_per_day,omitempty"`
 	InspectionsForToday uint32                 `protobuf:"varint,12,opt,name=Inspections_for_today,json=InspectionsForToday,proto3" json:"Inspections_for_today,omitempty"`
+	IsConfirmed         bool                   `protobuf:"varint,13,opt,name=is_confirmed,json=isConfirmed,proto3" json:"is_confirmed,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -198,6 +199,13 @@ func (x *GetUserInfoResponse) GetInspectionsForToday() uint32 {
 		return x.InspectionsForToday
 	}
 	return 0
+}
+
+func (x *GetUserInfoResponse) GetIsConfirmed() bool {
+	if x != nil {
+		return x.IsConfirmed
+	}
+	return false
 }
 
 // RegisterUserRequest содержит данные для регистрации пользователя
@@ -999,7 +1007,7 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\n" +
 	"\x12user/v1/user.proto\x12\auser.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"-\n" +
 	"\x12GetUserInfoRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xfb\x03\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x9e\x04\n" +
 	"\x13GetUserInfoResponse\x12\x1d\n" +
 	"\n" +
 	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
@@ -1014,7 +1022,8 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x14error_feedback_count\x18\n" +
 	" \x01(\rR\x12errorFeedbackCount\x12.\n" +
 	"\x13inspections_per_day\x18\v \x01(\rR\x11inspectionsPerDay\x122\n" +
-	"\x15Inspections_for_today\x18\f \x01(\rR\x13InspectionsForToday\"\x99\x01\n" +
+	"\x15Inspections_for_today\x18\f \x01(\rR\x13InspectionsForToday\x12!\n" +
+	"\fis_confirmed\x18\r \x01(\bR\visConfirmed\"\x99\x01\n" +
 	"\x13RegisterUserRequest\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x1d\n" +

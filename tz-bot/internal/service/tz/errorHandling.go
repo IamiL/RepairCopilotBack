@@ -7,9 +7,12 @@ import (
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	markdown_service_client "repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type OutInvalidError struct {
+	ErrorID               uuid.UUID `json:"errorId"`
 	Id                    uint32
 	IdStr                 string `json:"id"`
 	GroupID               string `json:"group_id"`
@@ -29,6 +32,7 @@ type OutInvalidError struct {
 }
 
 type OutMissingError struct {
+	ErrorID      uuid.UUID `json:"errorId"`
 	Id           uint32
 	IdStr        string   `json:"id"`
 	GroupID      string   `json:"group_id"`

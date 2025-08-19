@@ -191,6 +191,43 @@ type MissingErrorData struct {
 	CreatedAt    time.Time
 }
 
+// Error represents an error in the errors table
+type Error struct {
+	ID                  uuid.UUID `db:"id"`
+	VersionID           uuid.UUID `db:"version_id"`
+	GroupID             *string   `db:"group_id"`
+	ErrorCode           *string   `db:"error_code"`
+	PreliminaryNotes    *string   `db:"preliminary_notes"`
+	OverallCritique     *string   `db:"overall_critique"`
+	Verdict             *string   `db:"verdict"`
+	ProcessAnalysis     *string   `db:"process_analysis"`
+	ProcessCritique     *string   `db:"process_critique"`
+	ProcessVerification *string   `db:"process_verification"`
+	ProcessRetrieval    []string  `db:"process_retrieval"`
+	Instances           []byte    `db:"instances"` // JSONB
+}
+
+// CreateErrorsRequest represents request to create errors
+type CreateErrorsRequest struct {
+	VersionID uuid.UUID
+	Errors    []ErrorData
+}
+
+// ErrorData represents data for creating an error
+type ErrorData struct {
+	ID                  uuid.UUID
+	GroupID             *string
+	ErrorCode           *string
+	PreliminaryNotes    *string
+	OverallCritique     *string
+	Verdict             *string
+	ProcessAnalysis     *string
+	ProcessCritique     *string
+	ProcessVerification *string
+	ProcessRetrieval    *[]string
+	Instances           []byte // JSONB
+}
+
 // ErrorType represents the type of error (invalid or missing)
 type ErrorType string
 

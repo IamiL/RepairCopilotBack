@@ -89,6 +89,7 @@ type CheckTzResponse struct {
 	InvalidErrors []*OutInvalidError     `protobuf:"bytes,4,rep,name=invalid_errors,json=invalidErrors,proto3" json:"invalid_errors,omitempty"`
 	MissingErrors []*OutMissingError     `protobuf:"bytes,5,rep,name=missing_errors,json=missingErrors,proto3" json:"missing_errors,omitempty"`
 	FileId        string                 `protobuf:"bytes,6,opt,name=fileId,proto3" json:"fileId,omitempty"`
+	Errors        []*Error               `protobuf:"bytes,7,rep,name=errors,proto3" json:"errors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,6 +164,13 @@ func (x *CheckTzResponse) GetFileId() string {
 		return x.FileId
 	}
 	return ""
+}
+
+func (x *CheckTzResponse) GetErrors() []*Error {
+	if x != nil {
+		return x.Errors
+	}
+	return nil
 }
 
 type OutInvalidError struct {
@@ -429,6 +437,214 @@ func (x *OutMissingError) GetRationale() string {
 	return ""
 }
 
+type Instance struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ErrType       *string                `protobuf:"bytes,1,opt,name=err_type,json=errType,proto3,oneof" json:"err_type,omitempty"`
+	Snippet       *string                `protobuf:"bytes,2,opt,name=snippet,proto3,oneof" json:"snippet,omitempty"`
+	LineStart     *int32                 `protobuf:"varint,3,opt,name=line_start,json=lineStart,proto3,oneof" json:"line_start,omitempty"`
+	LineEnd       *int32                 `protobuf:"varint,4,opt,name=line_end,json=lineEnd,proto3,oneof" json:"line_end,omitempty"`
+	SuggestedFix  *string                `protobuf:"bytes,5,opt,name=suggested_fix,json=suggestedFix,proto3,oneof" json:"suggested_fix,omitempty"`
+	Rationale     *string                `protobuf:"bytes,6,opt,name=rationale,proto3,oneof" json:"rationale,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Instance) Reset() {
+	*x = Instance{}
+	mi := &file_tz_v1_tz_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Instance) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Instance) ProtoMessage() {}
+
+func (x *Instance) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Instance.ProtoReflect.Descriptor instead.
+func (*Instance) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Instance) GetErrType() string {
+	if x != nil && x.ErrType != nil {
+		return *x.ErrType
+	}
+	return ""
+}
+
+func (x *Instance) GetSnippet() string {
+	if x != nil && x.Snippet != nil {
+		return *x.Snippet
+	}
+	return ""
+}
+
+func (x *Instance) GetLineStart() int32 {
+	if x != nil && x.LineStart != nil {
+		return *x.LineStart
+	}
+	return 0
+}
+
+func (x *Instance) GetLineEnd() int32 {
+	if x != nil && x.LineEnd != nil {
+		return *x.LineEnd
+	}
+	return 0
+}
+
+func (x *Instance) GetSuggestedFix() string {
+	if x != nil && x.SuggestedFix != nil {
+		return *x.SuggestedFix
+	}
+	return ""
+}
+
+func (x *Instance) GetRationale() string {
+	if x != nil && x.Rationale != nil {
+		return *x.Rationale
+	}
+	return ""
+}
+
+type Error struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	GroupId             string                 `protobuf:"bytes,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	ErrorCode           string                 `protobuf:"bytes,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	PreliminaryNotes    *string                `protobuf:"bytes,4,opt,name=preliminary_notes,json=preliminaryNotes,proto3,oneof" json:"preliminary_notes,omitempty"`
+	OverallCritique     *string                `protobuf:"bytes,5,opt,name=overall_critique,json=overallCritique,proto3,oneof" json:"overall_critique,omitempty"`
+	Verdict             string                 `protobuf:"bytes,6,opt,name=verdict,proto3" json:"verdict,omitempty"`
+	ProcessAnalysis     *string                `protobuf:"bytes,7,opt,name=process_analysis,json=processAnalysis,proto3,oneof" json:"process_analysis,omitempty"`
+	ProcessCritique     *string                `protobuf:"bytes,8,opt,name=process_critique,json=processCritique,proto3,oneof" json:"process_critique,omitempty"`
+	ProcessVerification *string                `protobuf:"bytes,9,opt,name=process_verification,json=processVerification,proto3,oneof" json:"process_verification,omitempty"`
+	ProcessRetrieval    []string               `protobuf:"bytes,10,rep,name=process_retrieval,json=processRetrieval,proto3" json:"process_retrieval,omitempty"`
+	Instances           []*Instance            `protobuf:"bytes,11,rep,name=instances,proto3" json:"instances,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Error) Reset() {
+	*x = Error{}
+	mi := &file_tz_v1_tz_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Error) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Error) ProtoMessage() {}
+
+func (x *Error) ProtoReflect() protoreflect.Message {
+	mi := &file_tz_v1_tz_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Error.ProtoReflect.Descriptor instead.
+func (*Error) Descriptor() ([]byte, []int) {
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Error) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Error) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *Error) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *Error) GetPreliminaryNotes() string {
+	if x != nil && x.PreliminaryNotes != nil {
+		return *x.PreliminaryNotes
+	}
+	return ""
+}
+
+func (x *Error) GetOverallCritique() string {
+	if x != nil && x.OverallCritique != nil {
+		return *x.OverallCritique
+	}
+	return ""
+}
+
+func (x *Error) GetVerdict() string {
+	if x != nil {
+		return x.Verdict
+	}
+	return ""
+}
+
+func (x *Error) GetProcessAnalysis() string {
+	if x != nil && x.ProcessAnalysis != nil {
+		return *x.ProcessAnalysis
+	}
+	return ""
+}
+
+func (x *Error) GetProcessCritique() string {
+	if x != nil && x.ProcessCritique != nil {
+		return *x.ProcessCritique
+	}
+	return ""
+}
+
+func (x *Error) GetProcessVerification() string {
+	if x != nil && x.ProcessVerification != nil {
+		return *x.ProcessVerification
+	}
+	return ""
+}
+
+func (x *Error) GetProcessRetrieval() []string {
+	if x != nil {
+		return x.ProcessRetrieval
+	}
+	return nil
+}
+
+func (x *Error) GetInstances() []*Instance {
+	if x != nil {
+		return x.Instances
+	}
+	return nil
+}
+
 type GetTechnicalSpecificationVersionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -438,7 +654,7 @@ type GetTechnicalSpecificationVersionsRequest struct {
 
 func (x *GetTechnicalSpecificationVersionsRequest) Reset() {
 	*x = GetTechnicalSpecificationVersionsRequest{}
-	mi := &file_tz_v1_tz_proto_msgTypes[4]
+	mi := &file_tz_v1_tz_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -450,7 +666,7 @@ func (x *GetTechnicalSpecificationVersionsRequest) String() string {
 func (*GetTechnicalSpecificationVersionsRequest) ProtoMessage() {}
 
 func (x *GetTechnicalSpecificationVersionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[4]
+	mi := &file_tz_v1_tz_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -463,7 +679,7 @@ func (x *GetTechnicalSpecificationVersionsRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use GetTechnicalSpecificationVersionsRequest.ProtoReflect.Descriptor instead.
 func (*GetTechnicalSpecificationVersionsRequest) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{4}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetTechnicalSpecificationVersionsRequest) GetUserId() string {
@@ -482,7 +698,7 @@ type GetTechnicalSpecificationVersionsResponse struct {
 
 func (x *GetTechnicalSpecificationVersionsResponse) Reset() {
 	*x = GetTechnicalSpecificationVersionsResponse{}
-	mi := &file_tz_v1_tz_proto_msgTypes[5]
+	mi := &file_tz_v1_tz_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -494,7 +710,7 @@ func (x *GetTechnicalSpecificationVersionsResponse) String() string {
 func (*GetTechnicalSpecificationVersionsResponse) ProtoMessage() {}
 
 func (x *GetTechnicalSpecificationVersionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[5]
+	mi := &file_tz_v1_tz_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -507,7 +723,7 @@ func (x *GetTechnicalSpecificationVersionsResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use GetTechnicalSpecificationVersionsResponse.ProtoReflect.Descriptor instead.
 func (*GetTechnicalSpecificationVersionsResponse) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{5}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetTechnicalSpecificationVersionsResponse) GetVersions() []*TechnicalSpecificationVersion {
@@ -529,7 +745,7 @@ type TechnicalSpecificationVersion struct {
 
 func (x *TechnicalSpecificationVersion) Reset() {
 	*x = TechnicalSpecificationVersion{}
-	mi := &file_tz_v1_tz_proto_msgTypes[6]
+	mi := &file_tz_v1_tz_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -541,7 +757,7 @@ func (x *TechnicalSpecificationVersion) String() string {
 func (*TechnicalSpecificationVersion) ProtoMessage() {}
 
 func (x *TechnicalSpecificationVersion) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[6]
+	mi := &file_tz_v1_tz_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -554,7 +770,7 @@ func (x *TechnicalSpecificationVersion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TechnicalSpecificationVersion.ProtoReflect.Descriptor instead.
 func (*TechnicalSpecificationVersion) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{6}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TechnicalSpecificationVersion) GetVersionId() string {
@@ -594,7 +810,7 @@ type GetVersionRequest struct {
 
 func (x *GetVersionRequest) Reset() {
 	*x = GetVersionRequest{}
-	mi := &file_tz_v1_tz_proto_msgTypes[7]
+	mi := &file_tz_v1_tz_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -606,7 +822,7 @@ func (x *GetVersionRequest) String() string {
 func (*GetVersionRequest) ProtoMessage() {}
 
 func (x *GetVersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[7]
+	mi := &file_tz_v1_tz_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -619,7 +835,7 @@ func (x *GetVersionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVersionRequest.ProtoReflect.Descriptor instead.
 func (*GetVersionRequest) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{7}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetVersionRequest) GetVersionId() string {
@@ -643,7 +859,7 @@ type GetVersionResponse struct {
 
 func (x *GetVersionResponse) Reset() {
 	*x = GetVersionResponse{}
-	mi := &file_tz_v1_tz_proto_msgTypes[8]
+	mi := &file_tz_v1_tz_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -655,7 +871,7 @@ func (x *GetVersionResponse) String() string {
 func (*GetVersionResponse) ProtoMessage() {}
 
 func (x *GetVersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[8]
+	mi := &file_tz_v1_tz_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -668,7 +884,7 @@ func (x *GetVersionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVersionResponse.ProtoReflect.Descriptor instead.
 func (*GetVersionResponse) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{8}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetVersionResponse) GetHtmlText() string {
@@ -721,7 +937,7 @@ type GetAllVersionsRequest struct {
 
 func (x *GetAllVersionsRequest) Reset() {
 	*x = GetAllVersionsRequest{}
-	mi := &file_tz_v1_tz_proto_msgTypes[9]
+	mi := &file_tz_v1_tz_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -733,7 +949,7 @@ func (x *GetAllVersionsRequest) String() string {
 func (*GetAllVersionsRequest) ProtoMessage() {}
 
 func (x *GetAllVersionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[9]
+	mi := &file_tz_v1_tz_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -746,7 +962,7 @@ func (x *GetAllVersionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAllVersionsRequest.ProtoReflect.Descriptor instead.
 func (*GetAllVersionsRequest) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{9}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{11}
 }
 
 type GetAllVersionsResponse struct {
@@ -758,7 +974,7 @@ type GetAllVersionsResponse struct {
 
 func (x *GetAllVersionsResponse) Reset() {
 	*x = GetAllVersionsResponse{}
-	mi := &file_tz_v1_tz_proto_msgTypes[10]
+	mi := &file_tz_v1_tz_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -770,7 +986,7 @@ func (x *GetAllVersionsResponse) String() string {
 func (*GetAllVersionsResponse) ProtoMessage() {}
 
 func (x *GetAllVersionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[10]
+	mi := &file_tz_v1_tz_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -783,7 +999,7 @@ func (x *GetAllVersionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAllVersionsResponse.ProtoReflect.Descriptor instead.
 func (*GetAllVersionsResponse) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{10}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetAllVersionsResponse) GetVersions() []*VersionWithErrorCounts {
@@ -817,7 +1033,7 @@ type VersionWithErrorCounts struct {
 
 func (x *VersionWithErrorCounts) Reset() {
 	*x = VersionWithErrorCounts{}
-	mi := &file_tz_v1_tz_proto_msgTypes[11]
+	mi := &file_tz_v1_tz_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -829,7 +1045,7 @@ func (x *VersionWithErrorCounts) String() string {
 func (*VersionWithErrorCounts) ProtoMessage() {}
 
 func (x *VersionWithErrorCounts) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[11]
+	mi := &file_tz_v1_tz_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -842,7 +1058,7 @@ func (x *VersionWithErrorCounts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VersionWithErrorCounts.ProtoReflect.Descriptor instead.
 func (*VersionWithErrorCounts) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{11}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *VersionWithErrorCounts) GetVersionId() string {
@@ -965,7 +1181,7 @@ type GetVersionStatisticsRequest struct {
 
 func (x *GetVersionStatisticsRequest) Reset() {
 	*x = GetVersionStatisticsRequest{}
-	mi := &file_tz_v1_tz_proto_msgTypes[12]
+	mi := &file_tz_v1_tz_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -977,7 +1193,7 @@ func (x *GetVersionStatisticsRequest) String() string {
 func (*GetVersionStatisticsRequest) ProtoMessage() {}
 
 func (x *GetVersionStatisticsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[12]
+	mi := &file_tz_v1_tz_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -990,7 +1206,7 @@ func (x *GetVersionStatisticsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVersionStatisticsRequest.ProtoReflect.Descriptor instead.
 func (*GetVersionStatisticsRequest) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{12}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{14}
 }
 
 type GetVersionStatisticsResponse struct {
@@ -1002,7 +1218,7 @@ type GetVersionStatisticsResponse struct {
 
 func (x *GetVersionStatisticsResponse) Reset() {
 	*x = GetVersionStatisticsResponse{}
-	mi := &file_tz_v1_tz_proto_msgTypes[13]
+	mi := &file_tz_v1_tz_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1014,7 +1230,7 @@ func (x *GetVersionStatisticsResponse) String() string {
 func (*GetVersionStatisticsResponse) ProtoMessage() {}
 
 func (x *GetVersionStatisticsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[13]
+	mi := &file_tz_v1_tz_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1027,7 +1243,7 @@ func (x *GetVersionStatisticsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVersionStatisticsResponse.ProtoReflect.Descriptor instead.
 func (*GetVersionStatisticsResponse) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{13}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetVersionStatisticsResponse) GetStatistics() *VersionStatistics {
@@ -1049,7 +1265,7 @@ type VersionStatistics struct {
 
 func (x *VersionStatistics) Reset() {
 	*x = VersionStatistics{}
-	mi := &file_tz_v1_tz_proto_msgTypes[14]
+	mi := &file_tz_v1_tz_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1277,7 @@ func (x *VersionStatistics) String() string {
 func (*VersionStatistics) ProtoMessage() {}
 
 func (x *VersionStatistics) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[14]
+	mi := &file_tz_v1_tz_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1290,7 @@ func (x *VersionStatistics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VersionStatistics.ProtoReflect.Descriptor instead.
 func (*VersionStatistics) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{14}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *VersionStatistics) GetTotalVersions() int64 {
@@ -1119,7 +1335,7 @@ type NewFeedbackErrorRequest struct {
 
 func (x *NewFeedbackErrorRequest) Reset() {
 	*x = NewFeedbackErrorRequest{}
-	mi := &file_tz_v1_tz_proto_msgTypes[15]
+	mi := &file_tz_v1_tz_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1131,7 +1347,7 @@ func (x *NewFeedbackErrorRequest) String() string {
 func (*NewFeedbackErrorRequest) ProtoMessage() {}
 
 func (x *NewFeedbackErrorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[15]
+	mi := &file_tz_v1_tz_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1144,7 +1360,7 @@ func (x *NewFeedbackErrorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewFeedbackErrorRequest.ProtoReflect.Descriptor instead.
 func (*NewFeedbackErrorRequest) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{15}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *NewFeedbackErrorRequest) GetVersionId() string {
@@ -1197,7 +1413,7 @@ type NewFeedbackErrorResponse struct {
 
 func (x *NewFeedbackErrorResponse) Reset() {
 	*x = NewFeedbackErrorResponse{}
-	mi := &file_tz_v1_tz_proto_msgTypes[16]
+	mi := &file_tz_v1_tz_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1209,7 +1425,7 @@ func (x *NewFeedbackErrorResponse) String() string {
 func (*NewFeedbackErrorResponse) ProtoMessage() {}
 
 func (x *NewFeedbackErrorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tz_v1_tz_proto_msgTypes[16]
+	mi := &file_tz_v1_tz_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1222,7 +1438,7 @@ func (x *NewFeedbackErrorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NewFeedbackErrorResponse.ProtoReflect.Descriptor instead.
 func (*NewFeedbackErrorResponse) Descriptor() ([]byte, []int) {
-	return file_tz_v1_tz_proto_rawDescGZIP(), []int{16}
+	return file_tz_v1_tz_proto_rawDescGZIP(), []int{18}
 }
 
 var File_tz_v1_tz_proto protoreflect.FileDescriptor
@@ -1234,14 +1450,15 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x04file\x18\x01 \x01(\fR\x04file\x12\x1a\n" +
 	"\bfilename\x18\x02 \x01(\tR\bfilename\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x03 \x01(\tR\trequestId\"\xec\x01\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\"\x92\x02\n" +
 	"\x0fCheckTzResponse\x12\x1b\n" +
 	"\thtml_text\x18\x01 \x01(\tR\bhtmlText\x12\x10\n" +
 	"\x03css\x18\x02 \x01(\tR\x03css\x12\x14\n" +
 	"\x05docId\x18\x03 \x01(\tR\x05docId\x12=\n" +
 	"\x0einvalid_errors\x18\x04 \x03(\v2\x16.tz.v1.OutInvalidErrorR\rinvalidErrors\x12=\n" +
 	"\x0emissing_errors\x18\x05 \x03(\v2\x16.tz.v1.OutMissingErrorR\rmissingErrors\x12\x16\n" +
-	"\x06fileId\x18\x06 \x01(\tR\x06fileId\"\xb1\x04\n" +
+	"\x06fileId\x18\x06 \x01(\tR\x06fileId\x12$\n" +
+	"\x06errors\x18\a \x03(\v2\f.tz.v1.ErrorR\x06errors\"\xb1\x04\n" +
 	"\x0fOutInvalidError\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x15\n" +
 	"\x06id_str\x18\x02 \x01(\tR\x05idStr\x12\x19\n" +
@@ -1273,7 +1490,42 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\bcritique\x18\x06 \x01(\tR\bcritique\x12\"\n" +
 	"\fverification\x18\a \x01(\tR\fverification\x12#\n" +
 	"\rsuggested_fix\x18\b \x01(\tR\fsuggestedFix\x12\x1c\n" +
-	"\trationale\x18\t \x01(\tR\trationale\"C\n" +
+	"\trationale\x18\t \x01(\tR\trationale\"\xaf\x02\n" +
+	"\bInstance\x12\x1e\n" +
+	"\berr_type\x18\x01 \x01(\tH\x00R\aerrType\x88\x01\x01\x12\x1d\n" +
+	"\asnippet\x18\x02 \x01(\tH\x01R\asnippet\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"line_start\x18\x03 \x01(\x05H\x02R\tlineStart\x88\x01\x01\x12\x1e\n" +
+	"\bline_end\x18\x04 \x01(\x05H\x03R\alineEnd\x88\x01\x01\x12(\n" +
+	"\rsuggested_fix\x18\x05 \x01(\tH\x04R\fsuggestedFix\x88\x01\x01\x12!\n" +
+	"\trationale\x18\x06 \x01(\tH\x05R\trationale\x88\x01\x01B\v\n" +
+	"\t_err_typeB\n" +
+	"\n" +
+	"\b_snippetB\r\n" +
+	"\v_line_startB\v\n" +
+	"\t_line_endB\x10\n" +
+	"\x0e_suggested_fixB\f\n" +
+	"\n" +
+	"_rationale\"\xaf\x04\n" +
+	"\x05Error\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
+	"\bgroup_id\x18\x02 \x01(\tR\agroupId\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x03 \x01(\tR\terrorCode\x120\n" +
+	"\x11preliminary_notes\x18\x04 \x01(\tH\x00R\x10preliminaryNotes\x88\x01\x01\x12.\n" +
+	"\x10overall_critique\x18\x05 \x01(\tH\x01R\x0foverallCritique\x88\x01\x01\x12\x18\n" +
+	"\averdict\x18\x06 \x01(\tR\averdict\x12.\n" +
+	"\x10process_analysis\x18\a \x01(\tH\x02R\x0fprocessAnalysis\x88\x01\x01\x12.\n" +
+	"\x10process_critique\x18\b \x01(\tH\x03R\x0fprocessCritique\x88\x01\x01\x126\n" +
+	"\x14process_verification\x18\t \x01(\tH\x04R\x13processVerification\x88\x01\x01\x12+\n" +
+	"\x11process_retrieval\x18\n" +
+	" \x03(\tR\x10processRetrieval\x12-\n" +
+	"\tinstances\x18\v \x03(\v2\x0f.tz.v1.InstanceR\tinstancesB\x14\n" +
+	"\x12_preliminary_notesB\x13\n" +
+	"\x11_overall_critiqueB\x13\n" +
+	"\x11_process_analysisB\x13\n" +
+	"\x11_process_critiqueB\x17\n" +
+	"\x15_process_verification\"C\n" +
 	"(GetTechnicalSpecificationVersionsRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"m\n" +
 	")GetTechnicalSpecificationVersionsResponse\x12@\n" +
@@ -1368,51 +1620,55 @@ func file_tz_v1_tz_proto_rawDescGZIP() []byte {
 	return file_tz_v1_tz_proto_rawDescData
 }
 
-var file_tz_v1_tz_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_tz_v1_tz_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_tz_v1_tz_proto_goTypes = []any{
 	(*CheckTzRequest)(nil),                            // 0: tz.v1.CheckTzRequest
 	(*CheckTzResponse)(nil),                           // 1: tz.v1.CheckTzResponse
 	(*OutInvalidError)(nil),                           // 2: tz.v1.OutInvalidError
 	(*OutMissingError)(nil),                           // 3: tz.v1.OutMissingError
-	(*GetTechnicalSpecificationVersionsRequest)(nil),  // 4: tz.v1.GetTechnicalSpecificationVersionsRequest
-	(*GetTechnicalSpecificationVersionsResponse)(nil), // 5: tz.v1.GetTechnicalSpecificationVersionsResponse
-	(*TechnicalSpecificationVersion)(nil),             // 6: tz.v1.TechnicalSpecificationVersion
-	(*GetVersionRequest)(nil),                         // 7: tz.v1.GetVersionRequest
-	(*GetVersionResponse)(nil),                        // 8: tz.v1.GetVersionResponse
-	(*GetAllVersionsRequest)(nil),                     // 9: tz.v1.GetAllVersionsRequest
-	(*GetAllVersionsResponse)(nil),                    // 10: tz.v1.GetAllVersionsResponse
-	(*VersionWithErrorCounts)(nil),                    // 11: tz.v1.VersionWithErrorCounts
-	(*GetVersionStatisticsRequest)(nil),               // 12: tz.v1.GetVersionStatisticsRequest
-	(*GetVersionStatisticsResponse)(nil),              // 13: tz.v1.GetVersionStatisticsResponse
-	(*VersionStatistics)(nil),                         // 14: tz.v1.VersionStatistics
-	(*NewFeedbackErrorRequest)(nil),                   // 15: tz.v1.NewFeedbackErrorRequest
-	(*NewFeedbackErrorResponse)(nil),                  // 16: tz.v1.NewFeedbackErrorResponse
+	(*Instance)(nil),                                  // 4: tz.v1.Instance
+	(*Error)(nil),                                     // 5: tz.v1.Error
+	(*GetTechnicalSpecificationVersionsRequest)(nil),  // 6: tz.v1.GetTechnicalSpecificationVersionsRequest
+	(*GetTechnicalSpecificationVersionsResponse)(nil), // 7: tz.v1.GetTechnicalSpecificationVersionsResponse
+	(*TechnicalSpecificationVersion)(nil),             // 8: tz.v1.TechnicalSpecificationVersion
+	(*GetVersionRequest)(nil),                         // 9: tz.v1.GetVersionRequest
+	(*GetVersionResponse)(nil),                        // 10: tz.v1.GetVersionResponse
+	(*GetAllVersionsRequest)(nil),                     // 11: tz.v1.GetAllVersionsRequest
+	(*GetAllVersionsResponse)(nil),                    // 12: tz.v1.GetAllVersionsResponse
+	(*VersionWithErrorCounts)(nil),                    // 13: tz.v1.VersionWithErrorCounts
+	(*GetVersionStatisticsRequest)(nil),               // 14: tz.v1.GetVersionStatisticsRequest
+	(*GetVersionStatisticsResponse)(nil),              // 15: tz.v1.GetVersionStatisticsResponse
+	(*VersionStatistics)(nil),                         // 16: tz.v1.VersionStatistics
+	(*NewFeedbackErrorRequest)(nil),                   // 17: tz.v1.NewFeedbackErrorRequest
+	(*NewFeedbackErrorResponse)(nil),                  // 18: tz.v1.NewFeedbackErrorResponse
 }
 var file_tz_v1_tz_proto_depIdxs = []int32{
 	2,  // 0: tz.v1.CheckTzResponse.invalid_errors:type_name -> tz.v1.OutInvalidError
 	3,  // 1: tz.v1.CheckTzResponse.missing_errors:type_name -> tz.v1.OutMissingError
-	6,  // 2: tz.v1.GetTechnicalSpecificationVersionsResponse.versions:type_name -> tz.v1.TechnicalSpecificationVersion
-	2,  // 3: tz.v1.GetVersionResponse.invalid_errors:type_name -> tz.v1.OutInvalidError
-	3,  // 4: tz.v1.GetVersionResponse.missing_errors:type_name -> tz.v1.OutMissingError
-	11, // 5: tz.v1.GetAllVersionsResponse.versions:type_name -> tz.v1.VersionWithErrorCounts
-	14, // 6: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
-	0,  // 7: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
-	4,  // 8: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
-	9,  // 9: tz.v1.TzService.GetAllVersions:input_type -> tz.v1.GetAllVersionsRequest
-	12, // 10: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
-	7,  // 11: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
-	15, // 12: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
-	1,  // 13: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
-	5,  // 14: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
-	10, // 15: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
-	13, // 16: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
-	8,  // 17: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
-	16, // 18: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	5,  // 2: tz.v1.CheckTzResponse.errors:type_name -> tz.v1.Error
+	4,  // 3: tz.v1.Error.instances:type_name -> tz.v1.Instance
+	8,  // 4: tz.v1.GetTechnicalSpecificationVersionsResponse.versions:type_name -> tz.v1.TechnicalSpecificationVersion
+	2,  // 5: tz.v1.GetVersionResponse.invalid_errors:type_name -> tz.v1.OutInvalidError
+	3,  // 6: tz.v1.GetVersionResponse.missing_errors:type_name -> tz.v1.OutMissingError
+	13, // 7: tz.v1.GetAllVersionsResponse.versions:type_name -> tz.v1.VersionWithErrorCounts
+	16, // 8: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
+	0,  // 9: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
+	6,  // 10: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
+	11, // 11: tz.v1.TzService.GetAllVersions:input_type -> tz.v1.GetAllVersionsRequest
+	14, // 12: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
+	9,  // 13: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
+	17, // 14: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
+	1,  // 15: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
+	7,  // 16: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
+	12, // 17: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
+	15, // 18: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
+	10, // 19: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
+	18, // 20: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
+	15, // [15:21] is the sub-list for method output_type
+	9,  // [9:15] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_tz_v1_tz_proto_init() }
@@ -1421,15 +1677,17 @@ func file_tz_v1_tz_proto_init() {
 		return
 	}
 	file_tz_v1_tz_proto_msgTypes[2].OneofWrappers = []any{}
-	file_tz_v1_tz_proto_msgTypes[11].OneofWrappers = []any{}
-	file_tz_v1_tz_proto_msgTypes[14].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[4].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[5].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[13].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[16].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tz_v1_tz_proto_rawDesc), len(file_tz_v1_tz_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
