@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -120,7 +119,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		return nil, status.Error(codes.InvalidArgument, "filename cannot be empty")
 	}
 
-	htmlText, css, docId, errors, invalidErrors, missingErrors, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
+	htmlText, css, docId, errors, invalidInstances, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
 	if err != nil {
 		log.Error("failed to check tz", slog.String("error", err.Error()))
 
@@ -134,176 +133,66 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		}
 	}
 
-	// Конвертация OutInvalidError в proto сообщения
-	grpcInvalidErrors := make([]*tzv1.OutInvalidError, len(*invalidErrors))
-	for i, invalidError := range *invalidErrors {
-		var startLine, endLine *int32
-		if invalidError.StartLineNumber != nil {
-			val := int32(*invalidError.StartLineNumber)
-			startLine = &val
-		}
-		if invalidError.EndLineNumber != nil {
-			val := int32(*invalidError.EndLineNumber)
-			endLine = &val
-		}
+	//htmlText, css, docId, errors, invalidInstances, fileId, err := s.tzService.GetVersion(ctx, versionID)
+	//if err != nil {
+	//	log.Error("failed to get version", slog.String("error", err.Error()))
+	//	return nil, status.Error(codes.Internal, "failed to get version")
+	//}
 
-		// Обработка QuoteLines (указатель на массив строк)
-		var quoteLines []string
-		if invalidError.QuoteLines != nil {
-			quoteLinesSlice := *invalidError.QuoteLines
-			quoteLines = make([]string, len(quoteLinesSlice))
-			for j, line := range quoteLinesSlice {
-				quoteLines[j] = sanitizeString(line)
-			}
-		}
+	errorsResp := make([]*tzv1.Error, 0, len(*errors))
 
-		grpcInvalidErrors[i] = &tzv1.OutInvalidError{
-			Id:                    invalidError.Id,
-			IdStr:                 sanitizeString(invalidError.IdStr),
-			GroupId:               sanitizeString(invalidError.GroupID),
-			ErrorCode:             sanitizeString(invalidError.ErrorCode),
-			Quote:                 sanitizeString(invalidError.Quote),
-			Analysis:              sanitizeString(invalidError.Analysis),
-			Critique:              sanitizeString(invalidError.Critique),
-			Verification:          sanitizeString(invalidError.Verification),
-			SuggestedFix:          sanitizeString(invalidError.SuggestedFix),
-			Rationale:             sanitizeString(invalidError.Rationale),
-			OriginalQuote:         sanitizeString(invalidError.OriginalQuote),
-			QuoteLines:            quoteLines,
-			UntilTheEndOfSentence: invalidError.UntilTheEndOfSentence,
-			StartLineNumber:       startLine,
-			EndLineNumber:         endLine,
+	for i := range *errors {
+		var processRetrieval []string
+
+		if (*errors)[i].ProcessRetrieval != nil {
+			processRetrieval = *(*errors)[i].ProcessRetrieval
 		}
+		errorsResp = append(errorsResp, &tzv1.Error{
+			Id:                  (*errors)[i].ID.String(),
+			GroupId:             (*errors)[i].GroupID,
+			ErrorCode:           (*errors)[i].ErrorCode,
+			PreliminaryNotes:    (*errors)[i].PreliminaryNotes,
+			OverallCritique:     (*errors)[i].OverallCritique,
+			Verdict:             (*errors)[i].Verdict,
+			ProcessAnalysis:     (*errors)[i].ProcessAnalysis,
+			ProcessCritique:     (*errors)[i].ProcessCritique,
+			ProcessVerification: (*errors)[i].ProcessVerification,
+			ProcessRetrieval:    processRetrieval,
+			InvalidInstances:    convertInvalidInstances((*errors)[i].InvalidInstances, nil),
+			MissingInstances:    convertMissingInstances((*errors)[i].MissingInstances),
+		})
 	}
 
-	// Конвертация OutMissingError в proto сообщения
-	grpcMissingErrors := make([]*tzv1.OutMissingError, len(*missingErrors))
-	for i, missingError := range *missingErrors {
-		grpcMissingErrors[i] = &tzv1.OutMissingError{
-			Id:           missingError.Id,
-			IdStr:        sanitizeString(missingError.IdStr),
-			GroupId:      sanitizeString(missingError.GroupID),
-			ErrorCode:    sanitizeString(missingError.ErrorCode),
-			Analysis:     sanitizeString(missingError.Analysis),
-			Critique:     sanitizeString(missingError.Critique),
-			Verification: sanitizeString(missingError.Verification),
-			SuggestedFix: sanitizeString(missingError.SuggestedFix),
-			Rationale:    sanitizeString(missingError.Rationale),
-		}
+	resp := &tzv1.CheckTzResponse{
+		InvalidInstances: convertInvalidInstances(invalidInstances, errorsResp),
+		Errors:           errorsResp,
+		HtmlText:         htmlText,
+		Css:              css,
+		DocId:            docId,
+		FileId:           fileId,
 	}
 
-	// Конвертация Error в proto сообщения
-	var grpcErrors []*tzv1.Error
-	if errors != nil {
-		grpcErrors = make([]*tzv1.Error, len(*errors))
-		for i, err := range *errors {
-			// Конвертируем instances
-			var grpcInstances []*tzv1.Instance
-			if err.Instances != nil {
-				grpcInstances = make([]*tzv1.Instance, len(*err.Instances))
-				for j, instance := range *err.Instances {
-					grpcInstance := &tzv1.Instance{}
-					if instance.ErrType != nil {
-						grpcInstance.ErrType = instance.ErrType
-					}
-					if instance.Snippet != nil {
-						snippet := sanitizeString(*instance.Snippet)
-						grpcInstance.Snippet = &snippet
-					}
-					if instance.LineStart != nil {
-						lineStart := int32(*instance.LineStart)
-						grpcInstance.LineStart = &lineStart
-					}
-					if instance.LineEnd != nil {
-						lineEnd := int32(*instance.LineEnd)
-						grpcInstance.LineEnd = &lineEnd
-					}
-					if instance.SuggestedFix != nil {
-						suggestedFix := sanitizeString(*instance.SuggestedFix)
-						grpcInstance.SuggestedFix = &suggestedFix
-					}
-					if instance.Rationale != nil {
-						rationale := sanitizeString(*instance.Rationale)
-						grpcInstance.Rationale = &rationale
-					}
-					grpcInstances[j] = grpcInstance
-				}
-			}
-
-			// Конвертируем process_retrieval
-			var processRetrieval []string
-			if err.ProcessRetrieval != nil {
-				processRetrieval = make([]string, len(*err.ProcessRetrieval))
-				for j, retrieval := range *err.ProcessRetrieval {
-					processRetrieval[j] = sanitizeString(retrieval)
-				}
-			}
-
-			grpcError := &tzv1.Error{
-				Id:        err.ID.String(),
-				GroupId:   sanitizeString(err.GroupID),
-				ErrorCode: sanitizeString(err.ErrorCode),
-				Verdict:   sanitizeString(err.Verdict),
-				Instances: grpcInstances,
-				ProcessRetrieval: processRetrieval,
-			}
-
-			if err.PreliminaryNotes != nil {
-				notes := sanitizeString(*err.PreliminaryNotes)
-				grpcError.PreliminaryNotes = &notes
-			}
-			if err.OverallCritique != nil {
-				critique := sanitizeString(*err.OverallCritique)
-				grpcError.OverallCritique = &critique
-			}
-			if err.ProcessAnalysis != nil {
-				analysis := sanitizeString(*err.ProcessAnalysis)
-				grpcError.ProcessAnalysis = &analysis
-			}
-			if err.ProcessCritique != nil {
-				critique := sanitizeString(*err.ProcessCritique)
-				grpcError.ProcessCritique = &critique
-			}
-			if err.ProcessVerification != nil {
-				verification := sanitizeString(*err.ProcessVerification)
-				grpcError.ProcessVerification = &verification
-			}
-
-			grpcErrors[i] = grpcError
-		}
-	}
-
-	log.Info("CheckTz request processed successfully", slog.Int("invalid_errors_count", len(*invalidErrors)), slog.Int("missing_errors_count", len(*missingErrors)), slog.Int("errors_count", len(grpcErrors)))
-
-	return &tzv1.CheckTzResponse{
-		HtmlText:      sanitizeString(htmlText),
-		InvalidErrors: grpcInvalidErrors,
-		MissingErrors: grpcMissingErrors,
-		FileId:        fileId,
-		Css:           css,
-		DocId:         docId,
-		Errors:        grpcErrors,
-	}, nil
+	return resp, nil
 }
 
-func sanitizeString(s string) string {
-	if utf8.ValidString(s) {
-		return s
-	}
-	var out []rune
-	for i := 0; i < len(s); {
-		r, size := utf8.DecodeRuneInString(s[i:])
-		if r == utf8.RuneError && size == 1 {
-			// некорректный байт: можете заменить на '\uFFFD' (�) или на пробел
-			out = append(out, ' ')
-			i++
-		} else {
-			out = append(out, r)
-			i += size
-		}
-	}
-	return string(out)
-}
+//func sanitizeString(s string) string {
+//	if utf8.ValidString(s) {
+//		return s
+//	}
+//	var out []rune
+//	for i := 0; i < len(s); {
+//		r, size := utf8.DecodeRuneInString(s[i:])
+//		if r == utf8.RuneError && size == 1 {
+//			// некорректный байт: можете заменить на '\uFFFD' (�) или на пробел
+//			out = append(out, ' ')
+//			i++
+//		} else {
+//			out = append(out, r)
+//			i += size
+//		}
+//	}
+//	return string(out)
+//}
 
 func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *tzv1.GetTechnicalSpecificationVersionsRequest) (*tzv1.GetTechnicalSpecificationVersionsResponse, error) {
 	const op = "grpc.tz.GetTechnicalSpecificationVersions"
@@ -345,7 +234,7 @@ func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *
 	}, nil
 }
 
-func (s *serverAPI) GetAllVersions(ctx context.Context, req *tzv1.GetAllVersionsRequest) (*tzv1.GetAllVersionsResponse, error) {
+func (s *serverAPI) GetAllVersions(ctx context.Context, _ *tzv1.GetAllVersionsRequest) (*tzv1.GetAllVersionsResponse, error) {
 	const op = "grpc.tz.GetAllVersions"
 
 	log := s.log.With(
@@ -400,7 +289,7 @@ func (s *serverAPI) GetAllVersions(ctx context.Context, req *tzv1.GetAllVersions
 	}, nil
 }
 
-func (s *serverAPI) GetVersionStatistics(ctx context.Context, req *tzv1.GetVersionStatisticsRequest) (*tzv1.GetVersionStatisticsResponse, error) {
+func (s *serverAPI) GetVersionStatistics(ctx context.Context, _ *tzv1.GetVersionStatisticsRequest) (*tzv1.GetVersionStatisticsResponse, error) {
 	const op = "grpc.tz.GetVersionStatistics"
 
 	log := s.log.With(
@@ -455,80 +344,122 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		return nil, status.Error(codes.InvalidArgument, "invalid version ID format")
 	}
 
-	htmlText, css, docId, invalidErrors, missingErrors, fileId, err := s.tzService.GetVersion(ctx, versionID)
+	htmlText, css, docId, errors, invalidInstances, fileId, err := s.tzService.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version", slog.String("error", err.Error()))
 		return nil, status.Error(codes.Internal, "failed to get version")
 	}
 
-	// Конвертация OutInvalidError в proto сообщения
-	grpcInvalidErrors := make([]*tzv1.OutInvalidError, len(*invalidErrors))
-	for i, invalidError := range *invalidErrors {
-		var startLine, endLine *int32
-		if invalidError.StartLineNumber != nil {
-			val := int32(*invalidError.StartLineNumber)
-			startLine = &val
-		}
-		if invalidError.EndLineNumber != nil {
-			val := int32(*invalidError.EndLineNumber)
-			endLine = &val
-		}
+	errorsResp := make([]*tzv1.Error, 0, len(*errors))
 
-		// Обработка QuoteLines (указатель на массив строк)
-		var quoteLines []string
-		if invalidError.QuoteLines != nil {
-			quoteLinesSlice := *invalidError.QuoteLines
-			quoteLines = make([]string, len(quoteLinesSlice))
-			for j, line := range quoteLinesSlice {
-				quoteLines[j] = sanitizeString(line)
+	for i := range *errors {
+		var processRetrieval []string
+
+		if (*errors)[i].ProcessRetrieval != nil {
+			processRetrieval = *(*errors)[i].ProcessRetrieval
+		}
+		errorsResp = append(errorsResp, &tzv1.Error{
+			Id:                  (*errors)[i].ID.String(),
+			GroupId:             (*errors)[i].GroupID,
+			ErrorCode:           (*errors)[i].ErrorCode,
+			PreliminaryNotes:    (*errors)[i].PreliminaryNotes,
+			OverallCritique:     (*errors)[i].OverallCritique,
+			Verdict:             (*errors)[i].Verdict,
+			ProcessAnalysis:     (*errors)[i].ProcessAnalysis,
+			ProcessCritique:     (*errors)[i].ProcessCritique,
+			ProcessVerification: (*errors)[i].ProcessVerification,
+			ProcessRetrieval:    processRetrieval,
+			InvalidInstances:    convertInvalidInstances((*errors)[i].InvalidInstances, nil),
+			MissingInstances:    convertMissingInstances((*errors)[i].MissingInstances),
+		})
+	}
+
+	resp := &tzv1.GetVersionResponse{
+		InvalidInstances: convertInvalidInstances(invalidInstances, errorsResp),
+		Errors:           errorsResp,
+		HtmlText:         htmlText,
+		Css:              css,
+		DocId:            docId,
+		FileId:           fileId,
+	}
+
+	return resp, nil
+}
+
+func convertInvalidInstances(invalidInstances *[]tzservice.OutInvalidError, errors []*tzv1.Error) []*tzv1.InvalidInstance {
+	if invalidInstances == nil {
+		return []*tzv1.InvalidInstance{}
+	} else {
+		respInvalidInstances := make([]*tzv1.InvalidInstance, 0, len(*invalidInstances))
+
+		for i := range *invalidInstances {
+			var quoteLines []string
+			if (*invalidInstances)[i].QuoteLines != nil {
+				quoteLines = *(*invalidInstances)[i].QuoteLines
 			}
+
+			var startLineNumber *int32
+			if (*invalidInstances)[i].StartLineNumber != nil {
+				startLineNumberTemp := int32(*(*invalidInstances)[i].StartLineNumber)
+				startLineNumber = &startLineNumberTemp
+			}
+
+			var endLineNumber *int32
+			if (*invalidInstances)[i].EndLineNumber != nil {
+				endLineNumberTemp := int32(*(*invalidInstances)[i].EndLineNumber)
+				endLineNumber = &endLineNumberTemp
+			}
+
+			var parentError *tzv1.Error
+			if errors != nil {
+				for j := range errors {
+					if (*invalidInstances)[i].ErrorID.String() == (*errors[j]).Id {
+						parentError = errors[j]
+					}
+				}
+			}
+
+			respInvalidInstances = append(respInvalidInstances,
+				&tzv1.InvalidInstance{
+					Id:                    (*invalidInstances)[i].ID.String(),
+					HtmlId:                (*invalidInstances)[i].HtmlID,
+					ErrorId:               (*invalidInstances)[i].ErrorID.String(),
+					Quote:                 (*invalidInstances)[i].Quote,
+					SuggestedFix:          (*invalidInstances)[i].SuggestedFix,
+					OriginalQuote:         (*invalidInstances)[i].OriginalQuote,
+					QuoteLines:            quoteLines,
+					UntilTheEndOfSentence: (*invalidInstances)[i].UntilTheEndOfSentence,
+					StartLineNumber:       startLineNumber,
+					EndLineNumber:         endLineNumber,
+					SystemComment:         (*invalidInstances)[i].SystemComment,
+					OrderNumber:           int32((*invalidInstances)[i].OrderNumber),
+					ParentError:           parentError,
+				})
 		}
 
-		grpcInvalidErrors[i] = &tzv1.OutInvalidError{
-			Id:                    invalidError.Id,
-			IdStr:                 sanitizeString(invalidError.IdStr),
-			GroupId:               sanitizeString(invalidError.GroupID),
-			ErrorCode:             sanitizeString(invalidError.ErrorCode),
-			Quote:                 sanitizeString(invalidError.Quote),
-			Analysis:              sanitizeString(invalidError.Analysis),
-			Critique:              sanitizeString(invalidError.Critique),
-			Verification:          sanitizeString(invalidError.Verification),
-			SuggestedFix:          sanitizeString(invalidError.SuggestedFix),
-			Rationale:             sanitizeString(invalidError.Rationale),
-			OriginalQuote:         sanitizeString(invalidError.OriginalQuote),
-			QuoteLines:            quoteLines,
-			UntilTheEndOfSentence: invalidError.UntilTheEndOfSentence,
-			StartLineNumber:       startLine,
-			EndLineNumber:         endLine,
-		}
+		return respInvalidInstances
 	}
+}
 
-	// Конвертация OutMissingError в proto сообщения
-	grpcMissingErrors := make([]*tzv1.OutMissingError, len(*missingErrors))
-	for i, missingError := range *missingErrors {
-		grpcMissingErrors[i] = &tzv1.OutMissingError{
-			Id:           missingError.Id,
-			IdStr:        sanitizeString(missingError.IdStr),
-			GroupId:      sanitizeString(missingError.GroupID),
-			ErrorCode:    sanitizeString(missingError.ErrorCode),
-			Analysis:     sanitizeString(missingError.Analysis),
-			Critique:     sanitizeString(missingError.Critique),
-			Verification: sanitizeString(missingError.Verification),
-			SuggestedFix: sanitizeString(missingError.SuggestedFix),
-			Rationale:    sanitizeString(missingError.Rationale),
+func convertMissingInstances(missingInstances *[]tzservice.OutMissingError) []*tzv1.MissingInstance {
+	if missingInstances == nil {
+		return []*tzv1.MissingInstance{}
+	} else {
+		respMissingInstances := make([]*tzv1.MissingInstance, 0, len(*missingInstances))
+
+		for i := range *missingInstances {
+
+			respMissingInstances = append(respMissingInstances,
+				&tzv1.MissingInstance{
+					Id:           (*missingInstances)[i].ID.String(),
+					HtmlId:       (*missingInstances)[i].HtmlID,
+					ErrorId:      (*missingInstances)[i].ErrorID.String(),
+					SuggestedFix: (*missingInstances)[i].SuggestedFix,
+				})
 		}
+
+		return respMissingInstances
 	}
-
-	log.Info("GetVersion request processed successfully", slog.Int("invalid_errors_count", len(*invalidErrors)), slog.Int("missing_errors_count", len(*missingErrors)))
-
-	return &tzv1.GetVersionResponse{
-		HtmlText:      sanitizeString(htmlText),
-		InvalidErrors: grpcInvalidErrors,
-		MissingErrors: grpcMissingErrors,
-		FileId:        fileId,
-		Css:           css,
-		DocId:         docId,
-	}, nil
 }
 
 func (s *serverAPI) NewFeedbackError(ctx context.Context, req *tzv1.NewFeedbackErrorRequest) (*tzv1.NewFeedbackErrorResponse, error) {

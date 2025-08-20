@@ -155,8 +155,8 @@ func NewTzHandler(
 		}
 
 		log.Info("TZ processing completed successfully",
-			slog.Int("invalid_errors_count", len(checkTzResult.InvalidErrors)),
-			slog.Int("missing_errors_count", len(checkTzResult.MissingErrors)),
+			slog.Int("errors_count", len(checkTzResult.Errors)),
+			slog.Int("invalid_instances_count", len(checkTzResult.InvalidInstances)),
 			slog.String("doc_id", checkTzResult.DocId))
 
 		// Логируем событие отправки документа

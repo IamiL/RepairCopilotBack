@@ -2,15 +2,19 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"repairCopilotBot/tz-bot/internal/repository/models"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	repo "repairCopilotBot/tz-bot/internal/repository"
+	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
 )
 
 type Storage struct {
@@ -54,13 +58,13 @@ func New(pool *pgxpool.Pool) (*Storage, error) {
 }
 
 // TechnicalSpecification operations
-func (s *Storage) CreateTechnicalSpecification(ctx context.Context, req *repo.CreateTechnicalSpecificationRequest) (*repo.TechnicalSpecification, error) {
+func (s *Storage) CreateTechnicalSpecification(ctx context.Context, req *modelrepo.CreateTechnicalSpecificationRequest) (*modelrepo.TechnicalSpecification, error) {
 	query := `
 		INSERT INTO technical_specifications (id, name, user_id, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, name, user_id, created_at, updated_at`
 
-	var ts repo.TechnicalSpecification
+	var ts modelrepo.TechnicalSpecification
 	err := s.db.QueryRow(ctx, query, req.ID, req.Name, req.UserID, req.CreatedAt, req.UpdatedAt).
 		Scan(&ts.ID, &ts.Name, &ts.UserID, &ts.CreatedAt, &ts.UpdatedAt)
 	if err != nil {
@@ -70,10 +74,10 @@ func (s *Storage) CreateTechnicalSpecification(ctx context.Context, req *repo.Cr
 	return &ts, nil
 }
 
-func (s *Storage) GetTechnicalSpecification(ctx context.Context, id uuid.UUID) (*repo.TechnicalSpecification, error) {
+func (s *Storage) GetTechnicalSpecification(ctx context.Context, id uuid.UUID) (*modelrepo.TechnicalSpecification, error) {
 	query := `SELECT id, name, user_id, created_at, updated_at FROM technical_specifications WHERE id = $1`
 
-	var ts repo.TechnicalSpecification
+	var ts modelrepo.TechnicalSpecification
 	err := s.db.QueryRow(ctx, query, id).
 		Scan(&ts.ID, &ts.Name, &ts.UserID, &ts.CreatedAt, &ts.UpdatedAt)
 	if err != nil {
@@ -86,7 +90,7 @@ func (s *Storage) GetTechnicalSpecification(ctx context.Context, id uuid.UUID) (
 	return &ts, nil
 }
 
-func (s *Storage) GetTechnicalSpecificationsByUserID(ctx context.Context, userID uuid.UUID) ([]*repo.TechnicalSpecification, error) {
+func (s *Storage) GetTechnicalSpecificationsByUserID(ctx context.Context, userID uuid.UUID) ([]*modelrepo.TechnicalSpecification, error) {
 	query := `SELECT id, name, user_id, created_at, updated_at FROM technical_specifications WHERE user_id = $1 ORDER BY created_at DESC`
 
 	rows, err := s.db.Query(ctx, query, userID)
@@ -95,9 +99,9 @@ func (s *Storage) GetTechnicalSpecificationsByUserID(ctx context.Context, userID
 	}
 	defer rows.Close()
 
-	var specifications []*repo.TechnicalSpecification
+	var specifications []*modelrepo.TechnicalSpecification
 	for rows.Next() {
-		var ts repo.TechnicalSpecification
+		var ts modelrepo.TechnicalSpecification
 		err := rows.Scan(&ts.ID, &ts.Name, &ts.UserID, &ts.CreatedAt, &ts.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan technical specification: %w", err)
@@ -139,13 +143,13 @@ func (s *Storage) DeleteTechnicalSpecification(ctx context.Context, id uuid.UUID
 }
 
 // Version operations
-func (s *Storage) CreateVersion(ctx context.Context, req *repo.CreateVersionRequest) (*repo.Version, error) {
+func (s *Storage) CreateVersion(ctx context.Context, req *modelrepo.CreateVersionRequest) (*modelrepo.Version, error) {
 	query := `
 		INSERT INTO versions (id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time`
 
-	var version repo.Version
+	var version modelrepo.Version
 	err := s.db.QueryRow(ctx, query, req.ID, req.TechnicalSpecificationID, req.VersionNumber, req.CreatedAt, req.UpdatedAt,
 		req.OriginalFileID, req.OutHTML, req.CSS, req.CheckedFileID, &req.AllRubs, &req.AllTokens, int64(req.InspectionTime)).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
@@ -158,10 +162,10 @@ func (s *Storage) CreateVersion(ctx context.Context, req *repo.CreateVersionRequ
 	return &version, nil
 }
 
-func (s *Storage) GetVersion(ctx context.Context, id uuid.UUID) (*repo.Version, error) {
+func (s *Storage) GetVersion(ctx context.Context, id uuid.UUID) (*modelrepo.Version, error) {
 	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time FROM versions WHERE id = $1`
 
-	var version repo.Version
+	var version modelrepo.Version
 	err := s.db.QueryRow(ctx, query, id).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
@@ -176,7 +180,7 @@ func (s *Storage) GetVersion(ctx context.Context, id uuid.UUID) (*repo.Version, 
 	return &version, nil
 }
 
-func (s *Storage) GetVersionWithErrors(ctx context.Context, versionID uuid.UUID) (*repo.Version, []*repo.InvalidError, []*repo.MissingError, error) {
+func (s *Storage) GetVersionWithErrors(ctx context.Context, versionID uuid.UUID) (*modelrepo.Version, []*modelrepo.InvalidError, []*modelrepo.MissingError, error) {
 	// Получаем версию
 	version, err := s.GetVersion(ctx, versionID)
 	if err != nil {
@@ -198,7 +202,7 @@ func (s *Storage) GetVersionWithErrors(ctx context.Context, versionID uuid.UUID)
 	return version, invalidErrors, missingErrors, nil
 }
 
-func (s *Storage) GetVersionsByTechnicalSpecificationID(ctx context.Context, technicalSpecificationID uuid.UUID) ([]*repo.Version, error) {
+func (s *Storage) GetVersionsByTechnicalSpecificationID(ctx context.Context, technicalSpecificationID uuid.UUID) ([]*modelrepo.Version, error) {
 	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time FROM versions WHERE technical_specification_id = $1 ORDER BY version_number DESC`
 
 	rows, err := s.db.Query(ctx, query, technicalSpecificationID)
@@ -207,9 +211,9 @@ func (s *Storage) GetVersionsByTechnicalSpecificationID(ctx context.Context, tec
 	}
 	defer rows.Close()
 
-	var versions []*repo.Version
+	var versions []*modelrepo.Version
 	for rows.Next() {
-		var version repo.Version
+		var version modelrepo.Version
 		err := rows.Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
 			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime)
@@ -222,10 +226,10 @@ func (s *Storage) GetVersionsByTechnicalSpecificationID(ctx context.Context, tec
 	return versions, nil
 }
 
-func (s *Storage) GetLatestVersion(ctx context.Context, technicalSpecificationID uuid.UUID) (*repo.Version, error) {
+func (s *Storage) GetLatestVersion(ctx context.Context, technicalSpecificationID uuid.UUID) (*modelrepo.Version, error) {
 	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time FROM versions WHERE technical_specification_id = $1 ORDER BY version_number DESC LIMIT 1`
 
-	var version repo.Version
+	var version modelrepo.Version
 	err := s.db.QueryRow(ctx, query, technicalSpecificationID).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
@@ -240,7 +244,7 @@ func (s *Storage) GetLatestVersion(ctx context.Context, technicalSpecificationID
 	return &version, nil
 }
 
-func (s *Storage) GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]*repo.VersionSummary, error) {
+func (s *Storage) GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]*modelrepo.VersionSummary, error) {
 	query := `
 		SELECT v.id, ts.name, v.version_number, v.created_at
 		FROM versions v
@@ -255,9 +259,9 @@ func (s *Storage) GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]
 	}
 	defer rows.Close()
 
-	var versions []*repo.VersionSummary
+	var versions []*modelrepo.VersionSummary
 	for rows.Next() {
-		var version repo.VersionSummary
+		var version modelrepo.VersionSummary
 		err := rows.Scan(&version.ID, &version.TechnicalSpecificationName,
 			&version.VersionNumber, &version.CreatedAt)
 		if err != nil {
@@ -269,7 +273,7 @@ func (s *Storage) GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]
 	return versions, nil
 }
 
-func (s *Storage) GetAllVersions(ctx context.Context) ([]*repo.VersionWithErrorCounts, error) {
+func (s *Storage) GetAllVersions(ctx context.Context) ([]*modelrepo.VersionWithErrorCounts, error) {
 	query := `
 		SELECT 
 			v.id, 
@@ -309,15 +313,15 @@ func (s *Storage) GetAllVersions(ctx context.Context) ([]*repo.VersionWithErrorC
 	}
 	defer rows.Close()
 
-	var versions []*repo.VersionWithErrorCounts
+	var versions []*modelrepo.VersionWithErrorCounts
 	for rows.Next() {
-		var version repo.VersionWithErrorCounts
+		var version modelrepo.VersionWithErrorCounts
 		err := rows.Scan(
-			&version.ID, 
+			&version.ID,
 			&version.TechnicalSpecificationID,
 			&version.TechnicalSpecificationName,
 			&version.UserID,
-			&version.VersionNumber, 
+			&version.VersionNumber,
 			&version.CreatedAt,
 			&version.UpdatedAt,
 			&version.OriginalFileID,
@@ -339,7 +343,7 @@ func (s *Storage) GetAllVersions(ctx context.Context) ([]*repo.VersionWithErrorC
 	return versions, nil
 }
 
-func (s *Storage) GetVersionStatistics(ctx context.Context) (*repo.VersionStatistics, error) {
+func (s *Storage) GetVersionStatistics(ctx context.Context) (*modelrepo.VersionStatistics, error) {
 	query := `
 		SELECT 
 			COUNT(*) as total_versions,
@@ -352,7 +356,7 @@ func (s *Storage) GetVersionStatistics(ctx context.Context) (*repo.VersionStatis
 		   OR inspection_time IS NOT NULL
 	`
 
-	var stats repo.VersionStatistics
+	var stats modelrepo.VersionStatistics
 	err := s.db.QueryRow(ctx, query).Scan(
 		&stats.TotalVersions,
 		&stats.TotalTokens,
@@ -397,7 +401,7 @@ func (s *Storage) DeleteVersion(ctx context.Context, id uuid.UUID) error {
 }
 
 // CreateInvalidErrors creates multiple invalid errors for a version
-func (s *Storage) CreateInvalidErrors(ctx context.Context, req *repo.CreateInvalidErrorsRequest) error {
+func (s *Storage) CreateInvalidErrors(ctx context.Context, req *modelrepo.CreateInvalidErrorsRequest) error {
 	if len(req.Errors) == 0 {
 		return nil
 	}
@@ -426,7 +430,7 @@ func (s *Storage) CreateInvalidErrors(ctx context.Context, req *repo.CreateInval
 	return tx.Commit(ctx)
 }
 
-func (s *Storage) GetInvalidErrorsByVersionID(ctx context.Context, versionID uuid.UUID) ([]*repo.InvalidError, error) {
+func (s *Storage) GetInvalidErrorsByVersionID(ctx context.Context, versionID uuid.UUID) ([]*modelrepo.InvalidError, error) {
 	query := `SELECT id, version_id, error_id, error_id_str, group_id, error_code, quote, analysis, critique, verification, suggested_fix, rationale,  created_at FROM invalid_errors WHERE version_id = $1 ORDER BY order_number`
 
 	rows, err := s.db.Query(ctx, query, versionID)
@@ -435,9 +439,9 @@ func (s *Storage) GetInvalidErrorsByVersionID(ctx context.Context, versionID uui
 	}
 	defer rows.Close()
 
-	var errors []*repo.InvalidError
+	var errors []*modelrepo.InvalidError
 	for rows.Next() {
-		var invErr repo.InvalidError
+		var invErr modelrepo.InvalidError
 		err := rows.Scan(&invErr.ID, &invErr.VersionID, &invErr.ErrorID, &invErr.ErrorIDStr,
 			&invErr.GroupID, &invErr.ErrorCode, &invErr.Quote, &invErr.Analysis,
 			&invErr.Critique, &invErr.Verification, &invErr.SuggestedFix,
@@ -467,7 +471,7 @@ func (s *Storage) GetUUIDByErrorID(ctx context.Context, errorID int) (uuid.UUID,
 	queryMissing := `SELECT id FROM missing_errors WHERE error_id = $1 LIMIT 1`
 
 	var errorUUID uuid.UUID
-	
+
 	err := s.db.QueryRow(ctx, queryInvalid, errorID).Scan(&errorUUID)
 	if err == nil {
 		return errorUUID, nil
@@ -488,7 +492,7 @@ func (s *Storage) GetUUIDByErrorID(ctx context.Context, errorID int) (uuid.UUID,
 }
 
 // CreateMissingErrors creates multiple missing errors for a version
-func (s *Storage) CreateMissingErrors(ctx context.Context, req *repo.CreateMissingErrorsRequest) error {
+func (s *Storage) CreateMissingErrors(ctx context.Context, req *modelrepo.CreateMissingErrorsRequest) error {
 	if len(req.Errors) == 0 {
 		return nil
 	}
@@ -517,7 +521,7 @@ func (s *Storage) CreateMissingErrors(ctx context.Context, req *repo.CreateMissi
 	return tx.Commit(ctx)
 }
 
-func (s *Storage) GetMissingErrorsByVersionID(ctx context.Context, versionID uuid.UUID) ([]*repo.MissingError, error) {
+func (s *Storage) GetMissingErrorsByVersionID(ctx context.Context, versionID uuid.UUID) ([]*modelrepo.MissingError, error) {
 	query := `SELECT id, version_id, error_id, error_id_str, group_id, error_code, analysis, critique, verification, suggested_fix, rationale, created_at FROM missing_errors WHERE version_id = $1 ORDER BY error_id`
 
 	rows, err := s.db.Query(ctx, query, versionID)
@@ -526,9 +530,9 @@ func (s *Storage) GetMissingErrorsByVersionID(ctx context.Context, versionID uui
 	}
 	defer rows.Close()
 
-	var errors []*repo.MissingError
+	var errors []*modelrepo.MissingError
 	for rows.Next() {
-		var missErr repo.MissingError
+		var missErr modelrepo.MissingError
 		err := rows.Scan(&missErr.ID, &missErr.VersionID, &missErr.ErrorID, &missErr.ErrorIDStr,
 			&missErr.GroupID, &missErr.ErrorCode, &missErr.Analysis, &missErr.Critique,
 			&missErr.Verification, &missErr.SuggestedFix, &missErr.Rationale, &missErr.CreatedAt)
@@ -555,7 +559,7 @@ func (s *Storage) DeleteMissingErrorsByVersionID(ctx context.Context, versionID 
 // ErrorRepository implementation
 
 // CreateErrors creates multiple errors for a version
-func (s *Storage) CreateErrors(ctx context.Context, req *repo.CreateErrorsRequest) error {
+func (s *Storage) CreateErrors(ctx context.Context, req *modelrepo.CreateErrorsRequest) error {
 	if len(req.Errors) == 0 {
 		return nil
 	}
@@ -578,14 +582,216 @@ func (s *Storage) CreateErrors(ctx context.Context, req *repo.CreateErrorsReques
 	return nil
 }
 
+// GetErrorsByVersionID retrieves all errors for a specific version
+func (s *Storage) GetErrorsByVersionID(ctx context.Context, versionID uuid.UUID) (*[]tzservice.Error, error) {
+	query := `
+		SELECT id, version_id, group_id, error_code, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances
+		FROM errors 
+		WHERE version_id = @version_id`
+
+	args := pgx.NamedArgs{
+		"version_id": versionID,
+	}
+
+	rows, err := s.db.Query(ctx, query, args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get errors by version ID: %w", err)
+	}
+	defer rows.Close()
+
+	var errorsList []tzservice.Error
+	for rows.Next() {
+		var errorItem tzservice.Error
+		var instancesJSON []byte
+		err := rows.Scan(
+			&errorItem.ID,
+			&versionID, // не используем, просто скипаем
+			&errorItem.GroupID,
+			&errorItem.ErrorCode,
+			&errorItem.PreliminaryNotes,
+			&errorItem.OverallCritique,
+			&errorItem.Verdict,
+			&errorItem.ProcessAnalysis,
+			&errorItem.ProcessCritique,
+			&errorItem.ProcessVerification,
+			&errorItem.ProcessRetrieval,
+			&instancesJSON,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan error: %w", err)
+		}
+
+		// Десериализуем instances из JSON
+		if len(instancesJSON) > 0 {
+			var instances []tz_llm_client.Instance
+			err := json.Unmarshal(instancesJSON, &instances)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal instances: %w", err)
+			}
+			errorItem.Instances = &instances
+		}
+
+		errorsList = append(errorsList, errorItem)
+	}
+
+	return &errorsList, nil
+}
+
+// InvalidInstanceRepository implementation
+
+// SaveInvalidInstances saves multiple invalid instances
+func (s *Storage) SaveInvalidInstances(ctx context.Context, invalidInstances *[]tzservice.OutInvalidError) error {
+	if invalidInstances == nil || len(*invalidInstances) == 0 {
+		return nil
+	}
+
+	query := `
+		INSERT INTO invalid_instances (id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number)
+		VALUES (@id, @html_id, @error_id, @quote, @suggested_fix, @original_quote, @quote_lines, @until_the_end_of_sentence, @start_line_number, @end_line_number, @system_comment, @order_number)`
+
+	for _, instance := range *invalidInstances {
+		args := pgx.NamedArgs{
+			"id":                        instance.ID,
+			"html_id":                   instance.HtmlID,
+			"error_id":                  instance.ErrorID,
+			"quote":                     instance.Quote,
+			"suggested_fix":             instance.SuggestedFix,
+			"original_quote":            instance.OriginalQuote,
+			"quote_lines":               instance.QuoteLines,
+			"until_the_end_of_sentence": instance.UntilTheEndOfSentence,
+			"start_line_number":         instance.StartLineNumber,
+			"end_line_number":           instance.EndLineNumber,
+			"system_comment":            instance.SystemComment,
+			"order_number":              instance.OrderNumber,
+		}
+
+		_, err := s.db.Exec(ctx, query, args)
+		if err != nil {
+			return fmt.Errorf("failed to save invalid instance: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// GetInvalidInstancesByErrorID retrieves all invalid instances for a specific error
+func (s *Storage) GetInvalidInstancesByErrorID(ctx context.Context, errorID uuid.UUID) (*[]tzservice.OutInvalidError, error) {
+	query := `
+		SELECT id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number
+		FROM invalid_instances 
+		WHERE error_id = @error_id 
+		ORDER BY order_number`
+
+	args := pgx.NamedArgs{
+		"error_id": errorID,
+	}
+
+	rows, err := s.db.Query(ctx, query, args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get invalid instances by error ID: %w", err)
+	}
+	defer rows.Close()
+
+	var instances []tzservice.OutInvalidError
+	for rows.Next() {
+		var instance tzservice.OutInvalidError
+		err := rows.Scan(
+			&instance.ID,
+			&instance.HtmlID,
+			&instance.ErrorID,
+			&instance.Quote,
+			&instance.SuggestedFix,
+			&instance.OriginalQuote,
+			&instance.QuoteLines,
+			&instance.UntilTheEndOfSentence,
+			&instance.StartLineNumber,
+			&instance.EndLineNumber,
+			&instance.SystemComment,
+			&instance.OrderNumber,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan invalid instance: %w", err)
+		}
+		instances = append(instances, instance)
+	}
+
+	return &instances, nil
+}
+
+// MissingInstanceRepository implementation
+
+// SaveMissingInstances saves multiple missing instances
+func (s *Storage) SaveMissingInstances(ctx context.Context, missingInstances *[]tzservice.OutMissingError) error {
+	if missingInstances == nil || len(*missingInstances) == 0 {
+		return nil
+	}
+
+	query := `
+		INSERT INTO missing_instances (id, html_id, error_id, suggested_fix, rationale)
+		VALUES (@id, @html_id, @error_id, @suggested_fix, @rationale)`
+
+	for _, instance := range *missingInstances {
+		args := pgx.NamedArgs{
+			"id":            instance.ID,
+			"html_id":       instance.HtmlID,
+			"error_id":      instance.ErrorID,
+			"suggested_fix": instance.SuggestedFix,
+			"rationale":     instance.Rationale,
+		}
+
+		_, err := s.db.Exec(ctx, query, args)
+		if err != nil {
+			return fmt.Errorf("failed to save missing instance: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// GetMissingInstancesByErrorID retrieves all missing instances for a specific error
+func (s *Storage) GetMissingInstancesByErrorID(ctx context.Context, errorID uuid.UUID) (*[]tzservice.OutMissingError, error) {
+	query := `
+		SELECT id, html_id, error_id, suggested_fix, rationale
+		FROM missing_instances 
+		WHERE error_id = @error_id`
+
+	args := pgx.NamedArgs{
+		"error_id": errorID,
+	}
+
+	rows, err := s.db.Query(ctx, query, args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get missing instances by error ID: %w", err)
+	}
+	defer rows.Close()
+
+	var instances []tzservice.OutMissingError
+	for rows.Next() {
+		var instance tzservice.OutMissingError
+		err := rows.Scan(
+			&instance.ID,
+			&instance.HtmlID,
+			&instance.ErrorID,
+			&instance.SuggestedFix,
+			&instance.Rationale,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan missing instance: %w", err)
+		}
+		instances = append(instances, instance)
+	}
+
+	return &instances, nil
+}
+
 // CreateErrorFeedback creates new feedback for an error
-func (s *Storage) CreateErrorFeedback(ctx context.Context, req *repo.CreateErrorFeedbackRequest) (*repo.ErrorFeedback, error) {
+func (s *Storage) CreateErrorFeedback(ctx context.Context, req *modelrepo.CreateErrorFeedbackRequest) (*modelrepo.ErrorFeedback, error) {
 	query := `
 		INSERT INTO error_feedback (id, version_id, error_id, error_type, user_id, feedback_type, comment, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, version_id, error_id, error_type, user_id, feedback_type, comment, created_at, updated_at`
 
-	var feedback repo.ErrorFeedback
+	var feedback modelrepo.ErrorFeedback
 	err := s.db.QueryRow(ctx, query, req.ID, req.VersionID, req.ErrorID, req.ErrorType, req.UserID, req.FeedbackType, req.Comment, req.CreatedAt, req.UpdatedAt).
 		Scan(&feedback.ID, &feedback.VersionID, &feedback.ErrorID, &feedback.ErrorType, &feedback.UserID, &feedback.FeedbackType, &feedback.Comment, &feedback.CreatedAt, &feedback.UpdatedAt)
 	if err != nil {
@@ -597,10 +803,10 @@ func (s *Storage) CreateErrorFeedback(ctx context.Context, req *repo.CreateError
 
 // LLMCacheRepository implementation
 
-func (s *Storage) GetCachedResponse(ctx context.Context, messagesHash string) (*repo.LLMCache, error) {
+func (s *Storage) GetCachedResponse(ctx context.Context, messagesHash string) (*modelrepo.LLMCache, error) {
 	query := `SELECT id, messages_hash, response_data, created_at, updated_at FROM llm_cache WHERE messages_hash = $1`
 
-	var cache repo.LLMCache
+	var cache modelrepo.LLMCache
 	err := s.db.QueryRow(ctx, query, messagesHash).Scan(
 		&cache.ID, &cache.MessagesHash, &cache.ResponseData, &cache.CreatedAt, &cache.UpdatedAt)
 	if err != nil {
@@ -613,12 +819,12 @@ func (s *Storage) GetCachedResponse(ctx context.Context, messagesHash string) (*
 	return &cache, nil
 }
 
-func (s *Storage) SaveCachedResponse(ctx context.Context, req *repo.CreateLLMCacheRequest) (*repo.LLMCache, error) {
+func (s *Storage) SaveCachedResponse(ctx context.Context, req *modelrepo.CreateLLMCacheRequest) (*modelrepo.LLMCache, error) {
 	id := uuid.New()
 	query := `INSERT INTO llm_cache (id, messages_hash, response_data, created_at, updated_at) 
 			  VALUES ($1, $2, $3, $4, $5) RETURNING id, messages_hash, response_data, created_at, updated_at`
 
-	var cache repo.LLMCache
+	var cache modelrepo.LLMCache
 	err := s.db.QueryRow(ctx, query, id, req.MessagesHash, req.ResponseData, req.CreatedAt, req.UpdatedAt).Scan(
 		&cache.ID, &cache.MessagesHash, &cache.ResponseData, &cache.CreatedAt, &cache.UpdatedAt)
 	if err != nil {

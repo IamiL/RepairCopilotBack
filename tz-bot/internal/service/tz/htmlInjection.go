@@ -10,7 +10,7 @@ func InjectInvalidErrorsToHtmlBlocks(invalidErrors *[]OutInvalidError, htmlBlock
 	for i := range *invalidErrors {
 		if (*invalidErrors)[i].StartLineNumber != nil && (*invalidErrors)[i].EndLineNumber != nil {
 			if *(*invalidErrors)[i].StartLineNumber == *(*invalidErrors)[i].EndLineNumber {
-				err := injectIntoHTMLBlockByLineNumber((*invalidErrors)[i].Quote, (*invalidErrors)[i].IdStr, htmlBlocks, *(*invalidErrors)[i].StartLineNumber)
+				err := injectIntoHTMLBlockByLineNumber((*invalidErrors)[i].Quote, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, *(*invalidErrors)[i].StartLineNumber)
 				if err != nil {
 					errors = append(errors, err)
 				}
@@ -18,19 +18,21 @@ func InjectInvalidErrorsToHtmlBlocks(invalidErrors *[]OutInvalidError, htmlBlock
 				for line := *(*invalidErrors)[i].StartLineNumber; line <= *(*invalidErrors)[i].EndLineNumber; line++ {
 					if (*invalidErrors)[i].QuoteLines != nil {
 						for _, quoteLine := range *(*invalidErrors)[i].QuoteLines {
-							err := injectIntoHTMLBlockByLineNumber(quoteLine, (*invalidErrors)[i].IdStr, htmlBlocks, line)
+							err := injectIntoHTMLBlockByLineNumber(quoteLine, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, line)
 							if err != nil {
 								errors = append(errors, err)
 							}
 						}
 					} else {
-						err := injectIntoHTMLBlockByLineNumber((*invalidErrors)[i].Quote, (*invalidErrors)[i].IdStr, htmlBlocks, line)
+						err := injectIntoHTMLBlockByLineNumber((*invalidErrors)[i].Quote, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, line)
 						if err != nil {
 							errors = append(errors, err)
 						}
 					}
 				}
 			}
+		} else {
+			(*invalidErrors)[i].SystemComment = "Не вставлено в тексте"
 		}
 	}
 	return errors

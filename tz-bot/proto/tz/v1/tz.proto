@@ -24,49 +24,9 @@ message CheckTzResponse {
   string html_text = 1;
   string css = 2;
   string docId = 3;
-  repeated OutInvalidError invalid_errors = 4;
-  repeated OutMissingError missing_errors = 5;
-  string fileId = 6;
-  repeated Error errors = 7;
-}
-
-message OutInvalidError {
-  uint32 id = 1;
-  string id_str = 2;
-  string group_id = 3;
-  string error_code = 4;
-  string quote = 5;
-  string analysis = 6;
-  string critique = 7;
-  string verification = 8;
-  string suggested_fix = 9;
-  string rationale = 10;
-  string original_quote = 11;
-  repeated string quote_lines = 12;
-  bool until_the_end_of_sentence = 13;
-  optional int32 start_line_number = 14;
-  optional int32 end_line_number = 15;
-}
-
-message OutMissingError {
-  uint32 id = 1;
-  string id_str = 2;
-  string group_id = 3;
-  string error_code = 4;
-  string analysis = 5;
-  string critique = 6;
-  string verification = 7;
-  string suggested_fix = 8;
-  string rationale = 9;
-}
-
-message Instance {
-  optional string err_type = 1;
-  optional string snippet = 2;
-  optional int32 line_start = 3;
-  optional int32 line_end = 4;
-  optional string suggested_fix = 5;
-  optional string rationale = 6;
+  string fileId = 4;
+  repeated Error errors = 5;
+  repeated InvalidInstance invalid_instances = 6;
 }
 
 message Error {
@@ -80,8 +40,35 @@ message Error {
   optional string process_critique = 8;
   optional string process_verification = 9;
   repeated string process_retrieval = 10;
-  repeated Instance instances = 11;
+  repeated InvalidInstance invalid_instances = 11;
+  repeated MissingInstance missing_instances = 12;
 }
+
+message InvalidInstance {
+  string id = 1;
+  uint32 html_id = 2;
+  string error_id = 3;
+  string quote = 4;
+  string suggested_fix = 5;
+  string original_quote = 6;
+  repeated string quote_lines = 7;
+  bool until_the_end_of_sentence = 8;
+  optional int32 start_line_number = 9;
+  optional int32 end_line_number = 10;
+  string system_comment = 11;
+  int32 order_number = 12;
+  optional Error parent_error = 13;
+}
+
+message MissingInstance {
+  string id = 1;
+  uint32 html_id = 2;
+  string error_id = 3;
+  string suggested_fix = 4;
+  string rationale = 5;
+}
+
+
 
 message GetTechnicalSpecificationVersionsRequest {
   string user_id = 1;
@@ -106,9 +93,9 @@ message GetVersionResponse {
   string html_text = 1;
   string css = 2;
   string docId = 3;
-  repeated OutInvalidError invalid_errors = 4;
-  repeated OutMissingError missing_errors = 5;
-  string fileId = 6;
+  string fileId = 4;
+  repeated Error errors = 5;
+  repeated InvalidInstance invalid_instances = 6;
 }
 
 message GetAllVersionsRequest {

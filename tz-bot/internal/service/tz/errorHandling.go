@@ -12,37 +12,29 @@ import (
 )
 
 type OutInvalidError struct {
-	ErrorID               uuid.UUID `json:"errorId"`
-	Id                    uint32
-	IdStr                 string `json:"id"`
-	GroupID               string `json:"group_id"`
-	ErrorCode             string `json:"error_code"`
-	Quote                 string `json:"quote"`
-	Analysis              string `json:"analysis"`
-	Critique              string `json:"critique"`
-	Verification          string `json:"verification"`
-	SuggestedFix          string `json:"suggested_fix"`
-	Rationale             string `json:"rational"`
+	ID                    uuid.UUID
+	HtmlID                uint32
+	HtmlIDStr             string
+	ErrorID               uuid.UUID
+	Quote                 string
+	SuggestedFix          string
 	OriginalQuote         string
 	QuoteLines            *[]string
 	UntilTheEndOfSentence bool
 	StartLineNumber       *int
 	EndLineNumber         *int
-	Retrieval             []string `json:"retrieval"`
+	SystemComment         string
+	OrderNumber           int
+	ParentError           Error
 }
 
 type OutMissingError struct {
-	ErrorID      uuid.UUID `json:"errorId"`
-	Id           uint32
-	IdStr        string   `json:"id"`
-	GroupID      string   `json:"group_id"`
-	ErrorCode    string   `json:"error_code"`
-	Analysis     string   `json:"analysis"`
-	Critique     string   `json:"critique"`
-	Verification string   `json:"verification"`
-	SuggestedFix string   `json:"suggested_fix"`
-	Rationale    string   `json:"rational"`
-	Retrieval    []string `json:"retrieval"`
+	ID           uuid.UUID
+	HtmlID       uint32
+	HtmlIDStr    string
+	ErrorID      uuid.UUID
+	SuggestedFix string
+	Rationale    string
 }
 
 func HandleErrors(report *[]tz_llm_client.GroupReport, htmlBlocks *[]markdown_service_client.Mapping) (*[]OutInvalidError, *[]OutMissingError, string) {
@@ -107,7 +99,7 @@ func sortInvalidErrorsByHtmlOrder(errors *[]OutInvalidError, htmlText string) *[
 	// Создаем map для быстрого поиска ошибок по IdStr
 	errorMap := make(map[string]OutInvalidError)
 	for _, err := range *errors {
-		errorMap[err.IdStr] = err
+		errorMap[err.HtmlIDStr] = err
 	}
 
 	// Создаем отсортированный массив
@@ -124,7 +116,7 @@ func sortInvalidErrorsByHtmlOrder(errors *[]OutInvalidError, htmlText string) *[
 
 	// Добавляем оставшиеся ошибки, которых нет в HTML (на случай если что-то пропустили)
 	for _, err := range *errors {
-		if !addedIds[err.IdStr] {
+		if !addedIds[err.HtmlIDStr] {
 			sortedErrors = append(sortedErrors, err)
 		}
 	}
@@ -148,9 +140,9 @@ func LogOutInvalidErrors(log *slog.Logger, errors *[]OutInvalidError, prefix str
 
 	for i, err := range *errors {
 		// Основная информация об ошибке
-		log.Info(fmt.Sprintf("  [%d] Ошибка ID=%d, IdStr=%s", i+1, err.Id, err.IdStr),
-			slog.String("group_id", err.GroupID),
-			slog.String("error_code", err.ErrorCode))
+		//log.Info(fmt.Sprintf("  [%d] Ошибка ID=%d, IdStr=%s", i+1, err.Id, err.IdStr),
+		//	slog.String("group_id", err.GroupID),
+		//	slog.String("error_code", err.ErrorCode))
 
 		// Цитата и оригинальная цитата
 		if err.Quote != "" {
@@ -186,21 +178,21 @@ func LogOutInvalidErrors(log *slog.Logger, errors *[]OutInvalidError, prefix str
 			slog.Bool("until_end_of_sentence", err.UntilTheEndOfSentence))
 
 		// Анализ и рекомендации
-		if err.Analysis != "" {
-			log.Info(fmt.Sprintf("    Analysis: %s", truncateString(err.Analysis, 150)))
-		}
-		if err.Critique != "" {
-			log.Info(fmt.Sprintf("    Critique: %s", truncateString(err.Critique, 150)))
-		}
-		if err.Verification != "" {
-			log.Info(fmt.Sprintf("    Verification: %s", truncateString(err.Verification, 150)))
-		}
-		if err.SuggestedFix != "" {
-			log.Info(fmt.Sprintf("    SuggestedFix: %s", truncateString(err.SuggestedFix, 150)))
-		}
-		if err.Rationale != "" {
-			log.Info(fmt.Sprintf("    Rationale: %s", truncateString(err.Rationale, 150)))
-		}
+		//if err.Analysis != "" {
+		//	log.Info(fmt.Sprintf("    Analysis: %s", truncateString(err.Analysis, 150)))
+		//}
+		//if err.Critique != "" {
+		//	log.Info(fmt.Sprintf("    Critique: %s", truncateString(err.Critique, 150)))
+		//}
+		//if err.Verification != "" {
+		//	log.Info(fmt.Sprintf("    Verification: %s", truncateString(err.Verification, 150)))
+		//}
+		//if err.SuggestedFix != "" {
+		//	log.Info(fmt.Sprintf("    SuggestedFix: %s", truncateString(err.SuggestedFix, 150)))
+		//}
+		//if err.Rationale != "" {
+		//	log.Info(fmt.Sprintf("    Rationale: %s", truncateString(err.Rationale, 150)))
+		//}
 
 		// Разделитель между ошибками
 		if i < len(*errors)-1 {

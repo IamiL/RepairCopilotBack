@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
 	"time"
 
 	"repairCopilotBot/tz-bot/internal/repository"
@@ -17,6 +18,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// LLMCacheRepository defines the interface for LLM cache operations
+type LLMCacheRepository interface {
+	// GetCachedResponse retrieves cached response by messages hash
+	GetCachedResponse(ctx context.Context, messagesHash string) (*modelrepo.LLMCache, error)
+
+	// SaveCachedResponse saves a new cached response
+	SaveCachedResponse(ctx context.Context, req *modelrepo.CreateLLMCacheRequest) (*modelrepo.LLMCache, error)
+}
 type Config struct {
 	Url   string `yaml:"url"`
 	Model string `yaml:"model"`
@@ -25,14 +34,14 @@ type Config struct {
 type Client struct {
 	url        string // URL API для отправки файла (замените на реальный URL) apiURL := "https://your-api-endpoint.com/upload"
 	model      string
-	repository repository.LLMCacheRepository
+	repository LLMCacheRepository
 }
 
 func New(url string, model string) *Client {
 	return &Client{url: url, model: model}
 }
 
-func NewWithCache(url string, model string, repo repository.LLMCacheRepository) *Client {
+func NewWithCache(url string, model string, repo LLMCacheRepository) *Client {
 	return &Client{url: url, model: model, repository: repo}
 }
 
@@ -242,7 +251,7 @@ func (c *Client) SendMessage(Messages []struct {
 			responseData, marshalErr := json.Marshal(response)
 			if marshalErr == nil {
 				now := time.Now()
-				cacheReq := &repository.CreateLLMCacheRequest{
+				cacheReq := &modelrepo.CreateLLMCacheRequest{
 					MessagesHash: messagesHash,
 					ResponseData: responseData,
 					CreatedAt:    now,

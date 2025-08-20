@@ -98,7 +98,7 @@ func GetVersionHandler(
 
 		log.Info("GetVersion request processed successfully",
 			slog.String("version_id", versionID.String()),
-			slog.Int("invalid_errors_count", len(result.InvalidErrors)),
-			slog.Int("missing_errors_count", len(result.MissingErrors)))
+			slog.Int("errors_count", len(result.Errors)),
+			slog.Int("invalid_instances_count", len(result.InvalidInstances)))
 	}
 }

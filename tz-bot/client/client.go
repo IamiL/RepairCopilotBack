@@ -223,7 +223,7 @@ func (c *Client) GetTechnicalSpecificationVersions(ctx context.Context, userID u
 	return versions, nil
 }
 
-func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*CheckTzResult, error) {
+func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*tzv1.GetVersionResponse, error) {
 	const op = "tz_client.GetVersion"
 
 	resp, err := c.api.GetVersion(ctx, &tzv1.GetVersionRequest{
@@ -232,71 +232,7 @@ func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*CheckTzR
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-
-	// Конвертация OutInvalidError из proto в клиентские структуры
-	invalidErrors := make([]OutInvalidError, len(resp.InvalidErrors))
-	for i, grpcError := range resp.InvalidErrors {
-		var startLine, endLine *int
-		if grpcError.StartLineNumber != nil {
-			val := int(*grpcError.StartLineNumber)
-			startLine = &val
-		}
-		if grpcError.EndLineNumber != nil {
-			val := int(*grpcError.EndLineNumber)
-			endLine = &val
-		}
-
-		// Обработка QuoteLines (массив строк из proto)
-		var quoteLines *[]string
-		if len(grpcError.QuoteLines) > 0 {
-			quoteLinesSlice := make([]string, len(grpcError.QuoteLines))
-			copy(quoteLinesSlice, grpcError.QuoteLines)
-			quoteLines = &quoteLinesSlice
-		}
-
-		invalidErrors[i] = OutInvalidError{
-			Id:                    grpcError.Id,
-			IdStr:                 grpcError.IdStr,
-			GroupID:               grpcError.GroupId,
-			ErrorCode:             grpcError.ErrorCode,
-			Quote:                 grpcError.Quote,
-			Analysis:              grpcError.Analysis,
-			Critique:              grpcError.Critique,
-			Verification:          grpcError.Verification,
-			SuggestedFix:          grpcError.SuggestedFix,
-			Rationale:             grpcError.Rationale,
-			OriginalQuote:         grpcError.OriginalQuote,
-			QuoteLines:            quoteLines,
-			UntilTheEndOfSentence: grpcError.UntilTheEndOfSentence,
-			StartLineNumber:       startLine,
-			EndLineNumber:         endLine,
-		}
-	}
-
-	// Конвертация OutMissingError из proto в клиентские структуры
-	missingErrors := make([]OutMissingError, len(resp.MissingErrors))
-	for i, grpcError := range resp.MissingErrors {
-		missingErrors[i] = OutMissingError{
-			Id:           grpcError.Id,
-			IdStr:        grpcError.IdStr,
-			GroupID:      grpcError.GroupId,
-			ErrorCode:    grpcError.ErrorCode,
-			Analysis:     grpcError.Analysis,
-			Critique:     grpcError.Critique,
-			Verification: grpcError.Verification,
-			SuggestedFix: grpcError.SuggestedFix,
-			Rationale:    grpcError.Rationale,
-		}
-	}
-
-	return &CheckTzResult{
-		HtmlText:      resp.HtmlText,
-		InvalidErrors: invalidErrors,
-		MissingErrors: missingErrors,
-		FileId:        resp.FileId,
-		Css:           resp.Css,
-		DocId:         resp.DocId,
-	}, nil
+	return resp, nil
 }
 
 func (c *Client) GetAllVersions(ctx context.Context) ([]VersionWithErrorCounts, error) {

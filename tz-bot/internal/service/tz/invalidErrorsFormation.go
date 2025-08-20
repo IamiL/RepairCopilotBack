@@ -5,96 +5,43 @@ import (
 	"regexp"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*[]OutInvalidError, uint32) {
 	id := startId
-	fmt.Println("отладка 71")
 	outInvalidErrors := make([]OutInvalidError, 0, 50)
-	fmt.Println("отладка 72")
 	if report != nil {
-		fmt.Println("отладка 73")
 		for i := range *report {
-			fmt.Println("отладка 74")
 			if (*report)[i].Errors != nil {
-				fmt.Println("отладка 75")
 				for j := range *(*report)[i].Errors {
-					fmt.Println("отладка 76")
 					if (*((*report)[i]).Errors)[j].Instances != nil {
-						fmt.Println("отладка 77")
 						for k := range *(*((*report)[i]).Errors)[j].Instances {
-							fmt.Println("отладка 78")
 							if (*(*((*report)[i]).Errors)[j].Instances)[k].ErrType != nil && *(*(*((*report)[i]).Errors)[j].Instances)[k].ErrType == "invalid" && (*(*((*report)[i]).Errors)[j].Instances)[k].Snippet != nil && *(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet != "" {
-								fmt.Println("отладка 31")
-								groupId := ""
-								if (*report)[i].GroupID != nil {
-									groupId = *(*report)[i].GroupID
-								}
-								errorCode := ""
-								fmt.Println("отладка 32")
-								if (*((*report)[i]).Errors)[j].Code != nil {
-									errorCode = *(*((*report)[i]).Errors)[j].Code
-								}
-								fmt.Println("отладка 33")
-								analysis := ""
-								critique := ""
-								verification := ""
-								var retrieval []string
-								if (*((*report)[i]).Errors)[j].Process != nil {
-									if (*((*report)[i]).Errors)[j].Process.Analysis != nil {
-										analysis = *(*((*report)[i]).Errors)[j].Process.Analysis
-									}
-									if (*((*report)[i]).Errors)[j].Process.Critique != nil {
-										critique = *(*((*report)[i]).Errors)[j].Process.Critique
-									}
-									if (*((*report)[i]).Errors)[j].Process.Verification != nil {
-										verification = *(*((*report)[i]).Errors)[j].Process.Verification
-									}
-									// Извлекаем тексты из Retrieval
-									if (*((*report)[i]).Errors)[j].Process.Retrieval != nil {
-										for _, r := range *(*((*report)[i]).Errors)[j].Process.Retrieval {
-											if r.Text != nil {
-												retrieval = append(retrieval, *r.Text)
-											}
-										}
-									}
-								}
-								fmt.Println("отладка 34")
-								suggested_fix := ""
+
+								suggestedFix := ""
 								if (*(*((*report)[i]).Errors)[j].Instances)[k].SuggestedFix != nil {
-									suggested_fix = *(*(*((*report)[i]).Errors)[j].Instances)[k].SuggestedFix
+									suggestedFix = *(*(*((*report)[i]).Errors)[j].Instances)[k].SuggestedFix
 								}
-								fmt.Println("отладка 35")
-								rationale := ""
-								if (*(*((*report)[i]).Errors)[j].Instances)[k].Rationale != nil {
-									rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
-								}
-								fmt.Println("отладка 36")
 								originalQuote := *(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet
 
-								fmt.Println("отладка 37")
 								cleanQuote := MarcdownCleaning(*(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet)
 
-								fmt.Println("отладка 38")
 								var quoteLines *[]string
 
-								fmt.Println("отладка 39")
 								cleanQuoteLines := SplitLinesNoEmpty(cleanQuote)
 
-								fmt.Println("отладка 40")
 								if cleanQuoteLines != nil && len(cleanQuoteLines) > 1 {
-									fmt.Println("отладка 41")
 									for lineNimber, _ := range cleanQuoteLines {
 										cleanQuoteLines[lineNimber] = MarcdownCleaning(cleanQuoteLines[lineNimber])
 									}
-									fmt.Println("отладка 42")
 
 									quoteLines = &cleanQuoteLines
 
 								} else {
-									fmt.Println("отладка 43")
 									cleanQuoteCells := SplitByPipeNoEmpty(cleanQuote)
-									fmt.Println("отладка 44")
+
 									if cleanQuoteCells != nil && len(cleanQuoteCells) > 1 {
 										for lineNimber, _ := range cleanQuoteCells {
 											cleanQuoteCells[lineNimber] = MarcdownCleaning(cleanQuoteCells[lineNimber])
@@ -113,23 +60,17 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 								//}
 
 								outInvalidErrors = append(outInvalidErrors, OutInvalidError{
+									ID:                    uuid.New(),
 									ErrorID:               (*((*report)[i]).Errors)[j].ID,
-									Id:                    id,
-									IdStr:                 fmt.Sprintf("%d", id),
-									GroupID:               groupId,
-									ErrorCode:             errorCode,
+									HtmlID:                id,
+									HtmlIDStr:             fmt.Sprintf("%d", id),
 									Quote:                 cleanQuote,
-									Analysis:              analysis,
-									Critique:              critique,
-									Verification:          verification,
-									SuggestedFix:          suggested_fix,
-									Rationale:             rationale,
+									SuggestedFix:          suggestedFix,
 									UntilTheEndOfSentence: EllipsisCheck(*(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet),
 									StartLineNumber:       startLineNumber,
 									EndLineNumber:         endLineNumber,
 									QuoteLines:            quoteLines,
 									OriginalQuote:         originalQuote,
-									Retrieval:             retrieval,
 								})
 
 								id++
@@ -142,7 +83,6 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 
 		}
 	}
-	fmt.Println("отладка 79")
 
 	return &outInvalidErrors, id
 }
