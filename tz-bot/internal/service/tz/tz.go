@@ -364,7 +364,7 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, stri
 				(*invalidInstancesFromDb)[j].HtmlIDStr = strconv.Itoa(int((*invalidInstancesFromDb)[j].HtmlID))
 			}
 			invalidInstances = append(invalidInstances, *invalidInstancesFromDb...)
-			(*errorsInTz)[i].InvalidInstances = &invalidInstances
+			(*errorsInTz)[i].InvalidInstances = invalidInstancesFromDb
 		}
 
 		missingInstances, err := tz.repo.GetMissingInstancesByErrorID(ctx, (*errorsInTz)[i].ID)
