@@ -23,12 +23,9 @@ message CheckTzRequest {
 }
 
 message CheckTzResponse {
-  string html_text = 1;
-  string css = 2;
-  string docId = 3;
-  string fileId = 4;
-  repeated Error errors = 5;
-  repeated InvalidInstance invalid_instances = 6;
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 3;
 }
 
 message Error {
@@ -47,6 +44,7 @@ message Error {
   repeated string process_retrieval = 13;
   repeated InvalidInstance invalid_instances = 14;
   repeated MissingInstance missing_instances = 15;
+  int32 order_number = 16;
 }
 
 message InvalidInstance {
@@ -64,6 +62,14 @@ message InvalidInstance {
   string system_comment = 12;
   int32 order_number = 13;
   optional Error parent_error = 14;
+  bool feedback_exists = 16;
+  optional bool feedback_mark = 17;
+  optional string feedback_comment = 18;
+  optional string feedback_user = 19;
+  bool feedback_verification_exists = 20;
+  optional bool feedback_verification_mark = 21;
+  optional string feedback_verification_comment = 22;
+  optional string feedback_verification_user = 23;
 }
 
 message MissingInstance {
@@ -72,9 +78,15 @@ message MissingInstance {
   string error_id = 3;
   string suggested_fix = 4;
   string rationale = 5;
+  bool feedback_exists = 16;
+  optional bool feedback_mark = 17;
+  optional string feedback_comment = 18;
+  optional string feedback_user = 19;
+  bool feedback_verification_exists = 20;
+  optional bool feedback_verification_mark = 21;
+  optional string feedback_verification_comment = 22;
+  optional string feedback_verification_user = 23;
 }
-
-
 
 message GetTechnicalSpecificationVersionsRequest {
   string user_id = 1;
@@ -96,16 +108,20 @@ message GetVersionRequest {
 }
 
 message GetVersionResponse {
-  string html_text = 1;
-  string css = 2;
-  string docId = 3;
-  string fileId = 4;
+  optional string html_text = 1;
+  optional string css = 2;
+  optional string docId = 3;
+  optional string fileId = 4;
   repeated Error errors = 5;
   repeated InvalidInstance invalid_instances = 6;
   google.protobuf.Timestamp created_at = 7;
   optional double total_rubs = 8;
   optional int64 total_tokens = 9;
   optional int64 average_inspection_time_nanoseconds = 10;
+  optional int64 original_file_size = 11;
+  optional int32 numberOfErrors = 12;
+  string name = 13;
+  string status = 14;
 }
 
 message GetAllVersionsRequest {

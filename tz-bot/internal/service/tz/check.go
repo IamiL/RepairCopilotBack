@@ -8,6 +8,8 @@ import (
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -15,7 +17,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID uuid.UUID) (string, string, string, *[]Error, *[]OutInvalidError, string, error) {
+func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID uuid.UUID) (uuid.UUID, string, time.Time, error) {
 	const op = "Tz.CheckTz"
 
 	log := tz.log.With(
@@ -23,63 +25,169 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		slog.String("userID", userID.String()),
 	)
 
-	log.Info("checking tz")
+	log.Info("checking tz - creating initial records")
+
+	// Создаем техническую спецификацию
+	newTzID := uuid.New()
+	ts, err := tz.repo.CreateTechnicalSpecification(ctx, &modelrepo.CreateTechnicalSpecificationRequest{
+		ID:        newTzID,
+		Name:      RemoveDocxExtension(filename),
+		UserID:    userID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	})
+	if err != nil {
+		return uuid.Nil, "", time.Time{}, fmt.Errorf("failed to create technical specification: %w", err)
+	}
+	log.Info("technical specification created", slog.String("ts_id", ts.ID.String()))
+
+	// Сохраняем оригинальный файл в S3
+	originalFileID := uuid.New().String()
+	err = tz.s3.SaveDocument(ctx, originalFileID, file)
+	if err != nil {
+		log.Error("ошибка сохранения оригинального файла в S3: ", sl.Err(err))
+		return uuid.Nil, "", time.Time{}, fmt.Errorf("ошибка сохранения файла в S3: %w", err)
+	}
+	log.Info("оригинальный файл успешно сохранён в S3", slog.String("file_id", originalFileID))
+
+	// Создаем версию с минимальными данными и статусом "in_progress"
+	newVersionID := uuid.New()
+	versionReq := &modelrepo.CreateVersionRequest{
+		ID:                       newVersionID,
+		TechnicalSpecificationID: newTzID,
+		VersionNumber:            1,
+		CreatedAt:                time.Now(),
+		UpdatedAt:                time.Now(),
+		OriginalFileID:           originalFileID,
+		OutHTML:                  "",
+		CSS:                      "",
+		CheckedFileID:            "",
+		AllRubs:                  0,
+		AllTokens:                0,
+		InspectionTime:           0,
+		OriginalFileSize:         int64(len(file)),
+		NumberOfErrors:           0,
+		Status:                   "in_progress",
+	}
+	err = tz.repo.CreateVersion(ctx, versionReq)
+	if err != nil {
+		return uuid.Nil, "", time.Time{}, fmt.Errorf("failed to create version: %w", err)
+	}
+	log.Info("version created with status 'in_progress'", slog.String("version_id", newVersionID.String()))
+
+	// Запускаем асинхронную обработку
+	go tz.ProcessTzAsync(file, filename, newVersionID, originalFileID)
+
+	log.Info("async processing started")
+	return newVersionID, RemoveDocxExtension(filename), time.Now(), nil
+}
+
+type Error struct {
+	ID                  uuid.UUID                 `json:"id"`
+	GroupID             string                    `json:"group_id"`
+	ErrorCode           string                    `json:"error_code"`
+	OrderNumber         int                       `json:"order_number"`
+	Name                string                    `json:"name"`
+	Description         string                    `json:"description"`
+	Detector            string                    `json:"detector"`
+	PreliminaryNotes    *string                   `json:"preliminary_notes"`
+	OverallCritique     *string                   `json:"overall_critique"`
+	Verdict             string                    `json:"verdict"`
+	ProcessAnalysis     *string                   `json:"process_analysis"`
+	ProcessCritique     *string                   `json:"process_critique"`
+	ProcessVerification *string                   `json:"process_verification"`
+	ProcessRetrieval    *[]string                 `json:"process_retrieval"`
+	Instances           *[]tz_llm_client.Instance `json:"instances"`
+	InvalidInstances    *[]OutInvalidError        `json:"invalid_instances"`
+	MissingInstances    *[]OutMissingError        `json:"missing_instances"`
+}
+
+// SortErrorsByCode сортирует массив ошибок по ErrorCode (E01, E02, и т.д.)
+func SortErrorsByCode(errors []Error) {
+	sort.Slice(errors, func(i, j int) bool {
+		numI := extractErrorNumber(errors[i].ErrorCode)
+		numJ := extractErrorNumber(errors[j].ErrorCode)
+
+		// Если оба числа валидны, сортируем по числу
+		if numI != -1 && numJ != -1 {
+			return numI < numJ
+		}
+
+		// Если только одно число валидно, валидное ставим первым
+		if numI != -1 && numJ == -1 {
+			return true
+		}
+		if numI == -1 && numJ != -1 {
+			return false
+		}
+
+		// Если оба невалидны, сортируем лексикографически
+		return errors[i].ErrorCode < errors[j].ErrorCode
+	})
+}
+
+// extractErrorNumber извлекает номер из ErrorCode (например, из "E01" возвращает 1)
+func extractErrorNumber(errorCode string) int {
+	if len(errorCode) < 2 || !strings.HasPrefix(strings.ToUpper(errorCode), "E") {
+		return -1
+	}
+
+	numStr := errorCode[1:]
+	num, err := strconv.Atoi(numStr)
+	if err != nil {
+		return -1
+	}
+
+	return num
+}
+
+func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, _ string) {
+	const op = "Tz.ProcessTzAsync"
+
+	log := tz.log.With(
+		slog.String("op", op),
+		slog.String("versionID", versionID.String()),
+	)
+
+	log.Info("starting async processing")
+
+	ctx, _ := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
 
 	timeStart := time.Now()
 
 	htmlText, css, err := tz.wordConverterClient.Convert(file, filename)
 	if err != nil {
-		tz.log.Info("Ошибка обработки файла в wordConverterClient: %v\n" + err.Error())
-
-		//tz.tgClient.SendMessage("Ошибка обработки файла в wordConverterClient: %v\n" + err.Error())
-
-		return "", "", "", nil, nil, "", ErrConvertWordFile
+		tz.log.Error("Ошибка обработки файла в wordConverterClient: " + err.Error())
+		tz.updateVersionWithError(ctx, versionID, "error")
+		return
 	}
 
 	log.Info("конвертация word файла в htmlText успешна")
 
-	log.Info("отправляем HTML в markdown-service для конвертации")
-
 	markdownResponse, err := tz.markdownClient.Convert(*htmlText)
 	if err != nil {
 		log.Error("ошибка конвертации HTML в markdown: ", sl.Err(err))
-		//tz.tgClient.SendMessage(fmt.Sprintf("Ошибка конвертации HTML в markdown: %v", err))
-		return "", "", "", nil, nil, "", fmt.Errorf("ошибка конвертации HTML в markdown: %w", err)
+		tz.updateVersionWithError(ctx, versionID, "error")
+		return
 	}
 
 	log.Info("конвертация HTML в markdown успешна")
 	log.Info(fmt.Sprintf("получены дополнительные данные: message=%s, mappings_count=%d", markdownResponse.Message, len(markdownResponse.Mappings)))
 
-	//log.Info("отправка Markdown файла в телеграм")
-	//
-	//markdownFileName := strings.TrimSuffix(filename, ".docx") + ".md"
-	//markdownFileData := []byte(markdownResponse.Markdown)
-	//err = tz.tgClient.SendFile(markdownFileData, markdownFileName)
-	//if err != nil {
-	//	log.Error("ошибка отправки Markdown файла в телеграм: ", sl.Err(err))
-	//	//tz.tgClient.SendMessage(fmt.Sprintf("Ошибка отправки Markdown файла в телеграм: %v", err))
-	//} else {
-	//	log.Info("Markdown файл успешно отправлен в телеграм")
-	//}
-
-	log.Info("запрос промтов в promt-builder")
-
-	//Генерируем запрос для нейронки
 	promts, schema, errorsDescrptions, err := tz.promtBuilderClient.GeneratePromts(markdownResponse.Markdown, tz.ggID)
 	if err != nil {
-		return "", "", "", nil, nil, "", ErrLlmAnalyzeFile
+		log.Error("ошибка генерации промтов: ", sl.Err(err))
+		tz.updateVersionWithError(ctx, versionID, "error")
+		return
 	}
 
 	if schema == nil {
-		return "", "", "", nil, nil, "", ErrLlmAnalyzeFile
+		log.Error("схема пустая")
+		tz.updateVersionWithError(ctx, versionID, "error")
+		return
 	}
 
-	//if len(*neuralRequest.Items) > 1 {
-	//	*neuralRequest.Items = (*neuralRequest.Items)[:1]
-	//}
-
 	groupReports := make([]tz_llm_client.GroupReport, 0, len(*promts))
-
 	allRubs := float64(0)
 	allTokens := int64(0)
 
@@ -96,7 +204,6 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		}, schema map[string]interface{}) {
 			defer wg.Done()
 
-			// Гарантируем, что всегда отправляем результат в канал
 			defer func() {
 				if r := recover(); r != nil {
 					log.Error("паника в goroutine: ", slog.Any("panic", r))
@@ -134,15 +241,11 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		}(v.Messages, schema)
 	}
 
-	fmt.Println(" отладка 5")
-
 	// Закрываем канал после завершения всех горутин
 	go func() {
 		wg.Wait()
 		close(resultChan)
 	}()
-
-	fmt.Println(" отладка 6")
 
 	// Собираем результаты
 	expectedResults := len(*promts)
@@ -150,58 +253,30 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 
 	for result := range resultChan {
 		receivedResults++
-		fmt.Printf(" отладка: получен результат %d из %d\n", receivedResults, expectedResults)
 
 		if result.err != nil {
 			log.Error("ошибка в результате: ", sl.Err(result.err))
 			continue
 		}
 
-		fmt.Println(" отладка 7")
-
 		if result.groupReport != nil {
 			groupReports = append(groupReports, *result.groupReport)
 		}
-
-		fmt.Println(" отладка 8")
 
 		if result.cost != nil {
 			allRubs += *result.cost
 		}
 
-		fmt.Println(" отладка 9")
-
 		if result.tokens != nil {
 			allTokens += *result.tokens
 		}
 
-		// Выходим из цикла, когда получили все ожидаемые результаты
 		if receivedResults >= expectedResults {
 			break
 		}
 	}
 
-	fmt.Println(" отладка 10")
-
 	inspectionTime := time.Since(timeStart)
-
-	//llmAnalyzeResult, err := tz.llmClient.Analyze(markdownResponse.Markdown)
-
-	//if err != nil {
-	//	log.Error("Error: \n", err)
-	//}
-	//if llmAnalyzeResult == nil {
-	//	//tz.tgClient.SendMessage("ИСПРАВИТЬ: от llm пришёл пустой ответ, но код ответа не ошибочный.")
-	//
-	//	log.Info("пустой ответ от llm")
-	//	return "", "", "", &([]OutInvalidError{}), &([]OutMissingError{}), "", ErrLlmAnalyzeFile
-	//}
-	//if llmAnalyzeResult.Reports == nil || len(llmAnalyzeResult.Reports) == 0 {
-	//	//tz.tgClient.SendMessage("МБ ЧТО-ТО НЕ ТАК: от llm ответ без отчетов, но код ответа не ошибочный")
-	//
-	//	log.Info("0 отчетов в ответе от llm")
-	//	return "", "", "", &([]OutInvalidError{}), &([]OutMissingError{}), "", ErrLlmAnalyzeFile
-	//}
 
 	for i := range groupReports {
 		for j := range *groupReports[i].Errors {
@@ -210,77 +285,60 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	}
 
 	errors := ErrorsFormation(groupReports, errorsDescrptions)
+	SortErrorsByCode(errors)
+	for i := range errors {
+		errors[i].OrderNumber = i
+	}
 
 	outInvalidErrors, outMissingErrors, outHtml := HandleErrors(&groupReports, &markdownResponse.Mappings)
 
-	// Сохраняем оригинальный файл в S3
-	originalFileID := uuid.New().String()
-	err = tz.s3.SaveDocument(ctx, originalFileID, file)
-	if err != nil {
-		log.Error("ошибка сохранения оригинального файла в S3: ", sl.Err(err))
-		return "", "", "", nil, nil, "", fmt.Errorf("ошибка сохранения файла в S3: %w", err)
-	}
-	log.Info("оригинальный файл успешно сохранён в S3", slog.String("file_id", originalFileID))
-
 	err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
 	if err != nil {
-		log.Error(err.Error())
-		return "", "", "", nil, nil, "", ErrLlmAnalyzeFile
+		log.Error("ошибка сохранения invalid instances: ", sl.Err(err))
+		tz.updateVersionWithError(ctx, versionID, "error")
+		return
 	}
 
 	err = tz.repo.SaveMissingInstances(ctx, outMissingErrors)
 	if err != nil {
-		log.Error(err.Error())
-		return "", "", "", nil, nil, "", ErrLlmAnalyzeFile
+		log.Error("ошибка сохранения missing instances: ", sl.Err(err))
+		tz.updateVersionWithError(ctx, versionID, "error")
+		return
 	}
 
-	newTzID := uuid.New()
-	ts, err := tz.repo.CreateTechnicalSpecification(ctx, &modelrepo.CreateTechnicalSpecificationRequest{
-		ID:        newTzID,
-		Name:      RemoveDocxExtension(filename),
-		UserID:    userID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	})
+	// Обновляем версию с результатами обработки
+	updateReq := &modelrepo.UpdateVersionRequest{
+		ID:             versionID,
+		UpdatedAt:      time.Now(),
+		OutHTML:        outHtml,
+		CSS:            *css,
+		CheckedFileID:  "",
+		AllRubs:        allRubs,
+		AllTokens:      allTokens,
+		InspectionTime: inspectionTime,
+		NumberOfErrors: len(*outMissingErrors) + len(*outInvalidErrors),
+		Status:         "completed",
+	}
+	err = tz.repo.UpdateVersion(ctx, updateReq)
 	if err != nil {
-		return "", "", "", nil, nil, "", fmt.Errorf("failed to create technical specification: %w", err)
+		log.Error("ошибка обновления версии: ", sl.Err(err))
+		return
 	}
-	log.Info("technical specification created", slog.String("ts_id", ts.ID.String()))
-
-	// Создаем версию
-	newVersionID := uuid.New()
-	versionReq := &modelrepo.CreateVersionRequest{
-		ID:                       newVersionID,
-		TechnicalSpecificationID: newTzID,
-		VersionNumber:            1, // Первая версия
-		CreatedAt:                time.Now(),
-		UpdatedAt:                time.Now(),
-		OriginalFileID:           originalFileID,
-		OutHTML:                  outHtml,
-		CSS:                      "", // Пока пустое
-		CheckedFileID:            "", // Пока пустое
-		AllRubs:                  allRubs,
-		AllTokens:                allTokens,
-		InspectionTime:           inspectionTime,
-	}
-	_, err = tz.repo.CreateVersion(ctx, versionReq)
-	if err != nil {
-		return "", "", "", nil, nil, "", fmt.Errorf("failed to create version: %w", err)
-	}
-	log.Info("version created", slog.String("version_id", newVersionID.String()))
 
 	if errors != nil && len(errors) > 0 {
 		errorData := make([]modelrepo.ErrorData, 0, len(errors))
 		for _, err := range errors {
 			instancesJSON, jsonErr := json.Marshal(err.Instances)
 			if jsonErr != nil {
-				return "", "", "", nil, nil, "", fmt.Errorf("failed to marshal instances: %w", jsonErr)
+				log.Error("ошибка сериализации instances: ", sl.Err(jsonErr))
+				continue
 			}
 
 			errorData = append(errorData, modelrepo.ErrorData{
 				ID:                  err.ID,
 				GroupID:             &err.GroupID,
 				ErrorCode:           &err.ErrorCode,
+				OrderNumber:         &err.OrderNumber,
 				Name:                &err.Name,
 				Description:         &err.Description,
 				Detector:            &err.Detector,
@@ -296,81 +354,38 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		}
 
 		errorsReq := &modelrepo.CreateErrorsRequest{
-			VersionID: newVersionID,
+			VersionID: versionID,
 			Errors:    errorData,
 		}
 
 		err = tz.repo.CreateErrors(ctx, errorsReq)
 		if err != nil {
-			return "", "", "", nil, nil, "", fmt.Errorf("failed to create errors: %w", err)
-		}
-
-		log.Info("errors saved", slog.Int("count", len(errorData)))
-	}
-
-	log.Info("technical specification data saved successfully")
-
-	for i := range errors {
-		invalidInstances := make([]OutInvalidError, 0)
-		missingInstances := make([]OutMissingError, 0)
-
-		for j := range *outInvalidErrors {
-			if (*outInvalidErrors)[j].ErrorID == errors[i].ID {
-				invalidInstances = append(invalidInstances, (*outInvalidErrors)[j])
-			}
-		}
-		for j := range *outMissingErrors {
-			if (*outMissingErrors)[j].ErrorID == errors[i].ID {
-				missingInstances = append(missingInstances, (*outMissingErrors)[j])
-			}
-		}
-
-		if len(invalidInstances) > 0 {
-			errors[i].InvalidInstances = &invalidInstances
-		}
-		if len(missingInstances) > 0 {
-			errors[i].MissingInstances = &missingInstances
+			log.Error("ошибка сохранения errors: ", sl.Err(err))
+		} else {
+			log.Info("errors saved", slog.Int("count", len(errorData)))
 		}
 	}
 
-	for i := range *outInvalidErrors {
-		(*outInvalidErrors)[i].OrderNumber = i
-		for j := range errors {
-			if (*outInvalidErrors)[i].ErrorID == errors[j].ID {
-				(*outInvalidErrors)[i].ParentError = errors[j]
-			}
-		}
-	}
-
-	//LogOutInvalidErrors(log, outInvalidErrors, "После сортировки")
-
-	//// Сохраняем данные в БД
-	//err = tz.saveTechnicalSpecificationData(ctx, filename, userID, outHtml, *css, originalFileID, outInvalidErrors, outMissingErrors, &errors, allRubs, allTokens, inspectionTime, log)
-	//if err != nil {
-	//	log.Error("ошибка сохранения данных в БД: ", sl.Err(err))
-	//	// Не возвращаем ошибку, чтобы не блокировать ответ пользователю
-	//}
-
-	return outHtml, *css, "123", &errors, outInvalidErrors, "123", nil
+	log.Info("async processing completed successfully")
 }
 
-type Error struct {
-	ID                  uuid.UUID                 `json:"id"`
-	GroupID             string                    `json:"group_id"`
-	ErrorCode           string                    `json:"error_code"`
-	Name                string                    `json:"name"`
-	Description         string                    `json:"description"`
-	Detector            string                    `json:"detector"`
-	PreliminaryNotes    *string                   `json:"preliminary_notes"`
-	OverallCritique     *string                   `json:"overall_critique"`
-	Verdict             string                    `json:"verdict"`
-	ProcessAnalysis     *string                   `json:"process_analysis"`
-	ProcessCritique     *string                   `json:"process_critique"`
-	ProcessVerification *string                   `json:"process_verification"`
-	ProcessRetrieval    *[]string                 `json:"process_retrieval"`
-	Instances           *[]tz_llm_client.Instance `json:"instances"`
-	InvalidInstances    *[]OutInvalidError        `json:"invalid_instances"`
-	MissingInstances    *[]OutMissingError        `json:"missing_instances"`
+func (tz *Tz) updateVersionWithError(ctx context.Context, versionID uuid.UUID, status string) {
+	updateReq := &modelrepo.UpdateVersionRequest{
+		ID:             versionID,
+		UpdatedAt:      time.Now(),
+		OutHTML:        "",
+		CSS:            "",
+		CheckedFileID:  "",
+		AllRubs:        0,
+		AllTokens:      0,
+		InspectionTime: 0,
+		NumberOfErrors: 0,
+		Status:         status,
+	}
+	err := tz.repo.UpdateVersion(ctx, updateReq)
+	if err != nil {
+		tz.log.Error("failed to update version with error status", slog.String("versionID", versionID.String()), slog.Any("error", err))
+	}
 }
 
 // RemoveDocxExtension удаляет расширение ".docx" из конца строки (регистронезависимо)

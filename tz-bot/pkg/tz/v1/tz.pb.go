@@ -83,15 +83,12 @@ func (x *CheckTzRequest) GetRequestId() string {
 }
 
 type CheckTzResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	HtmlText         string                 `protobuf:"bytes,1,opt,name=html_text,json=htmlText,proto3" json:"html_text,omitempty"`
-	Css              string                 `protobuf:"bytes,2,opt,name=css,proto3" json:"css,omitempty"`
-	DocId            string                 `protobuf:"bytes,3,opt,name=docId,proto3" json:"docId,omitempty"`
-	FileId           string                 `protobuf:"bytes,4,opt,name=fileId,proto3" json:"fileId,omitempty"`
-	Errors           []*Error               `protobuf:"bytes,5,rep,name=errors,proto3" json:"errors,omitempty"`
-	InvalidInstances []*InvalidInstance     `protobuf:"bytes,6,rep,name=invalid_instances,json=invalidInstances,proto3" json:"invalid_instances,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CheckTzResponse) Reset() {
@@ -124,44 +121,23 @@ func (*CheckTzResponse) Descriptor() ([]byte, []int) {
 	return file_tz_v1_tz_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CheckTzResponse) GetHtmlText() string {
+func (x *CheckTzResponse) GetId() string {
 	if x != nil {
-		return x.HtmlText
+		return x.Id
 	}
 	return ""
 }
 
-func (x *CheckTzResponse) GetCss() string {
+func (x *CheckTzResponse) GetName() string {
 	if x != nil {
-		return x.Css
+		return x.Name
 	}
 	return ""
 }
 
-func (x *CheckTzResponse) GetDocId() string {
+func (x *CheckTzResponse) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.DocId
-	}
-	return ""
-}
-
-func (x *CheckTzResponse) GetFileId() string {
-	if x != nil {
-		return x.FileId
-	}
-	return ""
-}
-
-func (x *CheckTzResponse) GetErrors() []*Error {
-	if x != nil {
-		return x.Errors
-	}
-	return nil
-}
-
-func (x *CheckTzResponse) GetInvalidInstances() []*InvalidInstance {
-	if x != nil {
-		return x.InvalidInstances
+		return x.CreatedAt
 	}
 	return nil
 }
@@ -183,6 +159,7 @@ type Error struct {
 	ProcessRetrieval    []string               `protobuf:"bytes,13,rep,name=process_retrieval,json=processRetrieval,proto3" json:"process_retrieval,omitempty"`
 	InvalidInstances    []*InvalidInstance     `protobuf:"bytes,14,rep,name=invalid_instances,json=invalidInstances,proto3" json:"invalid_instances,omitempty"`
 	MissingInstances    []*MissingInstance     `protobuf:"bytes,15,rep,name=missing_instances,json=missingInstances,proto3" json:"missing_instances,omitempty"`
+	OrderNumber         int32                  `protobuf:"varint,16,opt,name=order_number,json=orderNumber,proto3" json:"order_number,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -322,24 +299,39 @@ func (x *Error) GetMissingInstances() []*MissingInstance {
 	return nil
 }
 
+func (x *Error) GetOrderNumber() int32 {
+	if x != nil {
+		return x.OrderNumber
+	}
+	return 0
+}
+
 type InvalidInstance struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	HtmlId                uint32                 `protobuf:"varint,2,opt,name=html_id,json=htmlId,proto3" json:"html_id,omitempty"`
-	ErrorId               string                 `protobuf:"bytes,3,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`
-	Rationale             string                 `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Quote                 string                 `protobuf:"bytes,5,opt,name=quote,proto3" json:"quote,omitempty"`
-	SuggestedFix          string                 `protobuf:"bytes,6,opt,name=suggested_fix,json=suggestedFix,proto3" json:"suggested_fix,omitempty"`
-	OriginalQuote         string                 `protobuf:"bytes,7,opt,name=original_quote,json=originalQuote,proto3" json:"original_quote,omitempty"`
-	QuoteLines            []string               `protobuf:"bytes,8,rep,name=quote_lines,json=quoteLines,proto3" json:"quote_lines,omitempty"`
-	UntilTheEndOfSentence bool                   `protobuf:"varint,9,opt,name=until_the_end_of_sentence,json=untilTheEndOfSentence,proto3" json:"until_the_end_of_sentence,omitempty"`
-	StartLineNumber       *int32                 `protobuf:"varint,10,opt,name=start_line_number,json=startLineNumber,proto3,oneof" json:"start_line_number,omitempty"`
-	EndLineNumber         *int32                 `protobuf:"varint,11,opt,name=end_line_number,json=endLineNumber,proto3,oneof" json:"end_line_number,omitempty"`
-	SystemComment         string                 `protobuf:"bytes,12,opt,name=system_comment,json=systemComment,proto3" json:"system_comment,omitempty"`
-	OrderNumber           int32                  `protobuf:"varint,13,opt,name=order_number,json=orderNumber,proto3" json:"order_number,omitempty"`
-	ParentError           *Error                 `protobuf:"bytes,14,opt,name=parent_error,json=parentError,proto3,oneof" json:"parent_error,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"open.v1"`
+	Id                          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	HtmlId                      uint32                 `protobuf:"varint,2,opt,name=html_id,json=htmlId,proto3" json:"html_id,omitempty"`
+	ErrorId                     string                 `protobuf:"bytes,3,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`
+	Rationale                   string                 `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Quote                       string                 `protobuf:"bytes,5,opt,name=quote,proto3" json:"quote,omitempty"`
+	SuggestedFix                string                 `protobuf:"bytes,6,opt,name=suggested_fix,json=suggestedFix,proto3" json:"suggested_fix,omitempty"`
+	OriginalQuote               string                 `protobuf:"bytes,7,opt,name=original_quote,json=originalQuote,proto3" json:"original_quote,omitempty"`
+	QuoteLines                  []string               `protobuf:"bytes,8,rep,name=quote_lines,json=quoteLines,proto3" json:"quote_lines,omitempty"`
+	UntilTheEndOfSentence       bool                   `protobuf:"varint,9,opt,name=until_the_end_of_sentence,json=untilTheEndOfSentence,proto3" json:"until_the_end_of_sentence,omitempty"`
+	StartLineNumber             *int32                 `protobuf:"varint,10,opt,name=start_line_number,json=startLineNumber,proto3,oneof" json:"start_line_number,omitempty"`
+	EndLineNumber               *int32                 `protobuf:"varint,11,opt,name=end_line_number,json=endLineNumber,proto3,oneof" json:"end_line_number,omitempty"`
+	SystemComment               string                 `protobuf:"bytes,12,opt,name=system_comment,json=systemComment,proto3" json:"system_comment,omitempty"`
+	OrderNumber                 int32                  `protobuf:"varint,13,opt,name=order_number,json=orderNumber,proto3" json:"order_number,omitempty"`
+	ParentError                 *Error                 `protobuf:"bytes,14,opt,name=parent_error,json=parentError,proto3,oneof" json:"parent_error,omitempty"`
+	FeedbackExists              bool                   `protobuf:"varint,16,opt,name=feedback_exists,json=feedbackExists,proto3" json:"feedback_exists,omitempty"`
+	FeedbackMark                *bool                  `protobuf:"varint,17,opt,name=feedback_mark,json=feedbackMark,proto3,oneof" json:"feedback_mark,omitempty"`
+	FeedbackComment             *string                `protobuf:"bytes,18,opt,name=feedback_comment,json=feedbackComment,proto3,oneof" json:"feedback_comment,omitempty"`
+	FeedbackUser                *string                `protobuf:"bytes,19,opt,name=feedback_user,json=feedbackUser,proto3,oneof" json:"feedback_user,omitempty"`
+	FeedbackVerificationExists  bool                   `protobuf:"varint,20,opt,name=feedback_verification_exists,json=feedbackVerificationExists,proto3" json:"feedback_verification_exists,omitempty"`
+	FeedbackVerificationMark    *bool                  `protobuf:"varint,21,opt,name=feedback_verification_mark,json=feedbackVerificationMark,proto3,oneof" json:"feedback_verification_mark,omitempty"`
+	FeedbackVerificationComment *string                `protobuf:"bytes,22,opt,name=feedback_verification_comment,json=feedbackVerificationComment,proto3,oneof" json:"feedback_verification_comment,omitempty"`
+	FeedbackVerificationUser    *string                `protobuf:"bytes,23,opt,name=feedback_verification_user,json=feedbackVerificationUser,proto3,oneof" json:"feedback_verification_user,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *InvalidInstance) Reset() {
@@ -470,15 +462,79 @@ func (x *InvalidInstance) GetParentError() *Error {
 	return nil
 }
 
+func (x *InvalidInstance) GetFeedbackExists() bool {
+	if x != nil {
+		return x.FeedbackExists
+	}
+	return false
+}
+
+func (x *InvalidInstance) GetFeedbackMark() bool {
+	if x != nil && x.FeedbackMark != nil {
+		return *x.FeedbackMark
+	}
+	return false
+}
+
+func (x *InvalidInstance) GetFeedbackComment() string {
+	if x != nil && x.FeedbackComment != nil {
+		return *x.FeedbackComment
+	}
+	return ""
+}
+
+func (x *InvalidInstance) GetFeedbackUser() string {
+	if x != nil && x.FeedbackUser != nil {
+		return *x.FeedbackUser
+	}
+	return ""
+}
+
+func (x *InvalidInstance) GetFeedbackVerificationExists() bool {
+	if x != nil {
+		return x.FeedbackVerificationExists
+	}
+	return false
+}
+
+func (x *InvalidInstance) GetFeedbackVerificationMark() bool {
+	if x != nil && x.FeedbackVerificationMark != nil {
+		return *x.FeedbackVerificationMark
+	}
+	return false
+}
+
+func (x *InvalidInstance) GetFeedbackVerificationComment() string {
+	if x != nil && x.FeedbackVerificationComment != nil {
+		return *x.FeedbackVerificationComment
+	}
+	return ""
+}
+
+func (x *InvalidInstance) GetFeedbackVerificationUser() string {
+	if x != nil && x.FeedbackVerificationUser != nil {
+		return *x.FeedbackVerificationUser
+	}
+	return ""
+}
+
 type MissingInstance struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	HtmlId        uint32                 `protobuf:"varint,2,opt,name=html_id,json=htmlId,proto3" json:"html_id,omitempty"`
-	ErrorId       string                 `protobuf:"bytes,3,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`
-	SuggestedFix  string                 `protobuf:"bytes,4,opt,name=suggested_fix,json=suggestedFix,proto3" json:"suggested_fix,omitempty"`
-	Rationale     string                 `protobuf:"bytes,5,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"open.v1"`
+	Id                          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	HtmlId                      uint32                 `protobuf:"varint,2,opt,name=html_id,json=htmlId,proto3" json:"html_id,omitempty"`
+	ErrorId                     string                 `protobuf:"bytes,3,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`
+	SuggestedFix                string                 `protobuf:"bytes,4,opt,name=suggested_fix,json=suggestedFix,proto3" json:"suggested_fix,omitempty"`
+	Rationale                   string                 `protobuf:"bytes,5,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	FeedbackExists              bool                   `protobuf:"varint,16,opt,name=feedback_exists,json=feedbackExists,proto3" json:"feedback_exists,omitempty"`
+	FeedbackMark                *bool                  `protobuf:"varint,17,opt,name=feedback_mark,json=feedbackMark,proto3,oneof" json:"feedback_mark,omitempty"`
+	FeedbackComment             *string                `protobuf:"bytes,18,opt,name=feedback_comment,json=feedbackComment,proto3,oneof" json:"feedback_comment,omitempty"`
+	FeedbackUser                *string                `protobuf:"bytes,19,opt,name=feedback_user,json=feedbackUser,proto3,oneof" json:"feedback_user,omitempty"`
+	FeedbackVerificationExists  bool                   `protobuf:"varint,20,opt,name=feedback_verification_exists,json=feedbackVerificationExists,proto3" json:"feedback_verification_exists,omitempty"`
+	FeedbackVerificationMark    *bool                  `protobuf:"varint,21,opt,name=feedback_verification_mark,json=feedbackVerificationMark,proto3,oneof" json:"feedback_verification_mark,omitempty"`
+	FeedbackVerificationComment *string                `protobuf:"bytes,22,opt,name=feedback_verification_comment,json=feedbackVerificationComment,proto3,oneof" json:"feedback_verification_comment,omitempty"`
+	FeedbackVerificationUser    *string                `protobuf:"bytes,23,opt,name=feedback_verification_user,json=feedbackVerificationUser,proto3,oneof" json:"feedback_verification_user,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *MissingInstance) Reset() {
@@ -542,6 +598,62 @@ func (x *MissingInstance) GetSuggestedFix() string {
 func (x *MissingInstance) GetRationale() string {
 	if x != nil {
 		return x.Rationale
+	}
+	return ""
+}
+
+func (x *MissingInstance) GetFeedbackExists() bool {
+	if x != nil {
+		return x.FeedbackExists
+	}
+	return false
+}
+
+func (x *MissingInstance) GetFeedbackMark() bool {
+	if x != nil && x.FeedbackMark != nil {
+		return *x.FeedbackMark
+	}
+	return false
+}
+
+func (x *MissingInstance) GetFeedbackComment() string {
+	if x != nil && x.FeedbackComment != nil {
+		return *x.FeedbackComment
+	}
+	return ""
+}
+
+func (x *MissingInstance) GetFeedbackUser() string {
+	if x != nil && x.FeedbackUser != nil {
+		return *x.FeedbackUser
+	}
+	return ""
+}
+
+func (x *MissingInstance) GetFeedbackVerificationExists() bool {
+	if x != nil {
+		return x.FeedbackVerificationExists
+	}
+	return false
+}
+
+func (x *MissingInstance) GetFeedbackVerificationMark() bool {
+	if x != nil && x.FeedbackVerificationMark != nil {
+		return *x.FeedbackVerificationMark
+	}
+	return false
+}
+
+func (x *MissingInstance) GetFeedbackVerificationComment() string {
+	if x != nil && x.FeedbackVerificationComment != nil {
+		return *x.FeedbackVerificationComment
+	}
+	return ""
+}
+
+func (x *MissingInstance) GetFeedbackVerificationUser() string {
+	if x != nil && x.FeedbackVerificationUser != nil {
+		return *x.FeedbackVerificationUser
 	}
 	return ""
 }
@@ -748,16 +860,20 @@ func (x *GetVersionRequest) GetVersionId() string {
 
 type GetVersionResponse struct {
 	state                            protoimpl.MessageState `protogen:"open.v1"`
-	HtmlText                         string                 `protobuf:"bytes,1,opt,name=html_text,json=htmlText,proto3" json:"html_text,omitempty"`
-	Css                              string                 `protobuf:"bytes,2,opt,name=css,proto3" json:"css,omitempty"`
-	DocId                            string                 `protobuf:"bytes,3,opt,name=docId,proto3" json:"docId,omitempty"`
-	FileId                           string                 `protobuf:"bytes,4,opt,name=fileId,proto3" json:"fileId,omitempty"`
+	HtmlText                         *string                `protobuf:"bytes,1,opt,name=html_text,json=htmlText,proto3,oneof" json:"html_text,omitempty"`
+	Css                              *string                `protobuf:"bytes,2,opt,name=css,proto3,oneof" json:"css,omitempty"`
+	DocId                            *string                `protobuf:"bytes,3,opt,name=docId,proto3,oneof" json:"docId,omitempty"`
+	FileId                           *string                `protobuf:"bytes,4,opt,name=fileId,proto3,oneof" json:"fileId,omitempty"`
 	Errors                           []*Error               `protobuf:"bytes,5,rep,name=errors,proto3" json:"errors,omitempty"`
 	InvalidInstances                 []*InvalidInstance     `protobuf:"bytes,6,rep,name=invalid_instances,json=invalidInstances,proto3" json:"invalid_instances,omitempty"`
 	CreatedAt                        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	TotalRubs                        *float64               `protobuf:"fixed64,8,opt,name=total_rubs,json=totalRubs,proto3,oneof" json:"total_rubs,omitempty"`
 	TotalTokens                      *int64                 `protobuf:"varint,9,opt,name=total_tokens,json=totalTokens,proto3,oneof" json:"total_tokens,omitempty"`
 	AverageInspectionTimeNanoseconds *int64                 `protobuf:"varint,10,opt,name=average_inspection_time_nanoseconds,json=averageInspectionTimeNanoseconds,proto3,oneof" json:"average_inspection_time_nanoseconds,omitempty"`
+	OriginalFileSize                 *int64                 `protobuf:"varint,11,opt,name=original_file_size,json=originalFileSize,proto3,oneof" json:"original_file_size,omitempty"`
+	NumberOfErrors                   *int32                 `protobuf:"varint,12,opt,name=numberOfErrors,proto3,oneof" json:"numberOfErrors,omitempty"`
+	Name                             string                 `protobuf:"bytes,13,opt,name=name,proto3" json:"name,omitempty"`
+	Status                           string                 `protobuf:"bytes,14,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields                    protoimpl.UnknownFields
 	sizeCache                        protoimpl.SizeCache
 }
@@ -793,29 +909,29 @@ func (*GetVersionResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *GetVersionResponse) GetHtmlText() string {
-	if x != nil {
-		return x.HtmlText
+	if x != nil && x.HtmlText != nil {
+		return *x.HtmlText
 	}
 	return ""
 }
 
 func (x *GetVersionResponse) GetCss() string {
-	if x != nil {
-		return x.Css
+	if x != nil && x.Css != nil {
+		return *x.Css
 	}
 	return ""
 }
 
 func (x *GetVersionResponse) GetDocId() string {
-	if x != nil {
-		return x.DocId
+	if x != nil && x.DocId != nil {
+		return *x.DocId
 	}
 	return ""
 }
 
 func (x *GetVersionResponse) GetFileId() string {
-	if x != nil {
-		return x.FileId
+	if x != nil && x.FileId != nil {
+		return *x.FileId
 	}
 	return ""
 }
@@ -860,6 +976,34 @@ func (x *GetVersionResponse) GetAverageInspectionTimeNanoseconds() int64 {
 		return *x.AverageInspectionTimeNanoseconds
 	}
 	return 0
+}
+
+func (x *GetVersionResponse) GetOriginalFileSize() int64 {
+	if x != nil && x.OriginalFileSize != nil {
+		return *x.OriginalFileSize
+	}
+	return 0
+}
+
+func (x *GetVersionResponse) GetNumberOfErrors() int32 {
+	if x != nil && x.NumberOfErrors != nil {
+		return *x.NumberOfErrors
+	}
+	return 0
+}
+
+func (x *GetVersionResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GetVersionResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
 }
 
 type GetAllVersionsRequest struct {
@@ -1383,14 +1527,12 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x04file\x18\x01 \x01(\fR\x04file\x12\x1a\n" +
 	"\bfilename\x18\x02 \x01(\tR\bfilename\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x03 \x01(\tR\trequestId\"\xd9\x01\n" +
-	"\x0fCheckTzResponse\x12\x1b\n" +
-	"\thtml_text\x18\x01 \x01(\tR\bhtmlText\x12\x10\n" +
-	"\x03css\x18\x02 \x01(\tR\x03css\x12\x14\n" +
-	"\x05docId\x18\x03 \x01(\tR\x05docId\x12\x16\n" +
-	"\x06fileId\x18\x04 \x01(\tR\x06fileId\x12$\n" +
-	"\x06errors\x18\x05 \x03(\v2\f.tz.v1.ErrorR\x06errors\x12C\n" +
-	"\x11invalid_instances\x18\x06 \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\"\xdc\x05\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\"p\n" +
+	"\x0fCheckTzResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
+	"\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xff\x05\n" +
 	"\x05Error\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bgroup_id\x18\x02 \x01(\tR\agroupId\x12\x1d\n" +
@@ -1408,12 +1550,13 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x14process_verification\x18\f \x01(\tH\x04R\x13processVerification\x88\x01\x01\x12+\n" +
 	"\x11process_retrieval\x18\r \x03(\tR\x10processRetrieval\x12C\n" +
 	"\x11invalid_instances\x18\x0e \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\x12C\n" +
-	"\x11missing_instances\x18\x0f \x03(\v2\x16.tz.v1.MissingInstanceR\x10missingInstancesB\x14\n" +
+	"\x11missing_instances\x18\x0f \x03(\v2\x16.tz.v1.MissingInstanceR\x10missingInstances\x12!\n" +
+	"\forder_number\x18\x10 \x01(\x05R\vorderNumberB\x14\n" +
 	"\x12_preliminary_notesB\x13\n" +
 	"\x11_overall_critiqueB\x13\n" +
 	"\x11_process_analysisB\x13\n" +
 	"\x11_process_critiqueB\x17\n" +
-	"\x15_process_verification\"\xc9\x04\n" +
+	"\x15_process_verification\"\xa0\t\n" +
 	"\x0fInvalidInstance\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\ahtml_id\x18\x02 \x01(\rR\x06htmlId\x12\x19\n" +
@@ -1430,16 +1573,44 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x0fend_line_number\x18\v \x01(\x05H\x01R\rendLineNumber\x88\x01\x01\x12%\n" +
 	"\x0esystem_comment\x18\f \x01(\tR\rsystemComment\x12!\n" +
 	"\forder_number\x18\r \x01(\x05R\vorderNumber\x124\n" +
-	"\fparent_error\x18\x0e \x01(\v2\f.tz.v1.ErrorH\x02R\vparentError\x88\x01\x01B\x14\n" +
+	"\fparent_error\x18\x0e \x01(\v2\f.tz.v1.ErrorH\x02R\vparentError\x88\x01\x01\x12'\n" +
+	"\x0ffeedback_exists\x18\x10 \x01(\bR\x0efeedbackExists\x12(\n" +
+	"\rfeedback_mark\x18\x11 \x01(\bH\x03R\ffeedbackMark\x88\x01\x01\x12.\n" +
+	"\x10feedback_comment\x18\x12 \x01(\tH\x04R\x0ffeedbackComment\x88\x01\x01\x12(\n" +
+	"\rfeedback_user\x18\x13 \x01(\tH\x05R\ffeedbackUser\x88\x01\x01\x12@\n" +
+	"\x1cfeedback_verification_exists\x18\x14 \x01(\bR\x1afeedbackVerificationExists\x12A\n" +
+	"\x1afeedback_verification_mark\x18\x15 \x01(\bH\x06R\x18feedbackVerificationMark\x88\x01\x01\x12G\n" +
+	"\x1dfeedback_verification_comment\x18\x16 \x01(\tH\aR\x1bfeedbackVerificationComment\x88\x01\x01\x12A\n" +
+	"\x1afeedback_verification_user\x18\x17 \x01(\tH\bR\x18feedbackVerificationUser\x88\x01\x01B\x14\n" +
 	"\x12_start_line_numberB\x12\n" +
 	"\x10_end_line_numberB\x0f\n" +
-	"\r_parent_error\"\x98\x01\n" +
+	"\r_parent_errorB\x10\n" +
+	"\x0e_feedback_markB\x13\n" +
+	"\x11_feedback_commentB\x10\n" +
+	"\x0e_feedback_userB\x1d\n" +
+	"\x1b_feedback_verification_markB \n" +
+	"\x1e_feedback_verification_commentB\x1d\n" +
+	"\x1b_feedback_verification_user\"\xef\x05\n" +
 	"\x0fMissingInstance\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\ahtml_id\x18\x02 \x01(\rR\x06htmlId\x12\x19\n" +
 	"\berror_id\x18\x03 \x01(\tR\aerrorId\x12#\n" +
 	"\rsuggested_fix\x18\x04 \x01(\tR\fsuggestedFix\x12\x1c\n" +
-	"\trationale\x18\x05 \x01(\tR\trationale\"C\n" +
+	"\trationale\x18\x05 \x01(\tR\trationale\x12'\n" +
+	"\x0ffeedback_exists\x18\x10 \x01(\bR\x0efeedbackExists\x12(\n" +
+	"\rfeedback_mark\x18\x11 \x01(\bH\x00R\ffeedbackMark\x88\x01\x01\x12.\n" +
+	"\x10feedback_comment\x18\x12 \x01(\tH\x01R\x0ffeedbackComment\x88\x01\x01\x12(\n" +
+	"\rfeedback_user\x18\x13 \x01(\tH\x02R\ffeedbackUser\x88\x01\x01\x12@\n" +
+	"\x1cfeedback_verification_exists\x18\x14 \x01(\bR\x1afeedbackVerificationExists\x12A\n" +
+	"\x1afeedback_verification_mark\x18\x15 \x01(\bH\x03R\x18feedbackVerificationMark\x88\x01\x01\x12G\n" +
+	"\x1dfeedback_verification_comment\x18\x16 \x01(\tH\x04R\x1bfeedbackVerificationComment\x88\x01\x01\x12A\n" +
+	"\x1afeedback_verification_user\x18\x17 \x01(\tH\x05R\x18feedbackVerificationUser\x88\x01\x01B\x10\n" +
+	"\x0e_feedback_markB\x13\n" +
+	"\x11_feedback_commentB\x10\n" +
+	"\x0e_feedback_userB\x1d\n" +
+	"\x1b_feedback_verification_markB \n" +
+	"\x1e_feedback_verification_commentB\x1d\n" +
+	"\x1b_feedback_verification_user\"C\n" +
 	"(GetTechnicalSpecificationVersionsRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"m\n" +
 	")GetTechnicalSpecificationVersionsResponse\x12@\n" +
@@ -1453,24 +1624,35 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\tR\tcreatedAt\"2\n" +
 	"\x11GetVersionRequest\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x01 \x01(\tR\tversionId\"\xff\x03\n" +
-	"\x12GetVersionResponse\x12\x1b\n" +
-	"\thtml_text\x18\x01 \x01(\tR\bhtmlText\x12\x10\n" +
-	"\x03css\x18\x02 \x01(\tR\x03css\x12\x14\n" +
-	"\x05docId\x18\x03 \x01(\tR\x05docId\x12\x16\n" +
-	"\x06fileId\x18\x04 \x01(\tR\x06fileId\x12$\n" +
+	"version_id\x18\x01 \x01(\tR\tversionId\"\xf4\x05\n" +
+	"\x12GetVersionResponse\x12 \n" +
+	"\thtml_text\x18\x01 \x01(\tH\x00R\bhtmlText\x88\x01\x01\x12\x15\n" +
+	"\x03css\x18\x02 \x01(\tH\x01R\x03css\x88\x01\x01\x12\x19\n" +
+	"\x05docId\x18\x03 \x01(\tH\x02R\x05docId\x88\x01\x01\x12\x1b\n" +
+	"\x06fileId\x18\x04 \x01(\tH\x03R\x06fileId\x88\x01\x01\x12$\n" +
 	"\x06errors\x18\x05 \x03(\v2\f.tz.v1.ErrorR\x06errors\x12C\n" +
 	"\x11invalid_instances\x18\x06 \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\x129\n" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\"\n" +
 	"\n" +
-	"total_rubs\x18\b \x01(\x01H\x00R\ttotalRubs\x88\x01\x01\x12&\n" +
-	"\ftotal_tokens\x18\t \x01(\x03H\x01R\vtotalTokens\x88\x01\x01\x12R\n" +
+	"total_rubs\x18\b \x01(\x01H\x04R\ttotalRubs\x88\x01\x01\x12&\n" +
+	"\ftotal_tokens\x18\t \x01(\x03H\x05R\vtotalTokens\x88\x01\x01\x12R\n" +
 	"#average_inspection_time_nanoseconds\x18\n" +
-	" \x01(\x03H\x02R averageInspectionTimeNanoseconds\x88\x01\x01B\r\n" +
+	" \x01(\x03H\x06R averageInspectionTimeNanoseconds\x88\x01\x01\x121\n" +
+	"\x12original_file_size\x18\v \x01(\x03H\aR\x10originalFileSize\x88\x01\x01\x12+\n" +
+	"\x0enumberOfErrors\x18\f \x01(\x05H\bR\x0enumberOfErrors\x88\x01\x01\x12\x12\n" +
+	"\x04name\x18\r \x01(\tR\x04name\x12\x16\n" +
+	"\x06status\x18\x0e \x01(\tR\x06statusB\f\n" +
+	"\n" +
+	"_html_textB\x06\n" +
+	"\x04_cssB\b\n" +
+	"\x06_docIdB\t\n" +
+	"\a_fileIdB\r\n" +
 	"\v_total_rubsB\x0f\n" +
 	"\r_total_tokensB&\n" +
-	"$_average_inspection_time_nanoseconds\"\x17\n" +
+	"$_average_inspection_time_nanosecondsB\x15\n" +
+	"\x13_original_file_sizeB\x11\n" +
+	"\x0f_numberOfErrors\"\x17\n" +
 	"\x15GetAllVersionsRequest\"S\n" +
 	"\x16GetAllVersionsResponse\x129\n" +
 	"\bversions\x18\x01 \x03(\v2\x1d.tz.v1.VersionWithErrorCountsR\bversions\"\xd9\x05\n" +
@@ -1567,34 +1749,33 @@ var file_tz_v1_tz_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil),                     // 18: google.protobuf.Timestamp
 }
 var file_tz_v1_tz_proto_depIdxs = []int32{
-	2,  // 0: tz.v1.CheckTzResponse.errors:type_name -> tz.v1.Error
-	3,  // 1: tz.v1.CheckTzResponse.invalid_instances:type_name -> tz.v1.InvalidInstance
-	3,  // 2: tz.v1.Error.invalid_instances:type_name -> tz.v1.InvalidInstance
-	4,  // 3: tz.v1.Error.missing_instances:type_name -> tz.v1.MissingInstance
-	2,  // 4: tz.v1.InvalidInstance.parent_error:type_name -> tz.v1.Error
-	7,  // 5: tz.v1.GetTechnicalSpecificationVersionsResponse.versions:type_name -> tz.v1.TechnicalSpecificationVersion
-	2,  // 6: tz.v1.GetVersionResponse.errors:type_name -> tz.v1.Error
-	3,  // 7: tz.v1.GetVersionResponse.invalid_instances:type_name -> tz.v1.InvalidInstance
-	18, // 8: tz.v1.GetVersionResponse.created_at:type_name -> google.protobuf.Timestamp
-	12, // 9: tz.v1.GetAllVersionsResponse.versions:type_name -> tz.v1.VersionWithErrorCounts
-	15, // 10: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
-	0,  // 11: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
-	5,  // 12: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
-	10, // 13: tz.v1.TzService.GetAllVersions:input_type -> tz.v1.GetAllVersionsRequest
-	13, // 14: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
-	8,  // 15: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
-	16, // 16: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
-	1,  // 17: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
-	6,  // 18: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
-	11, // 19: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
-	14, // 20: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
-	9,  // 21: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
-	17, // 22: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
-	17, // [17:23] is the sub-list for method output_type
-	11, // [11:17] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	18, // 0: tz.v1.CheckTzResponse.created_at:type_name -> google.protobuf.Timestamp
+	3,  // 1: tz.v1.Error.invalid_instances:type_name -> tz.v1.InvalidInstance
+	4,  // 2: tz.v1.Error.missing_instances:type_name -> tz.v1.MissingInstance
+	2,  // 3: tz.v1.InvalidInstance.parent_error:type_name -> tz.v1.Error
+	7,  // 4: tz.v1.GetTechnicalSpecificationVersionsResponse.versions:type_name -> tz.v1.TechnicalSpecificationVersion
+	2,  // 5: tz.v1.GetVersionResponse.errors:type_name -> tz.v1.Error
+	3,  // 6: tz.v1.GetVersionResponse.invalid_instances:type_name -> tz.v1.InvalidInstance
+	18, // 7: tz.v1.GetVersionResponse.created_at:type_name -> google.protobuf.Timestamp
+	12, // 8: tz.v1.GetAllVersionsResponse.versions:type_name -> tz.v1.VersionWithErrorCounts
+	15, // 9: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
+	0,  // 10: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
+	5,  // 11: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
+	10, // 12: tz.v1.TzService.GetAllVersions:input_type -> tz.v1.GetAllVersionsRequest
+	13, // 13: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
+	8,  // 14: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
+	16, // 15: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
+	1,  // 16: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
+	6,  // 17: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
+	11, // 18: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
+	14, // 19: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
+	9,  // 20: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
+	17, // 21: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
+	16, // [16:22] is the sub-list for method output_type
+	10, // [10:16] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_tz_v1_tz_proto_init() }
@@ -1604,6 +1785,7 @@ func file_tz_v1_tz_proto_init() {
 	}
 	file_tz_v1_tz_proto_msgTypes[2].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[3].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[4].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[9].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[12].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[15].OneofWrappers = []any{}

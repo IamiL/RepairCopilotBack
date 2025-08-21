@@ -143,33 +143,47 @@ func (s *Storage) DeleteTechnicalSpecification(ctx context.Context, id uuid.UUID
 }
 
 // Version operations
-func (s *Storage) CreateVersion(ctx context.Context, req *modelrepo.CreateVersionRequest) (*modelrepo.Version, error) {
+func (s *Storage) CreateVersion(ctx context.Context, req *modelrepo.CreateVersionRequest) error {
 	query := `
-		INSERT INTO versions (id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		RETURNING id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time`
+		INSERT INTO versions (id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
 
-	var version modelrepo.Version
-	err := s.db.QueryRow(ctx, query, req.ID, req.TechnicalSpecificationID, req.VersionNumber, req.CreatedAt, req.UpdatedAt,
-		req.OriginalFileID, req.OutHTML, req.CSS, req.CheckedFileID, &req.AllRubs, &req.AllTokens, int64(req.InspectionTime)).
-		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
-			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime)
+	_, err := s.db.Exec(ctx, query, req.ID, req.TechnicalSpecificationID, req.VersionNumber, req.CreatedAt, req.UpdatedAt,
+		req.OriginalFileID, req.OutHTML, req.CSS, req.CheckedFileID, &req.AllRubs, &req.AllTokens, int64(req.InspectionTime), req.OriginalFileSize, req.NumberOfErrors, req.Status)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create version: %w", err)
+		return fmt.Errorf("failed to create version: %w", err)
 	}
 
-	return &version, nil
+	return nil
+}
+
+func (s *Storage) UpdateVersion(ctx context.Context, req *modelrepo.UpdateVersionRequest) error {
+	query := `
+		UPDATE versions 
+		SET updated_at = $2, out_html = $3, css = $4, checked_file_id = $5, all_rubs = $6, all_tokens = $7, inspection_time = $8, number_of_errors = $9, status = $10
+		WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, req.ID, req.UpdatedAt, req.OutHTML, req.CSS, req.CheckedFileID,
+		&req.AllRubs, &req.AllTokens, int64(req.InspectionTime), req.NumberOfErrors, req.Status)
+	if err != nil {
+		return fmt.Errorf("failed to update version: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrVersionNotFound
+	}
+
+	return nil
 }
 
 func (s *Storage) GetVersion(ctx context.Context, id uuid.UUID) (*modelrepo.Version, error) {
-	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time FROM versions WHERE id = $1`
+	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status FROM versions WHERE id = $1`
 
 	var version modelrepo.Version
 	err := s.db.QueryRow(ctx, query, id).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime)
+			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime, &version.OriginalFileSize, &version.NumberOfErrors, &version.Status)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repo.ErrVersionNotFound
@@ -370,21 +384,6 @@ func (s *Storage) GetVersionStatistics(ctx context.Context) (*modelrepo.VersionS
 	return &stats, nil
 }
 
-func (s *Storage) UpdateVersion(ctx context.Context, id uuid.UUID, outHTML, css, checkedFileID string, updatedAt time.Time) error {
-	query := `UPDATE versions SET out_html = $1, css = $2, checked_file_id = $3, updated_at = $4 WHERE id = $5`
-
-	result, err := s.db.Exec(ctx, query, outHTML, css, checkedFileID, updatedAt, id)
-	if err != nil {
-		return fmt.Errorf("failed to update version: %w", err)
-	}
-
-	if result.RowsAffected() == 0 {
-		return repo.ErrVersionNotFound
-	}
-
-	return nil
-}
-
 func (s *Storage) DeleteVersion(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM versions WHERE id = $1`
 
@@ -565,12 +564,12 @@ func (s *Storage) CreateErrors(ctx context.Context, req *modelrepo.CreateErrorsR
 	}
 
 	query := `
-		INSERT INTO errors (id, version_id, group_id, error_code, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances, name, description, detector)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
+		INSERT INTO errors (id, version_id, group_id, error_code, order_number, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances, name, description, detector)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`
 
 	for _, errorData := range req.Errors {
 		_, err := s.db.Exec(ctx, query,
-			errorData.ID, req.VersionID, errorData.GroupID, errorData.ErrorCode,
+			errorData.ID, req.VersionID, errorData.GroupID, errorData.ErrorCode, errorData.OrderNumber,
 			errorData.PreliminaryNotes, errorData.OverallCritique, errorData.Verdict,
 			errorData.ProcessAnalysis, errorData.ProcessCritique, errorData.ProcessVerification,
 			errorData.ProcessRetrieval, errorData.Instances, errorData.Name, errorData.Description, errorData.Detector)
@@ -585,9 +584,10 @@ func (s *Storage) CreateErrors(ctx context.Context, req *modelrepo.CreateErrorsR
 // GetErrorsByVersionID retrieves all errors for a specific version
 func (s *Storage) GetErrorsByVersionID(ctx context.Context, versionID uuid.UUID) (*[]tzservice.Error, error) {
 	query := `
-		SELECT id, version_id, group_id, error_code, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances, name, description, detector
+		SELECT id, version_id, group_id, error_code, order_number, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances, name, description, detector
 		FROM errors 
-		WHERE version_id = @version_id`
+		WHERE version_id = @version_id
+		ORDER BY order_number`
 
 	args := pgx.NamedArgs{
 		"version_id": versionID,
@@ -607,9 +607,10 @@ func (s *Storage) GetErrorsByVersionID(ctx context.Context, versionID uuid.UUID)
 		var instancesJSON []byte
 		err := rows.Scan(
 			&errorItem.ID,
-			&versionID, // не используем, просто скипаем
+			&versionID,
 			&errorItem.GroupID,
 			&errorItem.ErrorCode,
+			&errorItem.OrderNumber,
 			&errorItem.PreliminaryNotes,
 			&errorItem.OverallCritique,
 			&errorItem.Verdict,
@@ -663,24 +664,26 @@ func (s *Storage) SaveInvalidInstances(ctx context.Context, invalidInstances *[]
 	}
 
 	query := `
-		INSERT INTO invalid_instances (id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number, rationale)
-		VALUES (@id, @html_id, @error_id, @quote, @suggested_fix, @original_quote, @quote_lines, @until_the_end_of_sentence, @start_line_number, @end_line_number, @system_comment, @order_number, @rationale)`
+		INSERT INTO invalid_instances (id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number, rationale, feedback_exists, feedback_verification_exists)
+		VALUES (@id, @html_id, @error_id, @quote, @suggested_fix, @original_quote, @quote_lines, @until_the_end_of_sentence, @start_line_number, @end_line_number, @system_comment, @order_number, @rationale, @feedback_exists, @feedback_verification_exists)`
 
 	for _, instance := range *invalidInstances {
 		args := pgx.NamedArgs{
-			"id":                        instance.ID,
-			"html_id":                   instance.HtmlID,
-			"error_id":                  instance.ErrorID,
-			"quote":                     instance.Quote,
-			"suggested_fix":             instance.SuggestedFix,
-			"original_quote":            instance.OriginalQuote,
-			"quote_lines":               instance.QuoteLines,
-			"until_the_end_of_sentence": instance.UntilTheEndOfSentence,
-			"start_line_number":         instance.StartLineNumber,
-			"end_line_number":           instance.EndLineNumber,
-			"system_comment":            instance.SystemComment,
-			"order_number":              instance.OrderNumber,
-			"rationale":                 instance.Rationale,
+			"id":                           instance.ID,
+			"html_id":                      instance.HtmlID,
+			"error_id":                     instance.ErrorID,
+			"quote":                        instance.Quote,
+			"suggested_fix":                instance.SuggestedFix,
+			"original_quote":               instance.OriginalQuote,
+			"quote_lines":                  instance.QuoteLines,
+			"until_the_end_of_sentence":    instance.UntilTheEndOfSentence,
+			"start_line_number":            instance.StartLineNumber,
+			"end_line_number":              instance.EndLineNumber,
+			"system_comment":               instance.SystemComment,
+			"order_number":                 instance.OrderNumber,
+			"rationale":                    instance.Rationale,
+			"feedback_exists":              false,
+			"feedback_verification_exists": false,
 		}
 
 		_, err := s.db.Exec(ctx, query, args)
@@ -695,7 +698,7 @@ func (s *Storage) SaveInvalidInstances(ctx context.Context, invalidInstances *[]
 // GetInvalidInstancesByErrorID retrieves all invalid instances for a specific error
 func (s *Storage) GetInvalidInstancesByErrorID(ctx context.Context, errorID uuid.UUID) (*[]tzservice.OutInvalidError, error) {
 	query := `
-		SELECT id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number, rationale
+		SELECT id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number, rationale, feedback_exists, feedback_mark, feedback_comment, feedback_user, feedback_verification_exists, feedback_verification_mark, feedback_verification_comment, feedback_verification_user
 		FROM invalid_instances 
 		WHERE error_id = @error_id 
 		ORDER BY order_number`
@@ -728,6 +731,14 @@ func (s *Storage) GetInvalidInstancesByErrorID(ctx context.Context, errorID uuid
 			&instance.SystemComment,
 			&instance.OrderNumber,
 			&rationale,
+			&instance.FeedbackExists,
+			&instance.FeedbackMark,
+			&instance.FeedbackComment,
+			&instance.FeedbackUser,
+			&instance.FeedbackVerificationExists,
+			&instance.FeedbackVerificationMark,
+			&instance.FeedbackVerificationComment,
+			&instance.FeedbackVerificationUser,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan invalid instance: %w", err)
@@ -751,16 +762,18 @@ func (s *Storage) SaveMissingInstances(ctx context.Context, missingInstances *[]
 	}
 
 	query := `
-		INSERT INTO missing_instances (id, html_id, error_id, suggested_fix, rationale)
-		VALUES (@id, @html_id, @error_id, @suggested_fix, @rationale)`
+		INSERT INTO missing_instances (id, html_id, error_id, suggested_fix, rationale, feedback_exists, feedback_verification_exists)
+		VALUES (@id, @html_id, @error_id, @suggested_fix, @rationale, @feedback_exists, @feedback_verification_exists)`
 
 	for _, instance := range *missingInstances {
 		args := pgx.NamedArgs{
-			"id":            instance.ID,
-			"html_id":       instance.HtmlID,
-			"error_id":      instance.ErrorID,
-			"suggested_fix": instance.SuggestedFix,
-			"rationale":     instance.Rationale,
+			"id":                           instance.ID,
+			"html_id":                      instance.HtmlID,
+			"error_id":                     instance.ErrorID,
+			"suggested_fix":                instance.SuggestedFix,
+			"rationale":                    instance.Rationale,
+			"feedback_exists":              false,
+			"feedback_verification_exists": false,
 		}
 
 		_, err := s.db.Exec(ctx, query, args)
@@ -775,7 +788,7 @@ func (s *Storage) SaveMissingInstances(ctx context.Context, missingInstances *[]
 // GetMissingInstancesByErrorID retrieves all missing instances for a specific error
 func (s *Storage) GetMissingInstancesByErrorID(ctx context.Context, errorID uuid.UUID) (*[]tzservice.OutMissingError, error) {
 	query := `
-		SELECT id, html_id, error_id, suggested_fix, rationale
+		SELECT id, html_id, error_id, suggested_fix, rationale, feedback_exists, feedback_mark, feedback_comment, feedback_user, feedback_verification_exists, feedback_verification_mark, feedback_verification_comment, feedback_verification_user
 		FROM missing_instances 
 		WHERE error_id = @error_id`
 
@@ -798,6 +811,14 @@ func (s *Storage) GetMissingInstancesByErrorID(ctx context.Context, errorID uuid
 			&instance.ErrorID,
 			&instance.SuggestedFix,
 			&instance.Rationale,
+			&instance.FeedbackExists,
+			&instance.FeedbackMark,
+			&instance.FeedbackComment,
+			&instance.FeedbackUser,
+			&instance.FeedbackVerificationExists,
+			&instance.FeedbackVerificationMark,
+			&instance.FeedbackVerificationComment,
+			&instance.FeedbackVerificationUser,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan missing instance: %w", err)

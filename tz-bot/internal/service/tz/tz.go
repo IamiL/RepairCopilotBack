@@ -333,7 +333,7 @@ func (tz *Tz) GetVersionStatistics(ctx context.Context) (*modelrepo.VersionStati
 	return stats, nil
 }
 
-func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (time.Time, float64, int64, time.Duration, string, string, string, *[]Error, *[]OutInvalidError, string, error) {
+func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time.Time, float64, int64, time.Duration, string, string, string, *[]Error, *[]OutInvalidError, string, int64, int, error) {
 	const op = "Tz.GetVersion"
 
 	log := tz.log.With(
@@ -346,13 +346,17 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (time.Time, f
 	version, err := tz.repo.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version: ", sl.Err(err))
-		return time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", err
+		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, err
+	}
+
+	if version.Status == "in_progress" {
+		return "in_progress", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, err
 	}
 
 	errorsInTz, err := tz.repo.GetErrorsByVersionID(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version errors: ", sl.Err(err))
-		return time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", err
+		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, err
 	}
 
 	invalidInstances := make([]OutInvalidError, 0)
@@ -421,7 +425,7 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (time.Time, f
 	//	slog.Int("invalid_errors_count", len(outInvalidErrors)),
 	//	slog.Int("missing_errors_count", len(outMissingErrors)))
 
-	return version.CreatedAt, *version.AllRubs, *version.AllTokens, *version.InspectionTime, version.OutHTML, version.CSS, version.CheckedFileID, errorsInTz, &invalidInstances, "", nil
+	return "completed", version.CreatedAt, *version.AllRubs, *version.AllTokens, *version.InspectionTime, version.OutHTML, version.CSS, version.CheckedFileID, errorsInTz, &invalidInstances, "", *version.OriginalFileSize, int(*version.NumberOfErrors), nil
 }
 
 func SortOutInvalidErrorsByOrderNumber(errors *[]OutInvalidError) {

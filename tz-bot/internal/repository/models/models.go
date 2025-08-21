@@ -29,6 +29,9 @@ type Version struct {
 	AllRubs                  *float64       `db:"all_rubs"`
 	AllTokens                *int64         `db:"all_tokens"`
 	InspectionTime           *time.Duration `db:"inspection_time"`
+	OriginalFileSize         *int64         `db:"original_file_size"`
+	NumberOfErrors           *int64         `db:"number_of_errors"`
+	Status                   string         `db:"status"`
 }
 
 // VersionWithTechnicalSpec represents a version with technical specification info
@@ -143,6 +146,23 @@ type CreateVersionRequest struct {
 	AllRubs                  float64
 	AllTokens                int64
 	InspectionTime           time.Duration
+	OriginalFileSize         int64
+	NumberOfErrors           int
+	Status                   string
+}
+
+// UpdateVersionRequest represents request to update an existing version
+type UpdateVersionRequest struct {
+	ID             uuid.UUID
+	UpdatedAt      time.Time
+	OutHTML        string
+	CSS            string
+	CheckedFileID  string
+	AllRubs        float64
+	AllTokens      int64
+	InspectionTime time.Duration
+	NumberOfErrors int
+	Status         string
 }
 
 // CreateInvalidErrorsRequest represents request to create invalid errors
@@ -218,6 +238,7 @@ type ErrorData struct {
 	ID                  uuid.UUID
 	GroupID             *string
 	ErrorCode           *string
+	OrderNumber         *int
 	Name                *string
 	Description         *string
 	Detector            *string

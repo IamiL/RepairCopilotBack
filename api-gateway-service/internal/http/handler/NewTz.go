@@ -154,10 +154,7 @@ func NewTzHandler(
 			return
 		}
 
-		log.Info("TZ processing completed successfully",
-			slog.Int("errors_count", len(checkTzResult.Errors)),
-			slog.Int("invalid_instances_count", len(checkTzResult.InvalidInstances)),
-			slog.String("doc_id", checkTzResult.DocId))
+		log.Info("TZ processing completed successfully")
 
 		// Логируем событие отправки документа
 		userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), uid)

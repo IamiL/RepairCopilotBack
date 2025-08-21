@@ -29,7 +29,7 @@ type TechnicalSpecificationRepository interface {
 // VersionRepository defines the interface for version operations
 type VersionRepository interface {
 	// CreateVersion creates a new version for a technical specification
-	CreateVersion(ctx context.Context, req *modelrepo.CreateVersionRequest) (*modelrepo.Version, error)
+	CreateVersion(ctx context.Context, req *modelrepo.CreateVersionRequest) error
 
 	// GetVersion retrieves a version by ID
 	GetVersion(ctx context.Context, id uuid.UUID) (*modelrepo.Version, error)
@@ -53,7 +53,7 @@ type VersionRepository interface {
 	GetLatestVersion(ctx context.Context, technicalSpecificationID uuid.UUID) (*modelrepo.Version, error)
 
 	// UpdateVersion updates a version
-	UpdateVersion(ctx context.Context, id uuid.UUID, outHTML, css, checkedFileID string, updatedAt time.Time) error
+	UpdateVersion(ctx context.Context, req *modelrepo.UpdateVersionRequest) error
 
 	// DeleteVersion deletes a version and all its errors
 	DeleteVersion(ctx context.Context, id uuid.UUID) error

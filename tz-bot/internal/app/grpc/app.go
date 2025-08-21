@@ -120,7 +120,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		return nil, status.Error(codes.InvalidArgument, "filename cannot be empty")
 	}
 
-	htmlText, css, docId, errors, invalidInstances, fileId, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
+	id, name, createdAt, err := s.tzService.CheckTz(ctx, req.File, req.Filename, requestID)
 	if err != nil {
 		log.Error("failed to check tz", slog.String("error", err.Error()))
 
@@ -134,46 +134,51 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 		}
 	}
 
+	return &tzv1.CheckTzResponse{
+		Id:        id.String(),
+		Name:      name,
+		CreatedAt: timestamppb.New(createdAt),
+	}, nil
+
 	//htmlText, css, docId, errors, invalidInstances, fileId, err := s.tzService.GetVersion(ctx, versionID)
 	//if err != nil {
 	//	log.Error("failed to get version", slog.String("error", err.Error()))
 	//	return nil, status.Error(codes.Internal, "failed to get version")
 	//}
 
-	errorsResp := make([]*tzv1.Error, 0, len(*errors))
+	//errorsResp := make([]*tzv1.Error, 0, len(*errors))
+	//
+	//for i := range *errors {
+	//	var processRetrieval []string
+	//
+	//	if (*errors)[i].ProcessRetrieval != nil {
+	//		processRetrieval = *(*errors)[i].ProcessRetrieval
+	//	}
+	//	errorsResp = append(errorsResp, &tzv1.Error{
+	//		Id:                  (*errors)[i].ID.String(),
+	//		GroupId:             (*errors)[i].GroupID,
+	//		ErrorCode:           (*errors)[i].ErrorCode,
+	//		PreliminaryNotes:    (*errors)[i].PreliminaryNotes,
+	//		OverallCritique:     (*errors)[i].OverallCritique,
+	//		Verdict:             (*errors)[i].Verdict,
+	//		ProcessAnalysis:     (*errors)[i].ProcessAnalysis,
+	//		ProcessCritique:     (*errors)[i].ProcessCritique,
+	//		ProcessVerification: (*errors)[i].ProcessVerification,
+	//		ProcessRetrieval:    processRetrieval,
+	//		InvalidInstances:    convertInvalidInstances((*errors)[i].InvalidInstances, nil),
+	//		MissingInstances:    convertMissingInstances((*errors)[i].MissingInstances),
+	//	})
+	//}
+	//
+	//resp := &tzv1.CheckTzResponse{
+	//	InvalidInstances: convertInvalidInstances(invalidInstances, errorsResp),
+	//	Errors:           errorsResp,
+	//	HtmlText:         htmlText,
+	//	Css:              css,
+	//	DocId:            docId,
+	//	FileId:           fileId,
+	//}
 
-	for i := range *errors {
-		var processRetrieval []string
-
-		if (*errors)[i].ProcessRetrieval != nil {
-			processRetrieval = *(*errors)[i].ProcessRetrieval
-		}
-		errorsResp = append(errorsResp, &tzv1.Error{
-			Id:                  (*errors)[i].ID.String(),
-			GroupId:             (*errors)[i].GroupID,
-			ErrorCode:           (*errors)[i].ErrorCode,
-			PreliminaryNotes:    (*errors)[i].PreliminaryNotes,
-			OverallCritique:     (*errors)[i].OverallCritique,
-			Verdict:             (*errors)[i].Verdict,
-			ProcessAnalysis:     (*errors)[i].ProcessAnalysis,
-			ProcessCritique:     (*errors)[i].ProcessCritique,
-			ProcessVerification: (*errors)[i].ProcessVerification,
-			ProcessRetrieval:    processRetrieval,
-			InvalidInstances:    convertInvalidInstances((*errors)[i].InvalidInstances, nil),
-			MissingInstances:    convertMissingInstances((*errors)[i].MissingInstances),
-		})
-	}
-
-	resp := &tzv1.CheckTzResponse{
-		InvalidInstances: convertInvalidInstances(invalidInstances, errorsResp),
-		Errors:           errorsResp,
-		HtmlText:         htmlText,
-		Css:              css,
-		DocId:            docId,
-		FileId:           fileId,
-	}
-
-	return resp, nil
 }
 
 //func sanitizeString(s string) string {
@@ -345,52 +350,64 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		return nil, status.Error(codes.InvalidArgument, "invalid version ID format")
 	}
 
-	createdAt, allRubs, allTokens, inspectionDuration, htmlText, css, docId, errors, invalidInstances, fileId, err := s.tzService.GetVersion(ctx, versionID)
+	statusTz, createdAt, allRubs, allTokens, inspectionDuration, htmlText, css, docId, errorsTz, invalidInstances, fileId, originalFileSize, numberOfErrors, err := s.tzService.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version", slog.String("error", err.Error()))
 		return nil, status.Error(codes.Internal, "failed to get version")
 	}
 
+	if statusTz == "in_progress" {
+		return &tzv1.GetVersionResponse{
+			Status: statusTz,
+		}, nil
+	}
+
 	inspectionDurationInNanoseconds := inspectionDuration.Nanoseconds()
 
-	errorsResp := make([]*tzv1.Error, 0, len(*errors))
+	errorsResp := make([]*tzv1.Error, 0, len(*errorsTz))
 
-	for i := range *errors {
+	for i := range *errorsTz {
 		var processRetrieval []string
 
-		if (*errors)[i].ProcessRetrieval != nil {
-			processRetrieval = *(*errors)[i].ProcessRetrieval
+		if (*errorsTz)[i].ProcessRetrieval != nil {
+			processRetrieval = *(*errorsTz)[i].ProcessRetrieval
 		}
 		errorsResp = append(errorsResp, &tzv1.Error{
-			Id:                  (*errors)[i].ID.String(),
-			GroupId:             (*errors)[i].GroupID,
-			ErrorCode:           (*errors)[i].ErrorCode,
-			Name:                (*errors)[i].Name,
-			Description:         (*errors)[i].Description,
-			Detector:            (*errors)[i].Detector,
-			PreliminaryNotes:    (*errors)[i].PreliminaryNotes,
-			OverallCritique:     (*errors)[i].OverallCritique,
-			Verdict:             (*errors)[i].Verdict,
-			ProcessAnalysis:     (*errors)[i].ProcessAnalysis,
-			ProcessCritique:     (*errors)[i].ProcessCritique,
-			ProcessVerification: (*errors)[i].ProcessVerification,
+			Id:                  (*errorsTz)[i].ID.String(),
+			GroupId:             (*errorsTz)[i].GroupID,
+			ErrorCode:           (*errorsTz)[i].ErrorCode,
+			Name:                (*errorsTz)[i].Name,
+			Description:         (*errorsTz)[i].Description,
+			Detector:            (*errorsTz)[i].Detector,
+			PreliminaryNotes:    (*errorsTz)[i].PreliminaryNotes,
+			OverallCritique:     (*errorsTz)[i].OverallCritique,
+			Verdict:             (*errorsTz)[i].Verdict,
+			ProcessAnalysis:     (*errorsTz)[i].ProcessAnalysis,
+			ProcessCritique:     (*errorsTz)[i].ProcessCritique,
+			ProcessVerification: (*errorsTz)[i].ProcessVerification,
 			ProcessRetrieval:    processRetrieval,
-			InvalidInstances:    convertInvalidInstances((*errors)[i].InvalidInstances, nil),
-			MissingInstances:    convertMissingInstances((*errors)[i].MissingInstances),
+			OrderNumber:         int32((*errorsTz)[i].OrderNumber),
+			InvalidInstances:    convertInvalidInstances((*errorsTz)[i].InvalidInstances, nil),
+			MissingInstances:    convertMissingInstances((*errorsTz)[i].MissingInstances),
 		})
 	}
+
+	numberOfErrrorsInt32 := int32(numberOfErrors)
 
 	resp := &tzv1.GetVersionResponse{
 		InvalidInstances:                 convertInvalidInstances(invalidInstances, errorsResp),
 		Errors:                           errorsResp,
-		HtmlText:                         htmlText,
-		Css:                              css,
-		DocId:                            docId,
-		FileId:                           fileId,
+		HtmlText:                         &htmlText,
+		Css:                              &css,
+		DocId:                            &docId,
+		FileId:                           &fileId,
 		CreatedAt:                        timestamppb.New(createdAt),
 		TotalTokens:                      &allTokens,
 		TotalRubs:                        &allRubs,
 		AverageInspectionTimeNanoseconds: &inspectionDurationInNanoseconds,
+		OriginalFileSize:                 &originalFileSize,
+		NumberOfErrors:                   &numberOfErrrorsInt32,
+		Status:                           statusTz,
 	}
 
 	return resp, nil
@@ -429,22 +446,39 @@ func convertInvalidInstances(invalidInstances *[]tzservice.OutInvalidError, erro
 				}
 			}
 
+			var feedbackUser string
+			var feedbackVerificationUser string
+			if (*invalidInstances)[i].FeedbackExists {
+				feedbackUser = (*invalidInstances)[i].FeedbackUser.String()
+			}
+			if (*invalidInstances)[i].FeedbackVerificationExists {
+				feedbackVerificationUser = (*invalidInstances)[i].FeedbackVerificationUser.String()
+			}
+
 			respInvalidInstances = append(respInvalidInstances,
 				&tzv1.InvalidInstance{
-					Id:                    (*invalidInstances)[i].ID.String(),
-					HtmlId:                (*invalidInstances)[i].HtmlID,
-					ErrorId:               (*invalidInstances)[i].ErrorID.String(),
-					Rationale:             (*invalidInstances)[i].Rationale,
-					Quote:                 (*invalidInstances)[i].Quote,
-					SuggestedFix:          (*invalidInstances)[i].SuggestedFix,
-					OriginalQuote:         (*invalidInstances)[i].OriginalQuote,
-					QuoteLines:            quoteLines,
-					UntilTheEndOfSentence: (*invalidInstances)[i].UntilTheEndOfSentence,
-					StartLineNumber:       startLineNumber,
-					EndLineNumber:         endLineNumber,
-					SystemComment:         (*invalidInstances)[i].SystemComment,
-					OrderNumber:           int32((*invalidInstances)[i].OrderNumber),
-					ParentError:           parentError,
+					Id:                          (*invalidInstances)[i].ID.String(),
+					HtmlId:                      (*invalidInstances)[i].HtmlID,
+					ErrorId:                     (*invalidInstances)[i].ErrorID.String(),
+					Rationale:                   (*invalidInstances)[i].Rationale,
+					Quote:                       (*invalidInstances)[i].Quote,
+					SuggestedFix:                (*invalidInstances)[i].SuggestedFix,
+					OriginalQuote:               (*invalidInstances)[i].OriginalQuote,
+					QuoteLines:                  quoteLines,
+					UntilTheEndOfSentence:       (*invalidInstances)[i].UntilTheEndOfSentence,
+					StartLineNumber:             startLineNumber,
+					EndLineNumber:               endLineNumber,
+					SystemComment:               (*invalidInstances)[i].SystemComment,
+					OrderNumber:                 int32((*invalidInstances)[i].OrderNumber),
+					ParentError:                 parentError,
+					FeedbackExists:              (*invalidInstances)[i].FeedbackExists,
+					FeedbackMark:                (*invalidInstances)[i].FeedbackMark,
+					FeedbackComment:             (*invalidInstances)[i].FeedbackComment,
+					FeedbackUser:                &feedbackUser,
+					FeedbackVerificationExists:  (*invalidInstances)[i].FeedbackVerificationExists,
+					FeedbackVerificationMark:    (*invalidInstances)[i].FeedbackVerificationMark,
+					FeedbackVerificationComment: (*invalidInstances)[i].FeedbackVerificationComment,
+					FeedbackVerificationUser:    &feedbackVerificationUser,
 				})
 		}
 

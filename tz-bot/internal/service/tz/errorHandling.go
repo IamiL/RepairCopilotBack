@@ -12,30 +12,46 @@ import (
 )
 
 type OutInvalidError struct {
-	ID                    uuid.UUID
-	HtmlID                uint32
-	HtmlIDStr             string
-	ErrorID               uuid.UUID
-	Rationale             string
-	SuggestedFix          string
-	Quote                 string
-	OriginalQuote         string
-	QuoteLines            *[]string
-	UntilTheEndOfSentence bool
-	StartLineNumber       *int
-	EndLineNumber         *int
-	SystemComment         string
-	OrderNumber           int
-	ParentError           Error
+	ID                          uuid.UUID
+	HtmlID                      uint32
+	HtmlIDStr                   string
+	ErrorID                     uuid.UUID
+	Rationale                   string
+	SuggestedFix                string
+	Quote                       string
+	OriginalQuote               string
+	QuoteLines                  *[]string
+	UntilTheEndOfSentence       bool
+	StartLineNumber             *int
+	EndLineNumber               *int
+	SystemComment               string
+	OrderNumber                 int
+	ParentError                 Error
+	FeedbackExists              bool
+	FeedbackMark                *bool
+	FeedbackComment             *string
+	FeedbackUser                *uuid.UUID
+	FeedbackVerificationExists  bool
+	FeedbackVerificationMark    *bool
+	FeedbackVerificationComment *string
+	FeedbackVerificationUser    *uuid.UUID
 }
 
 type OutMissingError struct {
-	ID           uuid.UUID
-	HtmlID       uint32
-	HtmlIDStr    string
-	ErrorID      uuid.UUID
-	Rationale    string
-	SuggestedFix string
+	ID                          uuid.UUID
+	HtmlID                      uint32
+	HtmlIDStr                   string
+	ErrorID                     uuid.UUID
+	Rationale                   string
+	SuggestedFix                string
+	FeedbackExists              bool
+	FeedbackMark                *bool
+	FeedbackComment             *string
+	FeedbackUser                *uuid.UUID
+	FeedbackVerificationExists  bool
+	FeedbackVerificationMark    *bool
+	FeedbackVerificationComment *string
+	FeedbackVerificationUser    *uuid.UUID
 }
 
 func HandleErrors(report *[]tz_llm_client.GroupReport, htmlBlocks *[]markdown_service_client.Mapping) (*[]OutInvalidError, *[]OutMissingError, string) {
