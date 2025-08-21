@@ -9,6 +9,7 @@ import (
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -332,7 +333,7 @@ func (tz *Tz) GetVersionStatistics(ctx context.Context) (*modelrepo.VersionStati
 	return stats, nil
 }
 
-func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, string, string, *[]Error, *[]OutInvalidError, string, error) {
+func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (time.Time, float64, int64, time.Duration, string, string, string, *[]Error, *[]OutInvalidError, string, error) {
 	const op = "Tz.GetVersion"
 
 	log := tz.log.With(
@@ -345,13 +346,13 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, stri
 	version, err := tz.repo.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version: ", sl.Err(err))
-		return "", "", "", nil, nil, "", err
+		return time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", err
 	}
 
 	errorsInTz, err := tz.repo.GetErrorsByVersionID(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version errors: ", sl.Err(err))
-		return "", "", "", nil, nil, "", err
+		return time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", err
 	}
 
 	invalidInstances := make([]OutInvalidError, 0)
@@ -420,7 +421,7 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, stri
 	//	slog.Int("invalid_errors_count", len(outInvalidErrors)),
 	//	slog.Int("missing_errors_count", len(outMissingErrors)))
 
-	return version.OutHTML, version.CSS, version.CheckedFileID, errorsInTz, &invalidInstances, "", nil
+	return version.CreatedAt, *version.AllRubs, *version.AllTokens, *version.InspectionTime, version.OutHTML, version.CSS, version.CheckedFileID, errorsInTz, &invalidInstances, "", nil
 }
 
 func SortOutInvalidErrorsByOrderNumber(errors *[]OutInvalidError) {

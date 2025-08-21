@@ -22,7 +22,7 @@ func NewIMissingErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (
 									suggestedFix = *(*(*((*report)[i]).Errors)[j].Instances)[k].SuggestedFix
 								}
 
-								rationale := ""
+								var rationale string
 								if (*(*((*report)[i]).Errors)[j].Instances)[k].Rationale != nil {
 									rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
 								}

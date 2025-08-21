@@ -565,15 +565,15 @@ func (s *Storage) CreateErrors(ctx context.Context, req *modelrepo.CreateErrorsR
 	}
 
 	query := `
-		INSERT INTO errors (id, version_id, group_id, error_code, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+		INSERT INTO errors (id, version_id, group_id, error_code, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances, name, description, detector)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
 
 	for _, errorData := range req.Errors {
 		_, err := s.db.Exec(ctx, query,
 			errorData.ID, req.VersionID, errorData.GroupID, errorData.ErrorCode,
 			errorData.PreliminaryNotes, errorData.OverallCritique, errorData.Verdict,
 			errorData.ProcessAnalysis, errorData.ProcessCritique, errorData.ProcessVerification,
-			errorData.ProcessRetrieval, errorData.Instances)
+			errorData.ProcessRetrieval, errorData.Instances, errorData.Name, errorData.Description, errorData.Detector)
 		if err != nil {
 			return fmt.Errorf("failed to create error: %w", err)
 		}
@@ -585,7 +585,7 @@ func (s *Storage) CreateErrors(ctx context.Context, req *modelrepo.CreateErrorsR
 // GetErrorsByVersionID retrieves all errors for a specific version
 func (s *Storage) GetErrorsByVersionID(ctx context.Context, versionID uuid.UUID) (*[]tzservice.Error, error) {
 	query := `
-		SELECT id, version_id, group_id, error_code, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances
+		SELECT id, version_id, group_id, error_code, preliminary_notes, overall_critique, verdict, process_analysis, process_critique, process_verification, process_retrieval, instances, name, description, detector
 		FROM errors 
 		WHERE version_id = @version_id`
 
@@ -598,7 +598,9 @@ func (s *Storage) GetErrorsByVersionID(ctx context.Context, versionID uuid.UUID)
 		return nil, fmt.Errorf("failed to get errors by version ID: %w", err)
 	}
 	defer rows.Close()
-
+	var name *string
+	var description *string
+	var detector *string
 	var errorsList []tzservice.Error
 	for rows.Next() {
 		var errorItem tzservice.Error
@@ -616,6 +618,9 @@ func (s *Storage) GetErrorsByVersionID(ctx context.Context, versionID uuid.UUID)
 			&errorItem.ProcessVerification,
 			&errorItem.ProcessRetrieval,
 			&instancesJSON,
+			&name,
+			&description,
+			&detector,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan error: %w", err)
@@ -629,6 +634,18 @@ func (s *Storage) GetErrorsByVersionID(ctx context.Context, versionID uuid.UUID)
 				return nil, fmt.Errorf("failed to unmarshal instances: %w", err)
 			}
 			errorItem.Instances = &instances
+		}
+
+		if name != nil {
+			errorItem.Name = *name
+		}
+
+		if description != nil {
+			errorItem.Description = *description
+		}
+
+		if detector != nil {
+			errorItem.Detector = *detector
 		}
 
 		errorsList = append(errorsList, errorItem)
@@ -646,8 +663,8 @@ func (s *Storage) SaveInvalidInstances(ctx context.Context, invalidInstances *[]
 	}
 
 	query := `
-		INSERT INTO invalid_instances (id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number)
-		VALUES (@id, @html_id, @error_id, @quote, @suggested_fix, @original_quote, @quote_lines, @until_the_end_of_sentence, @start_line_number, @end_line_number, @system_comment, @order_number)`
+		INSERT INTO invalid_instances (id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number, rationale)
+		VALUES (@id, @html_id, @error_id, @quote, @suggested_fix, @original_quote, @quote_lines, @until_the_end_of_sentence, @start_line_number, @end_line_number, @system_comment, @order_number, @rationale)`
 
 	for _, instance := range *invalidInstances {
 		args := pgx.NamedArgs{
@@ -663,6 +680,7 @@ func (s *Storage) SaveInvalidInstances(ctx context.Context, invalidInstances *[]
 			"end_line_number":           instance.EndLineNumber,
 			"system_comment":            instance.SystemComment,
 			"order_number":              instance.OrderNumber,
+			"rationale":                 instance.Rationale,
 		}
 
 		_, err := s.db.Exec(ctx, query, args)
@@ -677,7 +695,7 @@ func (s *Storage) SaveInvalidInstances(ctx context.Context, invalidInstances *[]
 // GetInvalidInstancesByErrorID retrieves all invalid instances for a specific error
 func (s *Storage) GetInvalidInstancesByErrorID(ctx context.Context, errorID uuid.UUID) (*[]tzservice.OutInvalidError, error) {
 	query := `
-		SELECT id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number
+		SELECT id, html_id, error_id, quote, suggested_fix, original_quote, quote_lines, until_the_end_of_sentence, start_line_number, end_line_number, system_comment, order_number, rationale
 		FROM invalid_instances 
 		WHERE error_id = @error_id 
 		ORDER BY order_number`
@@ -694,6 +712,7 @@ func (s *Storage) GetInvalidInstancesByErrorID(ctx context.Context, errorID uuid
 
 	var instances []tzservice.OutInvalidError
 	for rows.Next() {
+		var rationale *string
 		var instance tzservice.OutInvalidError
 		err := rows.Scan(
 			&instance.ID,
@@ -708,9 +727,14 @@ func (s *Storage) GetInvalidInstancesByErrorID(ctx context.Context, errorID uuid
 			&instance.EndLineNumber,
 			&instance.SystemComment,
 			&instance.OrderNumber,
+			&rationale,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan invalid instance: %w", err)
+		}
+
+		if rationale != nil {
+			instance.Rationale = *rationale
 		}
 		instances = append(instances, instance)
 	}

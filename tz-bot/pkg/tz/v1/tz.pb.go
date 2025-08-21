@@ -9,6 +9,7 @@ package tzv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -170,15 +171,18 @@ type Error struct {
 	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	GroupId             string                 `protobuf:"bytes,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
 	ErrorCode           string                 `protobuf:"bytes,3,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	PreliminaryNotes    *string                `protobuf:"bytes,4,opt,name=preliminary_notes,json=preliminaryNotes,proto3,oneof" json:"preliminary_notes,omitempty"`
-	OverallCritique     *string                `protobuf:"bytes,5,opt,name=overall_critique,json=overallCritique,proto3,oneof" json:"overall_critique,omitempty"`
-	Verdict             string                 `protobuf:"bytes,6,opt,name=verdict,proto3" json:"verdict,omitempty"`
-	ProcessAnalysis     *string                `protobuf:"bytes,7,opt,name=process_analysis,json=processAnalysis,proto3,oneof" json:"process_analysis,omitempty"`
-	ProcessCritique     *string                `protobuf:"bytes,8,opt,name=process_critique,json=processCritique,proto3,oneof" json:"process_critique,omitempty"`
-	ProcessVerification *string                `protobuf:"bytes,9,opt,name=process_verification,json=processVerification,proto3,oneof" json:"process_verification,omitempty"`
-	ProcessRetrieval    []string               `protobuf:"bytes,10,rep,name=process_retrieval,json=processRetrieval,proto3" json:"process_retrieval,omitempty"`
-	InvalidInstances    []*InvalidInstance     `protobuf:"bytes,11,rep,name=invalid_instances,json=invalidInstances,proto3" json:"invalid_instances,omitempty"`
-	MissingInstances    []*MissingInstance     `protobuf:"bytes,12,rep,name=missing_instances,json=missingInstances,proto3" json:"missing_instances,omitempty"`
+	Name                string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	Description         string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	Detector            string                 `protobuf:"bytes,6,opt,name=detector,proto3" json:"detector,omitempty"`
+	PreliminaryNotes    *string                `protobuf:"bytes,7,opt,name=preliminary_notes,json=preliminaryNotes,proto3,oneof" json:"preliminary_notes,omitempty"`
+	OverallCritique     *string                `protobuf:"bytes,8,opt,name=overall_critique,json=overallCritique,proto3,oneof" json:"overall_critique,omitempty"`
+	Verdict             string                 `protobuf:"bytes,9,opt,name=verdict,proto3" json:"verdict,omitempty"`
+	ProcessAnalysis     *string                `protobuf:"bytes,10,opt,name=process_analysis,json=processAnalysis,proto3,oneof" json:"process_analysis,omitempty"`
+	ProcessCritique     *string                `protobuf:"bytes,11,opt,name=process_critique,json=processCritique,proto3,oneof" json:"process_critique,omitempty"`
+	ProcessVerification *string                `protobuf:"bytes,12,opt,name=process_verification,json=processVerification,proto3,oneof" json:"process_verification,omitempty"`
+	ProcessRetrieval    []string               `protobuf:"bytes,13,rep,name=process_retrieval,json=processRetrieval,proto3" json:"process_retrieval,omitempty"`
+	InvalidInstances    []*InvalidInstance     `protobuf:"bytes,14,rep,name=invalid_instances,json=invalidInstances,proto3" json:"invalid_instances,omitempty"`
+	MissingInstances    []*MissingInstance     `protobuf:"bytes,15,rep,name=missing_instances,json=missingInstances,proto3" json:"missing_instances,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -230,6 +234,27 @@ func (x *Error) GetGroupId() string {
 func (x *Error) GetErrorCode() string {
 	if x != nil {
 		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *Error) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Error) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Error) GetDetector() string {
+	if x != nil {
+		return x.Detector
 	}
 	return ""
 }
@@ -302,16 +327,17 @@ type InvalidInstance struct {
 	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	HtmlId                uint32                 `protobuf:"varint,2,opt,name=html_id,json=htmlId,proto3" json:"html_id,omitempty"`
 	ErrorId               string                 `protobuf:"bytes,3,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`
-	Quote                 string                 `protobuf:"bytes,4,opt,name=quote,proto3" json:"quote,omitempty"`
-	SuggestedFix          string                 `protobuf:"bytes,5,opt,name=suggested_fix,json=suggestedFix,proto3" json:"suggested_fix,omitempty"`
-	OriginalQuote         string                 `protobuf:"bytes,6,opt,name=original_quote,json=originalQuote,proto3" json:"original_quote,omitempty"`
-	QuoteLines            []string               `protobuf:"bytes,7,rep,name=quote_lines,json=quoteLines,proto3" json:"quote_lines,omitempty"`
-	UntilTheEndOfSentence bool                   `protobuf:"varint,8,opt,name=until_the_end_of_sentence,json=untilTheEndOfSentence,proto3" json:"until_the_end_of_sentence,omitempty"`
-	StartLineNumber       *int32                 `protobuf:"varint,9,opt,name=start_line_number,json=startLineNumber,proto3,oneof" json:"start_line_number,omitempty"`
-	EndLineNumber         *int32                 `protobuf:"varint,10,opt,name=end_line_number,json=endLineNumber,proto3,oneof" json:"end_line_number,omitempty"`
-	SystemComment         string                 `protobuf:"bytes,11,opt,name=system_comment,json=systemComment,proto3" json:"system_comment,omitempty"`
-	OrderNumber           int32                  `protobuf:"varint,12,opt,name=order_number,json=orderNumber,proto3" json:"order_number,omitempty"`
-	ParentError           *Error                 `protobuf:"bytes,13,opt,name=parent_error,json=parentError,proto3,oneof" json:"parent_error,omitempty"`
+	Rationale             string                 `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Quote                 string                 `protobuf:"bytes,5,opt,name=quote,proto3" json:"quote,omitempty"`
+	SuggestedFix          string                 `protobuf:"bytes,6,opt,name=suggested_fix,json=suggestedFix,proto3" json:"suggested_fix,omitempty"`
+	OriginalQuote         string                 `protobuf:"bytes,7,opt,name=original_quote,json=originalQuote,proto3" json:"original_quote,omitempty"`
+	QuoteLines            []string               `protobuf:"bytes,8,rep,name=quote_lines,json=quoteLines,proto3" json:"quote_lines,omitempty"`
+	UntilTheEndOfSentence bool                   `protobuf:"varint,9,opt,name=until_the_end_of_sentence,json=untilTheEndOfSentence,proto3" json:"until_the_end_of_sentence,omitempty"`
+	StartLineNumber       *int32                 `protobuf:"varint,10,opt,name=start_line_number,json=startLineNumber,proto3,oneof" json:"start_line_number,omitempty"`
+	EndLineNumber         *int32                 `protobuf:"varint,11,opt,name=end_line_number,json=endLineNumber,proto3,oneof" json:"end_line_number,omitempty"`
+	SystemComment         string                 `protobuf:"bytes,12,opt,name=system_comment,json=systemComment,proto3" json:"system_comment,omitempty"`
+	OrderNumber           int32                  `protobuf:"varint,13,opt,name=order_number,json=orderNumber,proto3" json:"order_number,omitempty"`
+	ParentError           *Error                 `protobuf:"bytes,14,opt,name=parent_error,json=parentError,proto3,oneof" json:"parent_error,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -363,6 +389,13 @@ func (x *InvalidInstance) GetHtmlId() uint32 {
 func (x *InvalidInstance) GetErrorId() string {
 	if x != nil {
 		return x.ErrorId
+	}
+	return ""
+}
+
+func (x *InvalidInstance) GetRationale() string {
+	if x != nil {
+		return x.Rationale
 	}
 	return ""
 }
@@ -714,15 +747,19 @@ func (x *GetVersionRequest) GetVersionId() string {
 }
 
 type GetVersionResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	HtmlText         string                 `protobuf:"bytes,1,opt,name=html_text,json=htmlText,proto3" json:"html_text,omitempty"`
-	Css              string                 `protobuf:"bytes,2,opt,name=css,proto3" json:"css,omitempty"`
-	DocId            string                 `protobuf:"bytes,3,opt,name=docId,proto3" json:"docId,omitempty"`
-	FileId           string                 `protobuf:"bytes,4,opt,name=fileId,proto3" json:"fileId,omitempty"`
-	Errors           []*Error               `protobuf:"bytes,5,rep,name=errors,proto3" json:"errors,omitempty"`
-	InvalidInstances []*InvalidInstance     `protobuf:"bytes,6,rep,name=invalid_instances,json=invalidInstances,proto3" json:"invalid_instances,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                            protoimpl.MessageState `protogen:"open.v1"`
+	HtmlText                         string                 `protobuf:"bytes,1,opt,name=html_text,json=htmlText,proto3" json:"html_text,omitempty"`
+	Css                              string                 `protobuf:"bytes,2,opt,name=css,proto3" json:"css,omitempty"`
+	DocId                            string                 `protobuf:"bytes,3,opt,name=docId,proto3" json:"docId,omitempty"`
+	FileId                           string                 `protobuf:"bytes,4,opt,name=fileId,proto3" json:"fileId,omitempty"`
+	Errors                           []*Error               `protobuf:"bytes,5,rep,name=errors,proto3" json:"errors,omitempty"`
+	InvalidInstances                 []*InvalidInstance     `protobuf:"bytes,6,rep,name=invalid_instances,json=invalidInstances,proto3" json:"invalid_instances,omitempty"`
+	CreatedAt                        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	TotalRubs                        *float64               `protobuf:"fixed64,8,opt,name=total_rubs,json=totalRubs,proto3,oneof" json:"total_rubs,omitempty"`
+	TotalTokens                      *int64                 `protobuf:"varint,9,opt,name=total_tokens,json=totalTokens,proto3,oneof" json:"total_tokens,omitempty"`
+	AverageInspectionTimeNanoseconds *int64                 `protobuf:"varint,10,opt,name=average_inspection_time_nanoseconds,json=averageInspectionTimeNanoseconds,proto3,oneof" json:"average_inspection_time_nanoseconds,omitempty"`
+	unknownFields                    protoimpl.UnknownFields
+	sizeCache                        protoimpl.SizeCache
 }
 
 func (x *GetVersionResponse) Reset() {
@@ -795,6 +832,34 @@ func (x *GetVersionResponse) GetInvalidInstances() []*InvalidInstance {
 		return x.InvalidInstances
 	}
 	return nil
+}
+
+func (x *GetVersionResponse) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *GetVersionResponse) GetTotalRubs() float64 {
+	if x != nil && x.TotalRubs != nil {
+		return *x.TotalRubs
+	}
+	return 0
+}
+
+func (x *GetVersionResponse) GetTotalTokens() int64 {
+	if x != nil && x.TotalTokens != nil {
+		return *x.TotalTokens
+	}
+	return 0
+}
+
+func (x *GetVersionResponse) GetAverageInspectionTimeNanoseconds() int64 {
+	if x != nil && x.AverageInspectionTimeNanoseconds != nil {
+		return *x.AverageInspectionTimeNanoseconds
+	}
+	return 0
 }
 
 type GetAllVersionsRequest struct {
@@ -1313,7 +1378,7 @@ var File_tz_v1_tz_proto protoreflect.FileDescriptor
 
 const file_tz_v1_tz_proto_rawDesc = "" +
 	"\n" +
-	"\x0etz/v1/tz.proto\x12\x05tz.v1\"_\n" +
+	"\x0etz/v1/tz.proto\x12\x05tz.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"_\n" +
 	"\x0eCheckTzRequest\x12\x12\n" +
 	"\x04file\x18\x01 \x01(\fR\x04file\x12\x1a\n" +
 	"\bfilename\x18\x02 \x01(\tR\bfilename\x12\x1d\n" +
@@ -1325,43 +1390,47 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x05docId\x18\x03 \x01(\tR\x05docId\x12\x16\n" +
 	"\x06fileId\x18\x04 \x01(\tR\x06fileId\x12$\n" +
 	"\x06errors\x18\x05 \x03(\v2\f.tz.v1.ErrorR\x06errors\x12C\n" +
-	"\x11invalid_instances\x18\x06 \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\"\x8a\x05\n" +
+	"\x11invalid_instances\x18\x06 \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\"\xdc\x05\n" +
 	"\x05Error\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\bgroup_id\x18\x02 \x01(\tR\agroupId\x12\x1d\n" +
 	"\n" +
-	"error_code\x18\x03 \x01(\tR\terrorCode\x120\n" +
-	"\x11preliminary_notes\x18\x04 \x01(\tH\x00R\x10preliminaryNotes\x88\x01\x01\x12.\n" +
-	"\x10overall_critique\x18\x05 \x01(\tH\x01R\x0foverallCritique\x88\x01\x01\x12\x18\n" +
-	"\averdict\x18\x06 \x01(\tR\averdict\x12.\n" +
-	"\x10process_analysis\x18\a \x01(\tH\x02R\x0fprocessAnalysis\x88\x01\x01\x12.\n" +
-	"\x10process_critique\x18\b \x01(\tH\x03R\x0fprocessCritique\x88\x01\x01\x126\n" +
-	"\x14process_verification\x18\t \x01(\tH\x04R\x13processVerification\x88\x01\x01\x12+\n" +
-	"\x11process_retrieval\x18\n" +
-	" \x03(\tR\x10processRetrieval\x12C\n" +
-	"\x11invalid_instances\x18\v \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\x12C\n" +
-	"\x11missing_instances\x18\f \x03(\v2\x16.tz.v1.MissingInstanceR\x10missingInstancesB\x14\n" +
+	"error_code\x18\x03 \x01(\tR\terrorCode\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x1a\n" +
+	"\bdetector\x18\x06 \x01(\tR\bdetector\x120\n" +
+	"\x11preliminary_notes\x18\a \x01(\tH\x00R\x10preliminaryNotes\x88\x01\x01\x12.\n" +
+	"\x10overall_critique\x18\b \x01(\tH\x01R\x0foverallCritique\x88\x01\x01\x12\x18\n" +
+	"\averdict\x18\t \x01(\tR\averdict\x12.\n" +
+	"\x10process_analysis\x18\n" +
+	" \x01(\tH\x02R\x0fprocessAnalysis\x88\x01\x01\x12.\n" +
+	"\x10process_critique\x18\v \x01(\tH\x03R\x0fprocessCritique\x88\x01\x01\x126\n" +
+	"\x14process_verification\x18\f \x01(\tH\x04R\x13processVerification\x88\x01\x01\x12+\n" +
+	"\x11process_retrieval\x18\r \x03(\tR\x10processRetrieval\x12C\n" +
+	"\x11invalid_instances\x18\x0e \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\x12C\n" +
+	"\x11missing_instances\x18\x0f \x03(\v2\x16.tz.v1.MissingInstanceR\x10missingInstancesB\x14\n" +
 	"\x12_preliminary_notesB\x13\n" +
 	"\x11_overall_critiqueB\x13\n" +
 	"\x11_process_analysisB\x13\n" +
 	"\x11_process_critiqueB\x17\n" +
-	"\x15_process_verification\"\xab\x04\n" +
+	"\x15_process_verification\"\xc9\x04\n" +
 	"\x0fInvalidInstance\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\ahtml_id\x18\x02 \x01(\rR\x06htmlId\x12\x19\n" +
-	"\berror_id\x18\x03 \x01(\tR\aerrorId\x12\x14\n" +
-	"\x05quote\x18\x04 \x01(\tR\x05quote\x12#\n" +
-	"\rsuggested_fix\x18\x05 \x01(\tR\fsuggestedFix\x12%\n" +
-	"\x0eoriginal_quote\x18\x06 \x01(\tR\roriginalQuote\x12\x1f\n" +
-	"\vquote_lines\x18\a \x03(\tR\n" +
+	"\berror_id\x18\x03 \x01(\tR\aerrorId\x12\x1c\n" +
+	"\trationale\x18\x04 \x01(\tR\trationale\x12\x14\n" +
+	"\x05quote\x18\x05 \x01(\tR\x05quote\x12#\n" +
+	"\rsuggested_fix\x18\x06 \x01(\tR\fsuggestedFix\x12%\n" +
+	"\x0eoriginal_quote\x18\a \x01(\tR\roriginalQuote\x12\x1f\n" +
+	"\vquote_lines\x18\b \x03(\tR\n" +
 	"quoteLines\x128\n" +
-	"\x19until_the_end_of_sentence\x18\b \x01(\bR\x15untilTheEndOfSentence\x12/\n" +
-	"\x11start_line_number\x18\t \x01(\x05H\x00R\x0fstartLineNumber\x88\x01\x01\x12+\n" +
-	"\x0fend_line_number\x18\n" +
-	" \x01(\x05H\x01R\rendLineNumber\x88\x01\x01\x12%\n" +
-	"\x0esystem_comment\x18\v \x01(\tR\rsystemComment\x12!\n" +
-	"\forder_number\x18\f \x01(\x05R\vorderNumber\x124\n" +
-	"\fparent_error\x18\r \x01(\v2\f.tz.v1.ErrorH\x02R\vparentError\x88\x01\x01B\x14\n" +
+	"\x19until_the_end_of_sentence\x18\t \x01(\bR\x15untilTheEndOfSentence\x12/\n" +
+	"\x11start_line_number\x18\n" +
+	" \x01(\x05H\x00R\x0fstartLineNumber\x88\x01\x01\x12+\n" +
+	"\x0fend_line_number\x18\v \x01(\x05H\x01R\rendLineNumber\x88\x01\x01\x12%\n" +
+	"\x0esystem_comment\x18\f \x01(\tR\rsystemComment\x12!\n" +
+	"\forder_number\x18\r \x01(\x05R\vorderNumber\x124\n" +
+	"\fparent_error\x18\x0e \x01(\v2\f.tz.v1.ErrorH\x02R\vparentError\x88\x01\x01B\x14\n" +
 	"\x12_start_line_numberB\x12\n" +
 	"\x10_end_line_numberB\x0f\n" +
 	"\r_parent_error\"\x98\x01\n" +
@@ -1384,14 +1453,24 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\tR\tcreatedAt\"2\n" +
 	"\x11GetVersionRequest\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x01 \x01(\tR\tversionId\"\xdc\x01\n" +
+	"version_id\x18\x01 \x01(\tR\tversionId\"\xff\x03\n" +
 	"\x12GetVersionResponse\x12\x1b\n" +
 	"\thtml_text\x18\x01 \x01(\tR\bhtmlText\x12\x10\n" +
 	"\x03css\x18\x02 \x01(\tR\x03css\x12\x14\n" +
 	"\x05docId\x18\x03 \x01(\tR\x05docId\x12\x16\n" +
 	"\x06fileId\x18\x04 \x01(\tR\x06fileId\x12$\n" +
 	"\x06errors\x18\x05 \x03(\v2\f.tz.v1.ErrorR\x06errors\x12C\n" +
-	"\x11invalid_instances\x18\x06 \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\"\x17\n" +
+	"\x11invalid_instances\x18\x06 \x03(\v2\x16.tz.v1.InvalidInstanceR\x10invalidInstances\x129\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\"\n" +
+	"\n" +
+	"total_rubs\x18\b \x01(\x01H\x00R\ttotalRubs\x88\x01\x01\x12&\n" +
+	"\ftotal_tokens\x18\t \x01(\x03H\x01R\vtotalTokens\x88\x01\x01\x12R\n" +
+	"#average_inspection_time_nanoseconds\x18\n" +
+	" \x01(\x03H\x02R averageInspectionTimeNanoseconds\x88\x01\x01B\r\n" +
+	"\v_total_rubsB\x0f\n" +
+	"\r_total_tokensB&\n" +
+	"$_average_inspection_time_nanoseconds\"\x17\n" +
 	"\x15GetAllVersionsRequest\"S\n" +
 	"\x16GetAllVersionsResponse\x129\n" +
 	"\bversions\x18\x01 \x03(\v2\x1d.tz.v1.VersionWithErrorCountsR\bversions\"\xd9\x05\n" +
@@ -1485,6 +1564,7 @@ var file_tz_v1_tz_proto_goTypes = []any{
 	(*VersionStatistics)(nil),                         // 15: tz.v1.VersionStatistics
 	(*NewFeedbackErrorRequest)(nil),                   // 16: tz.v1.NewFeedbackErrorRequest
 	(*NewFeedbackErrorResponse)(nil),                  // 17: tz.v1.NewFeedbackErrorResponse
+	(*timestamppb.Timestamp)(nil),                     // 18: google.protobuf.Timestamp
 }
 var file_tz_v1_tz_proto_depIdxs = []int32{
 	2,  // 0: tz.v1.CheckTzResponse.errors:type_name -> tz.v1.Error
@@ -1495,25 +1575,26 @@ var file_tz_v1_tz_proto_depIdxs = []int32{
 	7,  // 5: tz.v1.GetTechnicalSpecificationVersionsResponse.versions:type_name -> tz.v1.TechnicalSpecificationVersion
 	2,  // 6: tz.v1.GetVersionResponse.errors:type_name -> tz.v1.Error
 	3,  // 7: tz.v1.GetVersionResponse.invalid_instances:type_name -> tz.v1.InvalidInstance
-	12, // 8: tz.v1.GetAllVersionsResponse.versions:type_name -> tz.v1.VersionWithErrorCounts
-	15, // 9: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
-	0,  // 10: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
-	5,  // 11: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
-	10, // 12: tz.v1.TzService.GetAllVersions:input_type -> tz.v1.GetAllVersionsRequest
-	13, // 13: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
-	8,  // 14: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
-	16, // 15: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
-	1,  // 16: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
-	6,  // 17: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
-	11, // 18: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
-	14, // 19: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
-	9,  // 20: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
-	17, // 21: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
-	16, // [16:22] is the sub-list for method output_type
-	10, // [10:16] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	18, // 8: tz.v1.GetVersionResponse.created_at:type_name -> google.protobuf.Timestamp
+	12, // 9: tz.v1.GetAllVersionsResponse.versions:type_name -> tz.v1.VersionWithErrorCounts
+	15, // 10: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
+	0,  // 11: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
+	5,  // 12: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
+	10, // 13: tz.v1.TzService.GetAllVersions:input_type -> tz.v1.GetAllVersionsRequest
+	13, // 14: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
+	8,  // 15: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
+	16, // 16: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
+	1,  // 17: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
+	6,  // 18: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
+	11, // 19: tz.v1.TzService.GetAllVersions:output_type -> tz.v1.GetAllVersionsResponse
+	14, // 20: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
+	9,  // 21: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
+	17, // 22: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
+	17, // [17:23] is the sub-list for method output_type
+	11, // [11:17] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_tz_v1_tz_proto_init() }
@@ -1523,6 +1604,7 @@ func file_tz_v1_tz_proto_init() {
 	}
 	file_tz_v1_tz_proto_msgTypes[2].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[3].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[9].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[12].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[15].OneofWrappers = []any{}
 	type x struct{}

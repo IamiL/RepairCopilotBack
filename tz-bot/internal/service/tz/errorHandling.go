@@ -16,8 +16,9 @@ type OutInvalidError struct {
 	HtmlID                uint32
 	HtmlIDStr             string
 	ErrorID               uuid.UUID
-	Quote                 string
+	Rationale             string
 	SuggestedFix          string
+	Quote                 string
 	OriginalQuote         string
 	QuoteLines            *[]string
 	UntilTheEndOfSentence bool
@@ -33,8 +34,8 @@ type OutMissingError struct {
 	HtmlID       uint32
 	HtmlIDStr    string
 	ErrorID      uuid.UUID
-	SuggestedFix string
 	Rationale    string
+	SuggestedFix string
 }
 
 func HandleErrors(report *[]tz_llm_client.GroupReport, htmlBlocks *[]markdown_service_client.Mapping) (*[]OutInvalidError, *[]OutMissingError, string) {

@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
 	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
@@ -344,11 +345,13 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		return nil, status.Error(codes.InvalidArgument, "invalid version ID format")
 	}
 
-	htmlText, css, docId, errors, invalidInstances, fileId, err := s.tzService.GetVersion(ctx, versionID)
+	createdAt, allRubs, allTokens, inspectionDuration, htmlText, css, docId, errors, invalidInstances, fileId, err := s.tzService.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version", slog.String("error", err.Error()))
 		return nil, status.Error(codes.Internal, "failed to get version")
 	}
+
+	inspectionDurationInNanoseconds := inspectionDuration.Nanoseconds()
 
 	errorsResp := make([]*tzv1.Error, 0, len(*errors))
 
@@ -362,6 +365,9 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 			Id:                  (*errors)[i].ID.String(),
 			GroupId:             (*errors)[i].GroupID,
 			ErrorCode:           (*errors)[i].ErrorCode,
+			Name:                (*errors)[i].Name,
+			Description:         (*errors)[i].Description,
+			Detector:            (*errors)[i].Detector,
 			PreliminaryNotes:    (*errors)[i].PreliminaryNotes,
 			OverallCritique:     (*errors)[i].OverallCritique,
 			Verdict:             (*errors)[i].Verdict,
@@ -375,12 +381,16 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 	}
 
 	resp := &tzv1.GetVersionResponse{
-		InvalidInstances: convertInvalidInstances(invalidInstances, errorsResp),
-		Errors:           errorsResp,
-		HtmlText:         htmlText,
-		Css:              css,
-		DocId:            docId,
-		FileId:           fileId,
+		InvalidInstances:                 convertInvalidInstances(invalidInstances, errorsResp),
+		Errors:                           errorsResp,
+		HtmlText:                         htmlText,
+		Css:                              css,
+		DocId:                            docId,
+		FileId:                           fileId,
+		CreatedAt:                        timestamppb.New(createdAt),
+		TotalTokens:                      &allTokens,
+		TotalRubs:                        &allRubs,
+		AverageInspectionTimeNanoseconds: &inspectionDurationInNanoseconds,
 	}
 
 	return resp, nil
@@ -424,6 +434,7 @@ func convertInvalidInstances(invalidInstances *[]tzservice.OutInvalidError, erro
 					Id:                    (*invalidInstances)[i].ID.String(),
 					HtmlId:                (*invalidInstances)[i].HtmlID,
 					ErrorId:               (*invalidInstances)[i].ErrorID.String(),
+					Rationale:             (*invalidInstances)[i].Rationale,
 					Quote:                 (*invalidInstances)[i].Quote,
 					SuggestedFix:          (*invalidInstances)[i].SuggestedFix,
 					OriginalQuote:         (*invalidInstances)[i].OriginalQuote,
@@ -455,6 +466,7 @@ func convertMissingInstances(missingInstances *[]tzservice.OutMissingError) []*t
 					HtmlId:       (*missingInstances)[i].HtmlID,
 					ErrorId:      (*missingInstances)[i].ErrorID.String(),
 					SuggestedFix: (*missingInstances)[i].SuggestedFix,
+					Rationale:    (*missingInstances)[i].Rationale,
 				})
 		}
 

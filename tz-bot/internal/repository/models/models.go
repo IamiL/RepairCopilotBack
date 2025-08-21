@@ -218,6 +218,9 @@ type ErrorData struct {
 	ID                  uuid.UUID
 	GroupID             *string
 	ErrorCode           *string
+	Name                *string
+	Description         *string
+	Detector            *string
 	PreliminaryNotes    *string
 	OverallCritique     *string
 	Verdict             *string

@@ -59,6 +59,12 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 								//
 								//}
 
+								var rationale string
+
+								if (*(*((*report)[i]).Errors)[j].Instances)[k].Rationale != nil {
+									rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
+								}
+
 								outInvalidErrors = append(outInvalidErrors, OutInvalidError{
 									ID:                    uuid.New(),
 									ErrorID:               (*((*report)[i]).Errors)[j].ID,
@@ -71,6 +77,7 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									EndLineNumber:         endLineNumber,
 									QuoteLines:            quoteLines,
 									OriginalQuote:         originalQuote,
+									Rationale:             rationale,
 								})
 
 								id++

@@ -33,6 +33,14 @@ type SuccessResponse struct {
 	GgID   *int                   `json:"ggid"`
 	Items  *[]Promt               `json:"items"`
 	Schema map[string]interface{} `json:"schema"`
+	Groups []struct {
+		Errors []struct {
+			Code        string `json:"code"`
+			Name        string `json:"name"`
+			Description string `json:"description"`
+			Detector    string `json:"detector"`
+		} `json:"errors"`
+	} `json:"groups"`
 }
 
 type Promt struct {
@@ -44,6 +52,12 @@ type Promt struct {
 		Role    *string `json:"role"`
 		Content *string `json:"content"`
 	} `json:"messages"`
+}
+
+type ErrorDescription struct {
+	Name     string
+	Desc     string
+	Detector string
 }
 
 type ErrorResponse struct {
@@ -129,14 +143,35 @@ func (c *Client) makeHTTPRequest(req Request) (*SuccessResponse, error) {
 
 }
 
-func (c *Client) GeneratePromts(doc string, ggID int) (*SuccessResponse, error) {
+func (c *Client) GeneratePromts(doc string, ggID int) (
+	*[]Promt,
+	map[string]interface{},
+	map[string]ErrorDescription,
+	error,
+) {
 	// Создаем запрос
 	req := Request{
 		Markdown: doc,
 		GgID:     ggID,
 	}
 
+	resp, err := c.makeHTTPRequest(req)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	errorsMap := make(map[string]ErrorDescription)
+
+	for i := range resp.Groups {
+		for j := range resp.Groups[i].Errors {
+			errorsMap[resp.Groups[i].Errors[j].Code] = ErrorDescription{
+				Name:     resp.Groups[i].Errors[j].Name,
+				Desc:     resp.Groups[i].Errors[j].Description,
+				Detector: resp.Groups[i].Errors[j].Detector,
+			}
+		}
+	}
 	// Выполняем запрос
-	return c.makeHTTPRequest(req)
+	return resp.Items, resp.Schema, errorsMap, nil
 
 }

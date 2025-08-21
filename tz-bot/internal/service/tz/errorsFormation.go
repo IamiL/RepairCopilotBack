@@ -1,8 +1,11 @@
 package tzservice
 
-import tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
+import (
+	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
+	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
+)
 
-func ErrorsFormation(groupReports []tz_llm_client.GroupReport) []Error {
+func ErrorsFormation(groupReports []tz_llm_client.GroupReport, errorsDescriptions map[string]promt_builder.ErrorDescription) []Error {
 	errors := make([]Error, 0)
 
 	for i := range groupReports {
@@ -26,6 +29,8 @@ func ErrorsFormation(groupReports []tz_llm_client.GroupReport) []Error {
 			errorCode = *(*groupReports[i].Errors)[j].Code
 			verdict = *(*groupReports[i].Errors)[j].Verdict
 
+			errorDescription := errorsDescriptions[errorCode]
+
 			var processRetrieval *[]string
 
 			if (*groupReports[i].Errors)[j].Process.Retrieval != nil {
@@ -45,6 +50,9 @@ func ErrorsFormation(groupReports []tz_llm_client.GroupReport) []Error {
 				ID:                  (*groupReports[i].Errors)[j].ID,
 				GroupID:             groupID,
 				ErrorCode:           errorCode,
+				Name:                errorDescription.Name,
+				Description:         errorDescription.Desc,
+				Detector:            errorDescription.Detector,
 				PreliminaryNotes:    groupReports[i].PreliminaryNotes,
 				OverallCritique:     groupReports[i].OverallCritique,
 				Verdict:             verdict,

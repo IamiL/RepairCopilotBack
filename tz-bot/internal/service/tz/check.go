@@ -65,12 +65,12 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	log.Info("запрос промтов в promt-builder")
 
 	//Генерируем запрос для нейронки
-	neuralRequest, err := tz.promtBuilderClient.GeneratePromts(markdownResponse.Markdown, tz.ggID)
+	promts, schema, errorsDescrptions, err := tz.promtBuilderClient.GeneratePromts(markdownResponse.Markdown, tz.ggID)
 	if err != nil {
 		return "", "", "", nil, nil, "", ErrLlmAnalyzeFile
 	}
 
-	if neuralRequest.Schema == nil {
+	if schema == nil {
 		return "", "", "", nil, nil, "", ErrLlmAnalyzeFile
 	}
 
@@ -78,17 +78,17 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	//	*neuralRequest.Items = (*neuralRequest.Items)[:1]
 	//}
 
-	groupReports := make([]tz_llm_client.GroupReport, 0, len(*neuralRequest.Items))
+	groupReports := make([]tz_llm_client.GroupReport, 0, len(*promts))
 
 	allRubs := float64(0)
 	allTokens := int64(0)
 
 	// Создаем канал для результатов и waitgroup для синхронизации
-	resultChan := make(chan llmRequestResult, len(*neuralRequest.Items))
+	resultChan := make(chan llmRequestResult, len(*promts))
 	var wg sync.WaitGroup
 
 	// Запускаем горутины для параллельной обработки запросов
-	for _, v := range *neuralRequest.Items {
+	for _, v := range *promts {
 		wg.Add(1)
 		go func(messages *[]struct {
 			Role    *string `json:"role"`
@@ -131,7 +131,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 			}
 
 			resultChan <- result
-		}(v.Messages, neuralRequest.Schema)
+		}(v.Messages, schema)
 	}
 
 	fmt.Println(" отладка 5")
@@ -145,7 +145,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	fmt.Println(" отладка 6")
 
 	// Собираем результаты
-	expectedResults := len(*neuralRequest.Items)
+	expectedResults := len(*promts)
 	receivedResults := 0
 
 	for result := range resultChan {
@@ -209,7 +209,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		}
 	}
 
-	errors := ErrorsFormation(groupReports)
+	errors := ErrorsFormation(groupReports, errorsDescrptions)
 
 	outInvalidErrors, outMissingErrors, outHtml := HandleErrors(&groupReports, &markdownResponse.Mappings)
 
@@ -281,6 +281,9 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 				ID:                  err.ID,
 				GroupID:             &err.GroupID,
 				ErrorCode:           &err.ErrorCode,
+				Name:                &err.Name,
+				Description:         &err.Description,
+				Detector:            &err.Detector,
 				PreliminaryNotes:    err.PreliminaryNotes,
 				OverallCritique:     err.OverallCritique,
 				Verdict:             &err.Verdict,
@@ -355,6 +358,9 @@ type Error struct {
 	ID                  uuid.UUID                 `json:"id"`
 	GroupID             string                    `json:"group_id"`
 	ErrorCode           string                    `json:"error_code"`
+	Name                string                    `json:"name"`
+	Description         string                    `json:"description"`
+	Detector            string                    `json:"detector"`
 	PreliminaryNotes    *string                   `json:"preliminary_notes"`
 	OverallCritique     *string                   `json:"overall_critique"`
 	Verdict             string                    `json:"verdict"`

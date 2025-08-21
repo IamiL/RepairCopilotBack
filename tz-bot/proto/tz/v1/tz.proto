@@ -5,6 +5,8 @@ package tz.v1;
 option go_package = "repairCopilotBot/tz-bot/proto/tz/v1;tzv1";
 
 
+import "google/protobuf/timestamp.proto";
+
 service TzService {
   rpc CheckTz(CheckTzRequest) returns (CheckTzResponse);
   rpc GetTechnicalSpecificationVersions(GetTechnicalSpecificationVersionsRequest) returns (GetTechnicalSpecificationVersionsResponse);
@@ -33,31 +35,35 @@ message Error {
   string id = 1;
   string group_id = 2;
   string error_code = 3;
-  optional string preliminary_notes = 4;
-  optional string overall_critique = 5;
-  string verdict = 6;
-  optional string process_analysis = 7;
-  optional string process_critique = 8;
-  optional string process_verification = 9;
-  repeated string process_retrieval = 10;
-  repeated InvalidInstance invalid_instances = 11;
-  repeated MissingInstance missing_instances = 12;
+  string name = 4;
+  string description = 5;
+  string detector = 6;
+  optional string preliminary_notes = 7;
+  optional string overall_critique = 8;
+  string verdict = 9;
+  optional string process_analysis = 10;
+  optional string process_critique = 11;
+  optional string process_verification = 12;
+  repeated string process_retrieval = 13;
+  repeated InvalidInstance invalid_instances = 14;
+  repeated MissingInstance missing_instances = 15;
 }
 
 message InvalidInstance {
   string id = 1;
   uint32 html_id = 2;
   string error_id = 3;
-  string quote = 4;
-  string suggested_fix = 5;
-  string original_quote = 6;
-  repeated string quote_lines = 7;
-  bool until_the_end_of_sentence = 8;
-  optional int32 start_line_number = 9;
-  optional int32 end_line_number = 10;
-  string system_comment = 11;
-  int32 order_number = 12;
-  optional Error parent_error = 13;
+  string rationale = 4;
+  string quote = 5;
+  string suggested_fix = 6;
+  string original_quote = 7;
+  repeated string quote_lines = 8;
+  bool until_the_end_of_sentence = 9;
+  optional int32 start_line_number = 10;
+  optional int32 end_line_number = 11;
+  string system_comment = 12;
+  int32 order_number = 13;
+  optional Error parent_error = 14;
 }
 
 message MissingInstance {
@@ -96,6 +102,10 @@ message GetVersionResponse {
   string fileId = 4;
   repeated Error errors = 5;
   repeated InvalidInstance invalid_instances = 6;
+  google.protobuf.Timestamp created_at = 7;
+  optional double total_rubs = 8;
+  optional int64 total_tokens = 9;
+  optional int64 average_inspection_time_nanoseconds = 10;
 }
 
 message GetAllVersionsRequest {
