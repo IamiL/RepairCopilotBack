@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"regexp"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
@@ -43,7 +44,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 
 	// Сохраняем оригинальный файл в S3
 	originalFileID := uuid.New().String()
-	err = tz.s3.SaveDocument(ctx, originalFileID, file)
+	err = tz.s3.SaveDocument(ctx, originalFileID, file, "docs")
 	if err != nil {
 		log.Error("ошибка сохранения оригинального файла в S3: ", sl.Err(err))
 		return uuid.Nil, "", time.Time{}, fmt.Errorf("ошибка сохранения файла в S3: %w", err)
@@ -82,9 +83,13 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	return newVersionID, RemoveDocxExtension(filename), time.Now(), nil
 }
 
+type ErrorsArray struct {
+	Errors []Error `json:"errors"`
+}
+
 type Error struct {
-	ID                  uuid.UUID                 `json:"id"`
-	GroupID             string                    `json:"group_id"`
+	ID                  uuid.UUID
+	GroupID             string
 	ErrorCode           string                    `json:"error_code"`
 	OrderNumber         int                       `json:"order_number"`
 	Name                string                    `json:"name"`
@@ -102,45 +107,6 @@ type Error struct {
 	MissingInstances    *[]OutMissingError        `json:"missing_instances"`
 }
 
-// SortErrorsByCode сортирует массив ошибок по ErrorCode (E01, E02, и т.д.)
-func SortErrorsByCode(errors []Error) {
-	sort.Slice(errors, func(i, j int) bool {
-		numI := extractErrorNumber(errors[i].ErrorCode)
-		numJ := extractErrorNumber(errors[j].ErrorCode)
-
-		// Если оба числа валидны, сортируем по числу
-		if numI != -1 && numJ != -1 {
-			return numI < numJ
-		}
-
-		// Если только одно число валидно, валидное ставим первым
-		if numI != -1 && numJ == -1 {
-			return true
-		}
-		if numI == -1 && numJ != -1 {
-			return false
-		}
-
-		// Если оба невалидны, сортируем лексикографически
-		return errors[i].ErrorCode < errors[j].ErrorCode
-	})
-}
-
-// extractErrorNumber извлекает номер из ErrorCode (например, из "E01" возвращает 1)
-func extractErrorNumber(errorCode string) int {
-	if len(errorCode) < 2 || !strings.HasPrefix(strings.ToUpper(errorCode), "E") {
-		return -1
-	}
-
-	numStr := errorCode[1:]
-	num, err := strconv.Atoi(numStr)
-	if err != nil {
-		return -1
-	}
-
-	return num
-}
-
 func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, _ string) {
 	const op = "Tz.ProcessTzAsync"
 
@@ -151,7 +117,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	log.Info("starting async processing")
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Duration(time.Minute*10))
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
 
 	timeStart := time.Now()
 
@@ -292,6 +259,39 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	outInvalidErrors, outMissingErrors, outHtml := HandleErrors(&groupReports, &markdownResponse.Mappings)
 
+	for i := range errors {
+		invalidInstances := make([]OutInvalidError, 0)
+		missingInstances := make([]OutMissingError, 0)
+		for j := range *outInvalidErrors {
+			if (*outInvalidErrors)[j].ErrorID == errors[i].ID {
+				invalidInstances = append(invalidInstances, (*outInvalidErrors)[j])
+			}
+		}
+
+		for j := range missingInstances {
+			if missingInstances[j].ErrorID == errors[i].ID {
+				missingInstances = append(missingInstances, missingInstances[j])
+			}
+		}
+
+		errors[i].InvalidInstances = &invalidInstances
+		errors[i].MissingInstances = &missingInstances
+	}
+
+	docxReportID := ""
+	client := NewClient("http://localhost:8050", 30*time.Second)
+	response, err := client.GenerateDocument(ctx, ErrorsArray{Errors: errors})
+	if err != nil {
+		log.Error("ошибка генерации docx-отчёта: ", sl.Err(err))
+	} else {
+		docxReportID = uuid.New().String()
+		err = tz.s3.SaveDocument(ctx, docxReportID, response.Data, "reports")
+		if err != nil {
+			log.Error("ошибка сохранения docx отчёта в s3: ", sl.Err(err))
+		}
+
+	}
+
 	err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
 	if err != nil {
 		log.Error("ошибка сохранения invalid instances: ", sl.Err(err))
@@ -312,7 +312,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		UpdatedAt:      time.Now(),
 		OutHTML:        outHtml,
 		CSS:            *css,
-		CheckedFileID:  "",
+		CheckedFileID:  docxReportID,
 		AllRubs:        allRubs,
 		AllTokens:      allTokens,
 		InspectionTime: inspectionTime,
@@ -395,4 +395,59 @@ func RemoveDocxExtension(filename string) string {
 		return filename[:len(filename)-5]
 	}
 	return filename
+}
+
+// SortErrorsByCode сортирует массив ошибок по ErrorCode
+// Ожидаемый формат: E + число + опциональная буква (E01, E12, E07, E01A, E03B)
+// Коды с неправильным форматом помещаются в конец массива
+func SortErrorsByCode(errors []Error) {
+	sort.Slice(errors, func(i, j int) bool {
+		codeI := errors[i].ErrorCode
+		codeJ := errors[j].ErrorCode
+
+		// Регулярное выражение для парсинга кода ошибки
+		re := regexp.MustCompile(`^E(\d+)([A-Z]?)$`)
+
+		matchI := re.FindStringSubmatch(codeI)
+		matchJ := re.FindStringSubmatch(codeJ)
+
+		// Если оба кода соответствуют формату
+		if matchI != nil && matchJ != nil {
+			// Сравниваем числовую часть
+			numI, _ := strconv.Atoi(matchI[1])
+			numJ, _ := strconv.Atoi(matchJ[1])
+
+			if numI != numJ {
+				return numI < numJ
+			}
+
+			// Если числа равны, сравниваем буквенную часть
+			letterI := matchI[2]
+			letterJ := matchJ[2]
+
+			// Если у одного есть буква, а у другого нет, тот что без буквы идет первым
+			if letterI == "" && letterJ != "" {
+				return true
+			}
+			if letterI != "" && letterJ == "" {
+				return false
+			}
+
+			// Если у обоих есть буквы или у обоих нет, сравниваем лексикографически
+			return letterI < letterJ
+		}
+
+		// Если только первый код соответствует формату, он идет первым
+		if matchI != nil && matchJ == nil {
+			return true
+		}
+
+		// Если только второй код соответствует формату, он идет первым
+		if matchI == nil && matchJ != nil {
+			return false
+		}
+
+		// Если оба кода не соответствуют формату, сортируем лексикографически
+		return codeI < codeJ
+	})
 }

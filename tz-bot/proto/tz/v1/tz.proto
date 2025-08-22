@@ -167,14 +167,12 @@ message VersionStatistics {
 }
 
 message NewFeedbackErrorRequest {
-  string version_id = 1;
-  string error_id = 2;
-  string error_type = 3;
-  uint32 feedback_type = 4;
-  string comment = 5;
-  string user_id = 6;
+  string instance_id = 1;
+  string instance_type = 2;
+  optional bool feedback_mark = 3;
+  optional string feedback_comment = 4;
+  string user_id = 5;
 }
 
 message NewFeedbackErrorResponse {
-
 }

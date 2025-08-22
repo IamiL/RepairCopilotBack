@@ -438,71 +438,36 @@ func SortOutInvalidErrorsByOrderNumber(errors *[]OutInvalidError) {
 	})
 }
 
-func (tz *Tz) NewFeedbackError(ctx context.Context, versionID uuid.UUID, errorID, errorType string, feedbackType uint32, comment string, userID uuid.UUID) error {
+func (tz *Tz) NewFeedbackError(ctx context.Context, instanceID uuid.UUID, instanceType string, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error {
 	const op = "Tz.NewFeedbackError"
 
 	log := tz.log.With(
 		slog.String("op", op),
-		slog.String("versionID", versionID.String()),
-		slog.String("errorID", errorID),
-		slog.String("errorType", errorType),
-		slog.String("userID", userID.String()),
+		slog.String("instance_id", instanceID.String()),
+		slog.String("instance_type", instanceType),
+		slog.String("user_id", userID.String()),
 	)
 
-	log.Info("creating feedback error")
+	log.Info("creating new feedback")
 
-	// Парсим errorID в int и получаем UUID через репозиторий
-	//errorIDInt, err := strconv.Atoi(errorID)
-	//if err != nil {
-	//	log.Error("invalid error ID format", slog.String("error", err.Error()))
-	//	return fmt.Errorf("invalid error ID format: %w", err)
-	//}
+	switch instanceType {
+	case "invalid":
+		err := tz.repo.UpdateInvalidInstanceFeedback(ctx, instanceID, feedbackMark, feedbackComment, userID)
+		if err != nil {
+			log.Error("failed to update invalid instance feedback", slog.String("error", err.Error()))
+			return fmt.Errorf("failed to update invalid instance feedback: %w", err)
+		}
+	case "missing":
+		err := tz.repo.UpdateMissingInstanceFeedback(ctx, instanceID, feedbackMark, feedbackComment, userID)
+		if err != nil {
+			log.Error("failed to update missing instance feedback", slog.String("error", err.Error()))
+			return fmt.Errorf("failed to update missing instance feedback: %w", err)
+		}
+	default:
+		log.Error("invalid instance type", slog.String("instance_type", instanceType))
+		return fmt.Errorf("invalid instance type: %s", instanceType)
+	}
 
-	//errorUUID, err := tz.repo.GetUUIDByErrorID(ctx, errorIDInt)
-	//if err != nil {
-	//	log.Error("failed to get UUID by error ID", slog.String("error", err.Error()))
-	//	return fmt.Errorf("failed to get UUID by error ID: %w", err)
-	//}
-
-	// Определяем тип ошибки
-	//var repoErrorType modelrepo.ErrorType
-	//switch errorType {
-	//case "invalid":
-	//	repoErrorType = modelrepo.ErrorTypeInvalid
-	//case "missing":
-	//	repoErrorType = modelrepo.ErrorTypeMissing
-	//default:
-	//	log.Error("invalid error type", slog.String("errorType", errorType))
-	//	return fmt.Errorf("invalid error type: %s", errorType)
-	//}
-
-	//now := time.Now()
-
-	// Создаем запрос для создания обратной связи об ошибке
-	//feedbackReq := &repository.CreateErrorFeedbackRequest{
-	//	ID:           uuid.New(),
-	//	VersionID:    versionID,
-	//	ErrorID:      errorUUID,
-	//	ErrorType:    repoErrorType,
-	//	UserID:       userID,
-	//	FeedbackType: int(feedbackType),
-	//	Comment:      &comment,
-	//	CreatedAt:    now,
-	//	UpdatedAt:    now,
-	//}
-	//
-	//// Если комментарий пустой, устанавливаем nil
-	//if comment == "" {
-	//	feedbackReq.Comment = nil
-	//}
-
-	// Сохраняем обратную связь в БД
-	//_, err = tz.repo.CreateErrorFeedback(ctx, feedbackReq)
-	//if err != nil {
-	//	log.Error("failed to create error feedback", slog.String("error", err.Error()))
-	//	return fmt.Errorf("failed to create error feedback: %w", err)
-	//}
-
-	log.Info("feedback error created successfully")
+	log.Info("feedback created successfully")
 	return nil
 }

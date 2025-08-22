@@ -11,11 +11,11 @@ import (
 )
 
 type NewFeedbackErrorRequest struct {
-	VersionID    string `json:"version_id"`
-	ErrorID      string `json:"error_id"`
-	ErrorType    string `json:"error_type"`
-	FeedbackType uint32 `json:"feedback_type"`
-	Comment      string `json:"comment"`
+	InstanceID      string  `json:"instance_id"`
+	InstanceType    string  `json:"instance_type"`
+	FeedbackMark    *bool   `json:"feedback_mark"`
+	FeedbackComment *string `json:"feedback_comment"`
+	UserID          string  `json:"user_id"`
 }
 
 type NewFeedbackErrorResponse struct {
@@ -28,122 +28,118 @@ func NewFeedbackErrorHandler(
 	tzBotClient *client.Client,
 	sessionRepo *repository.SessionRepository,
 	actionLogRepo repository.ActionLogRepository,
-) func(w http.ResponseWriter, r *http.Request) {
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handler.NewFeedbackErrorHandler"
+		const op = "handler.NewFeedbackError"
 
 		log := log.With(slog.String("op", op))
-		log.Info("processing NewFeedbackError request")
 
-		// Получаем токен из куки
-		cookie, err := r.Cookie("auth_token")
-		if err != nil {
-			log.Info("no auth token cookie found")
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		token := cookie.Value
+		// Получение токена из заголовков
+		token := r.Header.Get("X-Access-Token")
 		if token == "" {
-			log.Info("empty auth token")
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			log.Error("access token is missing")
+			http.Error(w, "access token is missing", http.StatusUnauthorized)
 			return
 		}
 
-		// Проверяем сессию в Redis
+		// Проверка сессии
 		session, err := sessionRepo.GetSession(token)
 		if err != nil {
-			log.Info("failed to get session from Redis", slog.String("error", err.Error()))
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			log.Error("invalid session", slog.String("error", err.Error()))
+			http.Error(w, "invalid session", http.StatusUnauthorized)
 			return
 		}
 
-		if session == nil {
-			log.Info("session not found")
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		userID, err := uuid.Parse(session.UserID)
-		if err != nil {
-			log.Error("invalid user ID in session", slog.String("user_id", session.UserID), slog.String("error", err.Error()))
-			http.Error(w, "Invalid session", http.StatusInternalServerError)
-			return
-		}
-
-		// Парсим JSON запрос
+		// Парсинг тела запроса
 		var req NewFeedbackErrorRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			log.Error("failed to decode request body", slog.String("error", err.Error()))
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			log.Error("failed to decode request", slog.String("error", err.Error()))
+			http.Error(w, "invalid request format", http.StatusBadRequest)
 			return
 		}
 
-		// Валидация входных данных
-		if req.VersionID == "" {
-			log.Error("version_id is required")
-			http.Error(w, "version_id is required", http.StatusBadRequest)
+		// Валидация параметров
+		if req.InstanceID == "" {
+			log.Error("instance_id is required")
+			http.Error(w, "instance_id is required", http.StatusBadRequest)
 			return
 		}
 
-		if req.ErrorID == "" {
-			log.Error("error_id is required")
-			http.Error(w, "error_id is required", http.StatusBadRequest)
+		if req.InstanceType != "invalid" && req.InstanceType != "missing" {
+			log.Error("invalid instance_type", slog.String("instance_type", req.InstanceType))
+			http.Error(w, "instance_type must be 'invalid' or 'missing'", http.StatusBadRequest)
 			return
 		}
 
-		if req.ErrorType != "invalid" && req.ErrorType != "missing" {
-			log.Error("invalid error_type", slog.String("error_type", req.ErrorType))
-			http.Error(w, "error_type must be 'invalid' or 'missing'", http.StatusBadRequest)
+		// Проверяем, что предоставлен хотя бы один тип фидбека
+		hasValidComment := req.FeedbackComment != nil && *req.FeedbackComment != ""
+		if req.FeedbackMark == nil && !hasValidComment {
+			log.Error("at least one of feedback_mark or feedback_comment is required")
+			http.Error(w, "at least one of feedback_mark or feedback_comment is required", http.StatusBadRequest)
 			return
 		}
 
-		// Валидация UUID
-		if _, err := uuid.Parse(req.VersionID); err != nil {
-			log.Error("invalid version_id format", slog.String("version_id", req.VersionID), slog.String("error", err.Error()))
-			http.Error(w, "invalid version_id format", http.StatusBadRequest)
-			return
-		}
-
-		// Вызываем tz-bot для создания feedback
-		err = tzBotClient.NewFeedbackError(r.Context(), req.VersionID, req.ErrorID, req.ErrorType, req.FeedbackType, req.Comment, userID.String())
+		// Парсинг UUID
+		instanceID, err := uuid.Parse(req.InstanceID)
 		if err != nil {
-			log.Error("failed to create feedback error in tz-bot", slog.String("error", err.Error()))
-			http.Error(w, "failed to create feedback error", http.StatusInternalServerError)
+			log.Error("invalid instance_id format", slog.String("error", err.Error()))
+			http.Error(w, "invalid instance_id format", http.StatusBadRequest)
 			return
 		}
 
-		// Логируем действие пользователя
-		//err = actionLogRepo.LogAction(userID, "feedback_error", map[string]interface{}{
-		//	"version_id":    req.VersionID,
-		//	"error_id":      req.ErrorID,
-		//	"error_type":    req.ErrorType,
-		//	"feedback_type": req.FeedbackType,
-		//	"comment":       req.Comment,
-		//})
-		//if err != nil {
-		//	log.Error("failed to log action", slog.String("error", err.Error()))
-		//	// Не прерываем выполнение, если логирование не удалось
-		//}
+		// Парсинг userID из сессии
+		sessionUserID, err := uuid.Parse(session.UserID)
+		if err != nil {
+			log.Error("invalid session user ID", slog.String("error", err.Error()))
+			http.Error(w, "invalid session", http.StatusInternalServerError)
+			return
+		}
 
+		userID := sessionUserID
+		if req.UserID != "" {
+			// Если указан user_id в запросе, используем его (для админов)
+			if parsedUserID, err := uuid.Parse(req.UserID); err == nil {
+				userID = parsedUserID
+			} else {
+				log.Error("invalid user_id format", slog.String("error", err.Error()))
+				http.Error(w, "invalid user_id format", http.StatusBadRequest)
+				return
+			}
+		}
+
+		// Вызов gRPC метода
+		err = tzBotClient.NewFeedbackError(r.Context(), instanceID, req.InstanceType, req.FeedbackMark, req.FeedbackComment, userID)
+		if err != nil {
+			log.Error("failed to create feedback", slog.String("error", err.Error()))
+			http.Error(w, "failed to create feedback", http.StatusInternalServerError)
+			return
+		}
+
+		// Логирование действия
+		if actionLogRepo != nil {
+			err = actionLogRepo.CreateActionLog(r.Context(), "create_feedback", sessionUserID)
+			if err != nil {
+				log.Error("failed to log action", slog.String("error", err.Error()))
+				// Не прерываем выполнение, просто логируем ошибку
+			}
+		}
+
+		// Успешный ответ
 		response := NewFeedbackErrorResponse{
 			Success: true,
 			Message: "Feedback created successfully",
 		}
 
-		// Возвращаем успешный ответ
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
+		w.WriteHeader(http.StatusCreated)
+		
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Error("failed to encode response", slog.String("error", err.Error()))
-			return
 		}
 
-		log.Info("NewFeedbackError request processed successfully",
-			slog.String("user_id", userID.String()),
-			slog.String("version_id", req.VersionID),
-			slog.String("error_id", req.ErrorID),
-			slog.String("error_type", req.ErrorType))
+		log.Info("feedback created successfully", 
+			slog.String("instance_id", req.InstanceID),
+			slog.String("instance_type", req.InstanceType),
+			slog.String("user_id", userID.String()))
 	}
 }

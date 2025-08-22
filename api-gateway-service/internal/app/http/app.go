@@ -88,7 +88,7 @@ func New(
 	)
 
 	router.HandleFunc(
-		"POST /api/feedback-error",
+		"POST /api/feedback",
 		handler.NewFeedbackErrorHandler(log, tzBotClient, sessionRepo, actionLogRepo),
 	)
 

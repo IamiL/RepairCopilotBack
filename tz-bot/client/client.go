@@ -284,16 +284,15 @@ func (c *Client) GetVersionStatistics(ctx context.Context) (*VersionStatistics, 
 	}, nil
 }
 
-func (c *Client) NewFeedbackError(ctx context.Context, versionID, errorID, errorType string, feedbackType uint32, comment, userID string) error {
+func (c *Client) NewFeedbackError(ctx context.Context, instanceID uuid.UUID, instanceType string, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error {
 	const op = "tz_client.NewFeedbackError"
 
 	_, err := c.api.NewFeedbackError(ctx, &tzv1.NewFeedbackErrorRequest{
-		VersionId:    versionID,
-		ErrorId:      errorID,
-		ErrorType:    errorType,
-		FeedbackType: feedbackType,
-		Comment:      comment,
-		UserId:       userID,
+		InstanceId:      instanceID.String(),
+		InstanceType:    instanceType,
+		FeedbackMark:    feedbackMark,
+		FeedbackComment: feedbackComment,
+		UserId:          userID.String(),
 	})
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)

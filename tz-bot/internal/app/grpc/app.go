@@ -394,12 +394,14 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 
 	numberOfErrrorsInt32 := int32(numberOfErrors)
 
+	reportLink := "https://docs.timuroid.ru/reports/" + docId + ".docx"
+
 	resp := &tzv1.GetVersionResponse{
 		InvalidInstances:                 convertInvalidInstances(invalidInstances, errorsResp),
 		Errors:                           errorsResp,
 		HtmlText:                         &htmlText,
 		Css:                              &css,
-		DocId:                            &docId,
+		DocId:                            &reportLink,
 		FileId:                           &fileId,
 		CreatedAt:                        timestamppb.New(createdAt),
 		TotalTokens:                      &allTokens,
@@ -513,18 +515,18 @@ func (s *serverAPI) NewFeedbackError(ctx context.Context, req *tzv1.NewFeedbackE
 
 	log := s.log.With(
 		slog.String("op", op),
-		slog.String("version_id", req.VersionId),
-		slog.String("error_id", req.ErrorId),
-		slog.String("error_type", req.ErrorType),
+		slog.String("instance_id", req.InstanceId),
+		slog.String("instance_type", req.InstanceType),
 		slog.String("user_id", req.UserId),
 	)
 
 	log.Info("processing NewFeedbackError request")
 
-	versionID, err := uuid.Parse(req.VersionId)
+	// Валидация параметров
+	instanceID, err := uuid.Parse(req.InstanceId)
 	if err != nil {
-		log.Error("invalid version ID format", slog.String("error", err.Error()))
-		return nil, status.Error(codes.InvalidArgument, "invalid version ID format")
+		log.Error("invalid instance ID format", slog.String("error", err.Error()))
+		return nil, status.Error(codes.InvalidArgument, "invalid instance ID format")
 	}
 
 	userID, err := uuid.Parse(req.UserId)
@@ -533,15 +535,15 @@ func (s *serverAPI) NewFeedbackError(ctx context.Context, req *tzv1.NewFeedbackE
 		return nil, status.Error(codes.InvalidArgument, "invalid user ID format")
 	}
 
-	if req.ErrorType != "invalid" && req.ErrorType != "missing" {
-		log.Error("invalid error type", slog.String("error_type", req.ErrorType))
-		return nil, status.Error(codes.InvalidArgument, "error type must be 'invalid' or 'missing'")
+	if req.InstanceType != "invalid" && req.InstanceType != "missing" {
+		log.Error("invalid instance type", slog.String("instance_type", req.InstanceType))
+		return nil, status.Error(codes.InvalidArgument, "instance_type must be 'invalid' or 'missing'")
 	}
 
-	err = s.tzService.NewFeedbackError(ctx, versionID, req.ErrorId, req.ErrorType, req.FeedbackType, req.Comment, userID)
+	err = s.tzService.NewFeedbackError(ctx, instanceID, req.InstanceType, req.FeedbackMark, req.FeedbackComment, userID)
 	if err != nil {
-		log.Error("failed to create feedback error", slog.String("error", err.Error()))
-		return nil, status.Error(codes.Internal, "failed to create feedback error")
+		log.Error("failed to create feedback", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to create feedback")
 	}
 
 	log.Info("NewFeedbackError request processed successfully")

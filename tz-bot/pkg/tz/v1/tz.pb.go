@@ -1399,15 +1399,14 @@ func (x *VersionStatistics) GetAverageInspectionTimeNanoseconds() int64 {
 }
 
 type NewFeedbackErrorRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	VersionId     string                 `protobuf:"bytes,1,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
-	ErrorId       string                 `protobuf:"bytes,2,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`
-	ErrorType     string                 `protobuf:"bytes,3,opt,name=error_type,json=errorType,proto3" json:"error_type,omitempty"`
-	FeedbackType  uint32                 `protobuf:"varint,4,opt,name=feedback_type,json=feedbackType,proto3" json:"feedback_type,omitempty"`
-	Comment       string                 `protobuf:"bytes,5,opt,name=comment,proto3" json:"comment,omitempty"`
-	UserId        string                 `protobuf:"bytes,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId      string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	InstanceType    string                 `protobuf:"bytes,2,opt,name=instance_type,json=instanceType,proto3" json:"instance_type,omitempty"`
+	FeedbackMark    *bool                  `protobuf:"varint,3,opt,name=feedback_mark,json=feedbackMark,proto3,oneof" json:"feedback_mark,omitempty"`
+	FeedbackComment *string                `protobuf:"bytes,4,opt,name=feedback_comment,json=feedbackComment,proto3,oneof" json:"feedback_comment,omitempty"`
+	UserId          string                 `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *NewFeedbackErrorRequest) Reset() {
@@ -1440,37 +1439,30 @@ func (*NewFeedbackErrorRequest) Descriptor() ([]byte, []int) {
 	return file_tz_v1_tz_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *NewFeedbackErrorRequest) GetVersionId() string {
+func (x *NewFeedbackErrorRequest) GetInstanceId() string {
 	if x != nil {
-		return x.VersionId
+		return x.InstanceId
 	}
 	return ""
 }
 
-func (x *NewFeedbackErrorRequest) GetErrorId() string {
+func (x *NewFeedbackErrorRequest) GetInstanceType() string {
 	if x != nil {
-		return x.ErrorId
+		return x.InstanceType
 	}
 	return ""
 }
 
-func (x *NewFeedbackErrorRequest) GetErrorType() string {
-	if x != nil {
-		return x.ErrorType
+func (x *NewFeedbackErrorRequest) GetFeedbackMark() bool {
+	if x != nil && x.FeedbackMark != nil {
+		return *x.FeedbackMark
 	}
-	return ""
+	return false
 }
 
-func (x *NewFeedbackErrorRequest) GetFeedbackType() uint32 {
-	if x != nil {
-		return x.FeedbackType
-	}
-	return 0
-}
-
-func (x *NewFeedbackErrorRequest) GetComment() string {
-	if x != nil {
-		return x.Comment
+func (x *NewFeedbackErrorRequest) GetFeedbackComment() string {
+	if x != nil && x.FeedbackComment != nil {
+		return *x.FeedbackComment
 	}
 	return ""
 }
@@ -1694,16 +1686,16 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"#average_inspection_time_nanoseconds\x18\x04 \x01(\x03H\x02R averageInspectionTimeNanoseconds\x88\x01\x01B\x0f\n" +
 	"\r_total_tokensB\r\n" +
 	"\v_total_rubsB&\n" +
-	"$_average_inspection_time_nanoseconds\"\xca\x01\n" +
-	"\x17NewFeedbackErrorRequest\x12\x1d\n" +
-	"\n" +
-	"version_id\x18\x01 \x01(\tR\tversionId\x12\x19\n" +
-	"\berror_id\x18\x02 \x01(\tR\aerrorId\x12\x1d\n" +
-	"\n" +
-	"error_type\x18\x03 \x01(\tR\terrorType\x12#\n" +
-	"\rfeedback_type\x18\x04 \x01(\rR\ffeedbackType\x12\x18\n" +
-	"\acomment\x18\x05 \x01(\tR\acomment\x12\x17\n" +
-	"\auser_id\x18\x06 \x01(\tR\x06userId\"\x1a\n" +
+	"$_average_inspection_time_nanoseconds\"\xf9\x01\n" +
+	"\x17NewFeedbackErrorRequest\x12\x1f\n" +
+	"\vinstance_id\x18\x01 \x01(\tR\n" +
+	"instanceId\x12#\n" +
+	"\rinstance_type\x18\x02 \x01(\tR\finstanceType\x12(\n" +
+	"\rfeedback_mark\x18\x03 \x01(\bH\x00R\ffeedbackMark\x88\x01\x01\x12.\n" +
+	"\x10feedback_comment\x18\x04 \x01(\tH\x01R\x0ffeedbackComment\x88\x01\x01\x12\x17\n" +
+	"\auser_id\x18\x05 \x01(\tR\x06userIdB\x10\n" +
+	"\x0e_feedback_markB\x13\n" +
+	"\x11_feedback_comment\"\x1a\n" +
 	"\x18NewFeedbackErrorResponse2\x96\x04\n" +
 	"\tTzService\x128\n" +
 	"\aCheckTz\x12\x15.tz.v1.CheckTzRequest\x1a\x16.tz.v1.CheckTzResponse\x12\x86\x01\n" +
@@ -1789,6 +1781,7 @@ func file_tz_v1_tz_proto_init() {
 	file_tz_v1_tz_proto_msgTypes[9].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[12].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[15].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[16].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

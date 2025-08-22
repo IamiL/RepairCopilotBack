@@ -829,6 +829,44 @@ func (s *Storage) GetMissingInstancesByErrorID(ctx context.Context, errorID uuid
 	return &instances, nil
 }
 
+// UpdateInvalidInstanceFeedback updates feedback for invalid instance
+func (s *Storage) UpdateInvalidInstanceFeedback(ctx context.Context, instanceID uuid.UUID, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error {
+	query := `
+		UPDATE invalid_instances 
+		SET feedback_exists = $2, feedback_mark = $3, feedback_comment = $4, feedback_user = $5
+		WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, instanceID, true, feedbackMark, feedbackComment, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update invalid instance feedback: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("invalid instance not found: %s", instanceID.String())
+	}
+
+	return nil
+}
+
+// UpdateMissingInstanceFeedback updates feedback for missing instance
+func (s *Storage) UpdateMissingInstanceFeedback(ctx context.Context, instanceID uuid.UUID, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error {
+	query := `
+		UPDATE missing_instances 
+		SET feedback_exists = $2, feedback_mark = $3, feedback_comment = $4, feedback_user = $5
+		WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, instanceID, true, feedbackMark, feedbackComment, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update missing instance feedback: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("missing instance not found: %s", instanceID.String())
+	}
+
+	return nil
+}
+
 // CreateErrorFeedback creates new feedback for an error
 func (s *Storage) CreateErrorFeedback(ctx context.Context, req *modelrepo.CreateErrorFeedbackRequest) (*modelrepo.ErrorFeedback, error) {
 	query := `

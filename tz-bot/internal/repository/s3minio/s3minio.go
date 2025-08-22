@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"log"
 )
 
 type Config struct {
@@ -318,13 +319,14 @@ func (s *MinioRepository) SaveDocument(
 	ctx context.Context,
 	id string,
 	object []byte,
+	bucketName string,
 ) error {
 	log.Printf("saving building preview: id=%s, size=%d bytes", id, len(object))
 
 	reader := bytes.NewReader(object)
 	info, err := s.Session.PutObject(
 		ctx,
-		"docs",
+		bucketName,
 		id+".docx",
 		reader,
 		int64(len(object)),

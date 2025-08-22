@@ -17,8 +17,8 @@ type OutInvalidError struct {
 	HtmlIDStr                   string
 	ErrorID                     uuid.UUID
 	Rationale                   string
-	SuggestedFix                string
-	Quote                       string
+	SuggestedFix                string `json:"suggested_fix"`
+	Quote                       string `json:"quote"`
 	OriginalQuote               string
 	QuoteLines                  *[]string
 	UntilTheEndOfSentence       bool
