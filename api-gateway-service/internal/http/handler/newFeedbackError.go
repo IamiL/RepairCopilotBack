@@ -15,7 +15,6 @@ type NewFeedbackErrorRequest struct {
 	InstanceType    string  `json:"instance_type"`
 	FeedbackMark    *bool   `json:"feedback_mark"`
 	FeedbackComment *string `json:"feedback_comment"`
-	UserID          string  `json:"user_id"`
 }
 
 type NewFeedbackErrorResponse struct {
@@ -35,10 +34,17 @@ func NewFeedbackErrorHandler(
 		log := log.With(slog.String("op", op))
 
 		// Получение токена из заголовков
-		token := r.Header.Get("X-Access-Token")
+		cookie, err := r.Cookie("auth_token")
+		if err != nil {
+			log.Info("no auth token cookie found")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		token := cookie.Value
 		if token == "" {
-			log.Error("access token is missing")
-			http.Error(w, "access token is missing", http.StatusUnauthorized)
+			log.Info("empty auth token")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
@@ -88,23 +94,11 @@ func NewFeedbackErrorHandler(
 		}
 
 		// Парсинг userID из сессии
-		sessionUserID, err := uuid.Parse(session.UserID)
+		userID, err := uuid.Parse(session.UserID)
 		if err != nil {
 			log.Error("invalid session user ID", slog.String("error", err.Error()))
 			http.Error(w, "invalid session", http.StatusInternalServerError)
 			return
-		}
-
-		userID := sessionUserID
-		if req.UserID != "" {
-			// Если указан user_id в запросе, используем его (для админов)
-			if parsedUserID, err := uuid.Parse(req.UserID); err == nil {
-				userID = parsedUserID
-			} else {
-				log.Error("invalid user_id format", slog.String("error", err.Error()))
-				http.Error(w, "invalid user_id format", http.StatusBadRequest)
-				return
-			}
 		}
 
 		// Вызов gRPC метода
@@ -117,7 +111,7 @@ func NewFeedbackErrorHandler(
 
 		// Логирование действия
 		if actionLogRepo != nil {
-			err = actionLogRepo.CreateActionLog(r.Context(), "create_feedback", sessionUserID)
+			err = actionLogRepo.CreateActionLog(r.Context(), "create_feedback", userID)
 			if err != nil {
 				log.Error("failed to log action", slog.String("error", err.Error()))
 				// Не прерываем выполнение, просто логируем ошибку
@@ -132,12 +126,12 @@ func NewFeedbackErrorHandler(
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		
+
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Error("failed to encode response", slog.String("error", err.Error()))
 		}
 
-		log.Info("feedback created successfully", 
+		log.Info("feedback created successfully",
 			slog.String("instance_id", req.InstanceID),
 			slog.String("instance_type", req.InstanceType),
 			slog.String("user_id", userID.String()))
