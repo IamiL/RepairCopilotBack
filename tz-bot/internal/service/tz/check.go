@@ -259,6 +259,10 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	outInvalidErrors, outMissingErrors, outHtml := HandleErrors(&groupReports, &markdownResponse.Mappings)
 
+	for i := range *outInvalidErrors {
+		(*outInvalidErrors)[i].OrderNumber = i
+	}
+
 	for i := range errors {
 		invalidInstances := make([]OutInvalidError, 0)
 		missingInstances := make([]OutMissingError, 0)
