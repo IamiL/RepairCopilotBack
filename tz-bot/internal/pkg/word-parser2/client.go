@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -113,8 +114,11 @@ func (c *WordConverterClient) Convert(fileData []byte, filename string) (string,
 		return "", "", "", fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
+	// Replace escaped quotes with regular quotes in HTML
+	cleanedHTML := strings.ReplaceAll(convertResp.HTML, `\"`, `"`)
+	
 	// Extract paragraphs from HTML
-	extraction := extractParagraphs(convertResp.HTML)
+	extraction := extractParagraphs(cleanedHTML)
 
 	return extraction.HTMLWithPlaceholder, convertResp.CSS, extraction.Paragraphs, nil
 }
