@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetUserInfo_FullMethodName        = "/user.v1.UserService/GetUserInfo"
-	UserService_RegisterUser_FullMethodName       = "/user.v1.UserService/RegisterUser"
-	UserService_Login_FullMethodName              = "/user.v1.UserService/Login"
-	UserService_GetLoginById_FullMethodName       = "/user.v1.UserService/GetLoginById"
-	UserService_GetUserByLogin_FullMethodName     = "/user.v1.UserService/GetUserByLogin"
-	UserService_GetAllUsers_FullMethodName        = "/user.v1.UserService/GetAllUsers"
-	UserService_GetUserDetailsById_FullMethodName = "/user.v1.UserService/GetUserDetailsById"
+	UserService_GetUserInfo_FullMethodName             = "/user.v1.UserService/GetUserInfo"
+	UserService_RegisterUser_FullMethodName            = "/user.v1.UserService/RegisterUser"
+	UserService_Login_FullMethodName                   = "/user.v1.UserService/Login"
+	UserService_GetLoginById_FullMethodName            = "/user.v1.UserService/GetLoginById"
+	UserService_GetUserByLogin_FullMethodName          = "/user.v1.UserService/GetUserByLogin"
+	UserService_GetAllUsers_FullMethodName             = "/user.v1.UserService/GetAllUsers"
+	UserService_GetUserDetailsById_FullMethodName      = "/user.v1.UserService/GetUserDetailsById"
+	UserService_UpdateInspectionsPerDay_FullMethodName = "/user.v1.UserService/UpdateInspectionsPerDay"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -48,6 +49,8 @@ type UserServiceClient interface {
 	GetAllUsers(ctx context.Context, in *GetAllUsersRequest, opts ...grpc.CallOption) (*GetAllUsersResponse, error)
 	// GetUserDetailsById получает все поля пользователя по ID (включая updated_at)
 	GetUserDetailsById(ctx context.Context, in *GetUserDetailsByIdRequest, opts ...grpc.CallOption) (*GetUserDetailsByIdResponse, error)
+	// UpdateInspectionsPerDay изменяет inspections_per_day для пользователей
+	UpdateInspectionsPerDay(ctx context.Context, in *UpdateInspectionsPerDayRequest, opts ...grpc.CallOption) (*UpdateInspectionsPerDayResponse, error)
 }
 
 type userServiceClient struct {
@@ -128,6 +131,16 @@ func (c *userServiceClient) GetUserDetailsById(ctx context.Context, in *GetUserD
 	return out, nil
 }
 
+func (c *userServiceClient) UpdateInspectionsPerDay(ctx context.Context, in *UpdateInspectionsPerDayRequest, opts ...grpc.CallOption) (*UpdateInspectionsPerDayResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateInspectionsPerDayResponse)
+	err := c.cc.Invoke(ctx, UserService_UpdateInspectionsPerDay_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -148,6 +161,8 @@ type UserServiceServer interface {
 	GetAllUsers(context.Context, *GetAllUsersRequest) (*GetAllUsersResponse, error)
 	// GetUserDetailsById получает все поля пользователя по ID (включая updated_at)
 	GetUserDetailsById(context.Context, *GetUserDetailsByIdRequest) (*GetUserDetailsByIdResponse, error)
+	// UpdateInspectionsPerDay изменяет inspections_per_day для пользователей
+	UpdateInspectionsPerDay(context.Context, *UpdateInspectionsPerDayRequest) (*UpdateInspectionsPerDayResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -178,6 +193,9 @@ func (UnimplementedUserServiceServer) GetAllUsers(context.Context, *GetAllUsersR
 }
 func (UnimplementedUserServiceServer) GetUserDetailsById(context.Context, *GetUserDetailsByIdRequest) (*GetUserDetailsByIdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserDetailsById not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateInspectionsPerDay(context.Context, *UpdateInspectionsPerDayRequest) (*UpdateInspectionsPerDayResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInspectionsPerDay not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -326,6 +344,24 @@ func _UserService_GetUserDetailsById_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UpdateInspectionsPerDay_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateInspectionsPerDayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdateInspectionsPerDay(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_UpdateInspectionsPerDay_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdateInspectionsPerDay(ctx, req.(*UpdateInspectionsPerDayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -360,6 +396,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserDetailsById",
 			Handler:    _UserService_GetUserDetailsById_Handler,
+		},
+		{
+			MethodName: "UpdateInspectionsPerDay",
+			Handler:    _UserService_UpdateInspectionsPerDay_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

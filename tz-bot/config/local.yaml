@@ -17,6 +17,9 @@ llm_client:
   model: "qwen3-235b-a22b-fp8/latest"
 word_parser_client:
   url: http://94.241.142.172:8082
+word_parser_client2:
+  host: localhost
+  port: 8060
 markdown_service_client:
   url: http://94.241.142.172:8089
 s3minio:

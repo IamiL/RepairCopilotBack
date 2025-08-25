@@ -245,6 +245,31 @@ func (s *serverAPI) GetUserDetailsById(ctx context.Context, req *pb.GetUserDetai
 	}, nil
 }
 
+func (s *serverAPI) UpdateInspectionsPerDay(ctx context.Context, req *pb.UpdateInspectionsPerDayRequest) (*pb.UpdateInspectionsPerDayResponse, error) {
+	if req.InspectionsPerDay == 0 {
+		return nil, status.Error(codes.InvalidArgument, "inspections_per_day must be greater than 0")
+	}
+
+	rowsAffected, err := s.userService.UpdateInspectionsPerDay(ctx, req.UserId, int(req.InspectionsPerDay))
+	if err != nil {
+		s.log.Error("failed to update inspections_per_day", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to update inspections_per_day")
+	}
+
+	var message string
+	if req.UserId == "" {
+		message = fmt.Sprintf("Successfully updated inspections_per_day for all users")
+	} else {
+		message = fmt.Sprintf("Successfully updated inspections_per_day for user %s", req.UserId)
+	}
+
+	return &pb.UpdateInspectionsPerDayResponse{
+		Success:      true,
+		Message:      message,
+		UpdatedCount: uint32(rowsAffected),
+	}, nil
+}
+
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {
 //	s.log.Error("GetLoginById not implemented")
 //}

@@ -56,30 +56,30 @@ type OutMissingError struct {
 
 func HandleErrors(report *[]tz_llm_client.GroupReport, htmlBlocks *[]markdown_service_client.Mapping) (*[]OutInvalidError, *[]OutMissingError, string) {
 	startId := uint32(1)
-	fmt.Println("отладка 21")
+	//fmt.Println("отладка 21")
 	outInvalidErrors, lastId := NewInvalidErrorsSet(startId, report)
-	fmt.Println("отладка 22")
+	//fmt.Println("отладка 22")
 	missingErrors, lastId := NewIMissingErrorsSet(lastId, report)
-	fmt.Println("отладка 23")
+	//fmt.Println("отладка 23")
 	errors := InjectInvalidErrorsToHtmlBlocks(outInvalidErrors, htmlBlocks)
 	if len(errors) > 0 {
-		fmt.Println("отладка 24")
+		//fmt.Println("отладка 24")
 		for _, err := range errors {
 			fmt.Println(err.Error())
 		}
 	}
-	fmt.Println("отладка 25")
+	//fmt.Println("отладка 25")
 	html := ""
-	fmt.Println("отладка 26")
+	//fmt.Println("отладка 26")
 
 	for i := range *htmlBlocks {
 		html = html + (*htmlBlocks)[i].HtmlContent
 	}
-	fmt.Println("отладка 27")
+	//fmt.Println("отладка 27")
 
 	// Сортируем ошибки по порядку их появления в HTML тексте
 	sortedInvalidErrors := sortInvalidErrorsByHtmlOrder(outInvalidErrors, html)
-	fmt.Println("отладка 28")
+	//fmt.Println("отладка 28")
 	return sortedInvalidErrors, missingErrors, html
 }
 

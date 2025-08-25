@@ -8,6 +8,7 @@ import (
 	"regexp"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
+	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
 	"sort"
 	"strconv"
@@ -122,16 +123,18 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	timeStart := time.Now()
 
-	htmlText, css, err := tz.wordConverterClient.Convert(file, filename)
-	if err != nil {
-		tz.log.Error("Ошибка обработки файла в wordConverterClient: " + err.Error())
-		tz.updateVersionWithError(ctx, versionID, "error")
-		return
-	}
+	//htmlText, css, err := tz.wordConverterClient.Convert(file, filename)
+	//if err != nil {
+	//	tz.log.Error("Ошибка обработки файла в wordConverterClient: " + err.Error())
+	//	tz.updateVersionWithError(ctx, versionID, "error")
+	//	return
+	//}
+
+	htmlWithPlaceholder, css, paragraphs, err := tz.wordConverterClient2.Convert(file, filename)
 
 	log.Info("конвертация word файла в htmlText успешна")
 
-	markdownResponse, err := tz.markdownClient.Convert(*htmlText)
+	markdownResponse, err := tz.markdownClient.Convert(paragraphs)
 	if err != nil {
 		log.Error("ошибка конвертации HTML в markdown: ", sl.Err(err))
 		tz.updateVersionWithError(ctx, versionID, "error")
@@ -257,7 +260,9 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		errors[i].OrderNumber = i
 	}
 
-	outInvalidErrors, outMissingErrors, outHtml := HandleErrors(&groupReports, &markdownResponse.Mappings)
+	outInvalidErrors, outMissingErrors, html := HandleErrors(&groupReports, &markdownResponse.Mappings)
+
+	outHtml := word_parser2.InsertParagraphs(htmlWithPlaceholder, html)
 
 	for i := range *outInvalidErrors {
 		(*outInvalidErrors)[i].OrderNumber = i
@@ -315,7 +320,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		ID:             versionID,
 		UpdatedAt:      time.Now(),
 		OutHTML:        outHtml,
-		CSS:            *css,
+		CSS:            css,
 		CheckedFileID:  docxReportID,
 		AllRubs:        allRubs,
 		AllTokens:      allTokens,

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
+	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
 	"sort"
 	"strconv"
@@ -22,15 +23,16 @@ import (
 )
 
 type Tz struct {
-	log                 *slog.Logger
-	wordConverterClient *word_parser_client.Client
-	markdownClient      *markdown_service_client.Client
-	llmClient           *tz_llm_client.Client
-	promtBuilderClient  *promt_builder.Client
-	tgClient            *tg_client.Client
-	s3                  *s3minio.MinioRepository
-	repo                Repository
-	ggID                int
+	log                  *slog.Logger
+	wordConverterClient  *word_parser_client.Client
+	wordConverterClient2 *word_parser2.WordConverterClient
+	markdownClient       *markdown_service_client.Client
+	llmClient            *tz_llm_client.Client
+	promtBuilderClient   *promt_builder.Client
+	tgClient             *tg_client.Client
+	s3                   *s3minio.MinioRepository
+	repo                 Repository
+	ggID                 int
 }
 
 type ErrorSaver interface {
@@ -84,6 +86,7 @@ type llmRequestResult struct {
 func New(
 	log *slog.Logger,
 	wordConverterClient *word_parser_client.Client,
+	wordConverterClient2 *word_parser2.WordConverterClient,
 	markdownClient *markdown_service_client.Client,
 	llmClient *tz_llm_client.Client,
 	promtBuilder *promt_builder.Client,
@@ -92,15 +95,16 @@ func New(
 	repo Repository,
 ) *Tz {
 	return &Tz{
-		log:                 log,
-		wordConverterClient: wordConverterClient,
-		markdownClient:      markdownClient,
-		llmClient:           llmClient,
-		promtBuilderClient:  promtBuilder,
-		tgClient:            tgClient,
-		s3:                  s3,
-		repo:                repo,
-		ggID:                1,
+		log:                  log,
+		wordConverterClient:  wordConverterClient,
+		wordConverterClient2: wordConverterClient2,
+		markdownClient:       markdownClient,
+		llmClient:            llmClient,
+		promtBuilderClient:   promtBuilder,
+		tgClient:             tgClient,
+		s3:                   s3,
+		repo:                 repo,
+		ggID:                 1,
 	}
 }
 

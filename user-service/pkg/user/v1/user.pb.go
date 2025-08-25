@@ -1001,6 +1001,120 @@ func (x *GetUserDetailsByIdResponse) GetEmail() string {
 	return ""
 }
 
+// UpdateInspectionsPerDayRequest запрос для изменения inspections_per_day
+type UpdateInspectionsPerDayRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	UserId            string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                                     // UUID пользователя (если пустой, то для всех пользователей)
+	InspectionsPerDay uint32                 `protobuf:"varint,2,opt,name=inspections_per_day,json=inspectionsPerDay,proto3" json:"inspections_per_day,omitempty"` // Новое значение inspections_per_day
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *UpdateInspectionsPerDayRequest) Reset() {
+	*x = UpdateInspectionsPerDayRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateInspectionsPerDayRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateInspectionsPerDayRequest) ProtoMessage() {}
+
+func (x *UpdateInspectionsPerDayRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateInspectionsPerDayRequest.ProtoReflect.Descriptor instead.
+func (*UpdateInspectionsPerDayRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *UpdateInspectionsPerDayRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UpdateInspectionsPerDayRequest) GetInspectionsPerDay() uint32 {
+	if x != nil {
+		return x.InspectionsPerDay
+	}
+	return 0
+}
+
+// UpdateInspectionsPerDayResponse ответ на изменение inspections_per_day
+type UpdateInspectionsPerDayResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`                               // Статус успешности операции
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`                                // Сообщение о результате
+	UpdatedCount  uint32                 `protobuf:"varint,3,opt,name=updated_count,json=updatedCount,proto3" json:"updated_count,omitempty"` // Количество обновленных записей
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateInspectionsPerDayResponse) Reset() {
+	*x = UpdateInspectionsPerDayResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateInspectionsPerDayResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateInspectionsPerDayResponse) ProtoMessage() {}
+
+func (x *UpdateInspectionsPerDayResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateInspectionsPerDayResponse.ProtoReflect.Descriptor instead.
+func (*UpdateInspectionsPerDayResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *UpdateInspectionsPerDayResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *UpdateInspectionsPerDayResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *UpdateInspectionsPerDayResponse) GetUpdatedCount() uint32 {
+	if x != nil {
+		return x.UpdatedCount
+	}
+	return 0
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
@@ -1078,7 +1192,14 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"updated_at\x18\x06 \x01(\tR\tupdatedAt\x12\x12\n" +
 	"\x04name\x18\a \x01(\tR\x04name\x12\x18\n" +
 	"\asurname\x18\b \x01(\tR\asurname\x12\x14\n" +
-	"\x05email\x18\t \x01(\tR\x05email2\xa5\x04\n" +
+	"\x05email\x18\t \x01(\tR\x05email\"i\n" +
+	"\x1eUpdateInspectionsPerDayRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12.\n" +
+	"\x13inspections_per_day\x18\x02 \x01(\rR\x11inspectionsPerDay\"z\n" +
+	"\x1fUpdateInspectionsPerDayResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
+	"\rupdated_count\x18\x03 \x01(\rR\fupdatedCount2\x93\x05\n" +
 	"\vUserService\x12H\n" +
 	"\vGetUserInfo\x12\x1b.user.v1.GetUserInfoRequest\x1a\x1c.user.v1.GetUserInfoResponse\x12K\n" +
 	"\fRegisterUser\x12\x1c.user.v1.RegisterUserRequest\x1a\x1d.user.v1.RegisterUserResponse\x126\n" +
@@ -1086,7 +1207,8 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\fGetLoginById\x12\x1c.user.v1.GetLoginByIdRequest\x1a\x1d.user.v1.GetLoginByIdResponse\x12Q\n" +
 	"\x0eGetUserByLogin\x12\x1e.user.v1.GetUserByLoginRequest\x1a\x1f.user.v1.GetUserByLoginResponse\x12H\n" +
 	"\vGetAllUsers\x12\x1b.user.v1.GetAllUsersRequest\x1a\x1c.user.v1.GetAllUsersResponse\x12]\n" +
-	"\x12GetUserDetailsById\x12\".user.v1.GetUserDetailsByIdRequest\x1a#.user.v1.GetUserDetailsByIdResponseB\tZ\auser/v1b\x06proto3"
+	"\x12GetUserDetailsById\x12\".user.v1.GetUserDetailsByIdRequest\x1a#.user.v1.GetUserDetailsByIdResponse\x12l\n" +
+	"\x17UpdateInspectionsPerDay\x12'.user.v1.UpdateInspectionsPerDayRequest\x1a(.user.v1.UpdateInspectionsPerDayResponseB\tZ\auser/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
@@ -1100,28 +1222,30 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_user_v1_user_proto_rawDescData
 }
 
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_user_v1_user_proto_goTypes = []any{
-	(*GetUserInfoRequest)(nil),         // 0: user.v1.GetUserInfoRequest
-	(*GetUserInfoResponse)(nil),        // 1: user.v1.GetUserInfoResponse
-	(*RegisterUserRequest)(nil),        // 2: user.v1.RegisterUserRequest
-	(*RegisterUserResponse)(nil),       // 3: user.v1.RegisterUserResponse
-	(*LoginRequest)(nil),               // 4: user.v1.LoginRequest
-	(*LoginResponse)(nil),              // 5: user.v1.LoginResponse
-	(*GetLoginByIdRequest)(nil),        // 6: user.v1.GetLoginByIdRequest
-	(*GetLoginByIdResponse)(nil),       // 7: user.v1.GetLoginByIdResponse
-	(*GetUserByLoginRequest)(nil),      // 8: user.v1.GetUserByLoginRequest
-	(*GetUserByLoginResponse)(nil),     // 9: user.v1.GetUserByLoginResponse
-	(*GetAllUsersRequest)(nil),         // 10: user.v1.GetAllUsersRequest
-	(*UserInfo)(nil),                   // 11: user.v1.UserInfo
-	(*GetAllUsersResponse)(nil),        // 12: user.v1.GetAllUsersResponse
-	(*GetUserDetailsByIdRequest)(nil),  // 13: user.v1.GetUserDetailsByIdRequest
-	(*GetUserDetailsByIdResponse)(nil), // 14: user.v1.GetUserDetailsByIdResponse
-	(*timestamppb.Timestamp)(nil),      // 15: google.protobuf.Timestamp
+	(*GetUserInfoRequest)(nil),              // 0: user.v1.GetUserInfoRequest
+	(*GetUserInfoResponse)(nil),             // 1: user.v1.GetUserInfoResponse
+	(*RegisterUserRequest)(nil),             // 2: user.v1.RegisterUserRequest
+	(*RegisterUserResponse)(nil),            // 3: user.v1.RegisterUserResponse
+	(*LoginRequest)(nil),                    // 4: user.v1.LoginRequest
+	(*LoginResponse)(nil),                   // 5: user.v1.LoginResponse
+	(*GetLoginByIdRequest)(nil),             // 6: user.v1.GetLoginByIdRequest
+	(*GetLoginByIdResponse)(nil),            // 7: user.v1.GetLoginByIdResponse
+	(*GetUserByLoginRequest)(nil),           // 8: user.v1.GetUserByLoginRequest
+	(*GetUserByLoginResponse)(nil),          // 9: user.v1.GetUserByLoginResponse
+	(*GetAllUsersRequest)(nil),              // 10: user.v1.GetAllUsersRequest
+	(*UserInfo)(nil),                        // 11: user.v1.UserInfo
+	(*GetAllUsersResponse)(nil),             // 12: user.v1.GetAllUsersResponse
+	(*GetUserDetailsByIdRequest)(nil),       // 13: user.v1.GetUserDetailsByIdRequest
+	(*GetUserDetailsByIdResponse)(nil),      // 14: user.v1.GetUserDetailsByIdResponse
+	(*UpdateInspectionsPerDayRequest)(nil),  // 15: user.v1.UpdateInspectionsPerDayRequest
+	(*UpdateInspectionsPerDayResponse)(nil), // 16: user.v1.UpdateInspectionsPerDayResponse
+	(*timestamppb.Timestamp)(nil),           // 17: google.protobuf.Timestamp
 }
 var file_user_v1_user_proto_depIdxs = []int32{
-	15, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
-	15, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	17, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
+	17, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
 	11, // 2: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
 	0,  // 3: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
 	2,  // 4: user.v1.UserService.RegisterUser:input_type -> user.v1.RegisterUserRequest
@@ -1130,15 +1254,17 @@ var file_user_v1_user_proto_depIdxs = []int32{
 	8,  // 7: user.v1.UserService.GetUserByLogin:input_type -> user.v1.GetUserByLoginRequest
 	10, // 8: user.v1.UserService.GetAllUsers:input_type -> user.v1.GetAllUsersRequest
 	13, // 9: user.v1.UserService.GetUserDetailsById:input_type -> user.v1.GetUserDetailsByIdRequest
-	1,  // 10: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
-	3,  // 11: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	5,  // 12: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	7,  // 13: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
-	9,  // 14: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
-	12, // 15: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
-	14, // 16: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
-	10, // [10:17] is the sub-list for method output_type
-	3,  // [3:10] is the sub-list for method input_type
+	15, // 10: user.v1.UserService.UpdateInspectionsPerDay:input_type -> user.v1.UpdateInspectionsPerDayRequest
+	1,  // 11: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
+	3,  // 12: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	5,  // 13: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	7,  // 14: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	9,  // 15: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
+	12, // 16: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
+	14, // 17: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
+	16, // 18: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
+	11, // [11:19] is the sub-list for method output_type
+	3,  // [3:11] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -1155,7 +1281,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

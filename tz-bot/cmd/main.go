@@ -26,6 +26,7 @@ func main() {
 		&cfg.GRPC,
 		&cfg.Llm,
 		&cfg.WordParser,
+		&cfg.WordParser2,
 		&cfg.MarkdownService,
 		&cfg.PromtBuilder,
 		&cfg.Tg,

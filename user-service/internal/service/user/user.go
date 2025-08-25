@@ -61,6 +61,7 @@ type UserProvider interface {
 	GetUserDetailsById(ctx context.Context, userID string) (*postgresUser.UserFullDetails, error)
 	GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID, error)
 	GetUserAuthDataByLogin(ctx context.Context, login string) (*postgresUser.UserAuthData, error)
+	UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay int) (int64, error)
 }
 
 func New(
@@ -327,4 +328,30 @@ func (u *User) GetUserDetailsById(ctx context.Context, userID string) (*postgres
 	log.Info("user details retrieved successfully", slog.String("login", userDetails.Login))
 
 	return userDetails, nil
+}
+
+func (u *User) UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay int) (int64, error) {
+	const op = "User.UpdateInspectionsPerDay"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+		slog.Int("inspectionsPerDay", inspectionsPerDay),
+	)
+
+	if userID == "" {
+		log.Info("updating inspections_per_day for all users")
+	} else {
+		log.Info("updating inspections_per_day for specific user")
+	}
+
+	rowsAffected, err := u.usrProvider.UpdateInspectionsPerDay(ctx, userID, inspectionsPerDay)
+	if err != nil {
+		log.Error("failed to update inspections_per_day", sl.Err(err))
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("inspections_per_day updated successfully", slog.Int64("rowsAffected", rowsAffected))
+
+	return rowsAffected, nil
 }

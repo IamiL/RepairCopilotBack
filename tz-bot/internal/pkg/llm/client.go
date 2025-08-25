@@ -135,9 +135,9 @@ func (c *Client) makeHTTPRequest(req Request) (*SuccessResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка сериализации запроса: %w", err)
 	}
-	fmt.Println("JSON DATA В ЗАПРОСЕ К ЛЛМ НАЧАЛО:")
-	fmt.Println(string(jsonData))
-	fmt.Println("--------КОНЕЦ-----------")
+	//fmt.Println("JSON DATA В ЗАПРОСЕ К ЛЛМ НАЧАЛО:")
+	//fmt.Println(string(jsonData))
+	//fmt.Println("--------КОНЕЦ-----------")
 
 	fmt.Printf("Отправляем запрос к LLM API: %s\n", c.url)
 
@@ -158,6 +158,8 @@ func (c *Client) makeHTTPRequest(req Request) (*SuccessResponse, error) {
 	// Выполняем запрос
 	resp, err := client.Do(httpReq)
 	if err != nil {
+		fmt.Println("---------ОШИБКА ПРИ ВЫПОЛНЕНИИ HTTP-ЗАПРОСА К LLM-REQUESTER. URL: ", c.url, ", JSON: ", string(jsonData))
+		fmt.Println("---------КОНЕЦ ОШИБКИ ПРИ ВЫПОЛНЕНИИ HTTP-ЗАПРОСА К LLM-REQUESTER")
 		return nil, fmt.Errorf("ошибка выполнения HTTP запроса: %w", err)
 	}
 	defer resp.Body.Close()
@@ -238,11 +240,11 @@ func (c *Client) SendMessage(Messages []struct {
 	response, err := c.makeHTTPRequest(req)
 	if err != nil {
 
-		fmt.Println(" отладка 11")
+		//fmt.Println(" отладка 11")
 		return nil, err
 	}
 
-	fmt.Println(" отладка 12")
+	//fmt.Println(" отладка 12")
 
 	// Если репозиторий настроен, сохраняем ответ в кэш
 	if c.repository != nil && response != nil {

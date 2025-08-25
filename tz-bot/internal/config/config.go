@@ -10,6 +10,7 @@ import (
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
+	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 
@@ -24,6 +25,7 @@ type Config struct {
 	PromtBuilder    promt_builder.Config           `yaml:"promt_builder"`
 	Tg              tg_client.Config               `yaml:"tg_client"`
 	WordParser      word_parser_client.Config      `yaml:"word_parser_client"`
+	WordParser2     word_parser2.Config            `yaml:"word_parser_client2"`
 	MarkdownService markdown_service_client.Config `yaml:"markdown_service_client"`
 	S3minio         s3minio.Config                 `yaml:"s3minio"`
 	Postgres        postgres.Config                `yaml:"postgres"`

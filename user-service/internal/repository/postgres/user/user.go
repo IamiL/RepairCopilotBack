@@ -289,3 +289,23 @@ func (s *Storage) GetUserAuthDataByLogin(ctx context.Context, login string) (*Us
 
 	return &authData, nil
 }
+
+func (s *Storage) UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay int) (int64, error) {
+	var query string
+	var args []interface{}
+
+	if userID == "" {
+		query = `UPDATE users SET inspections_per_day = $1`
+		args = []interface{}{inspectionsPerDay}
+	} else {
+		query = `UPDATE users SET inspections_per_day = $1 WHERE id = $2`
+		args = []interface{}{inspectionsPerDay, userID}
+	}
+
+	result, err := s.db.Exec(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("database error: %w", err)
+	}
+
+	return result.RowsAffected(), nil
+}

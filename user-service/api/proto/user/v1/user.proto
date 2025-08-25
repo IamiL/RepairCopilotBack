@@ -28,6 +28,9 @@ service UserService {
   
   // GetUserDetailsById получает все поля пользователя по ID (включая updated_at)
   rpc GetUserDetailsById(GetUserDetailsByIdRequest) returns (GetUserDetailsByIdResponse);
+  
+  // UpdateInspectionsPerDay изменяет inspections_per_day для пользователей
+  rpc UpdateInspectionsPerDay(UpdateInspectionsPerDayRequest) returns (UpdateInspectionsPerDayResponse);
 }
 
 // GetUserInfoRequest запрос для получения информации о пользователе по ID
@@ -142,4 +145,17 @@ message GetUserDetailsByIdResponse {
   string name = 7;              // Имя пользователя
   string surname = 8;           // Фамилия пользователя
   string email = 9;             // Email пользователя
+}
+
+// UpdateInspectionsPerDayRequest запрос для изменения inspections_per_day
+message UpdateInspectionsPerDayRequest {
+  string user_id = 1;           // UUID пользователя (если пустой, то для всех пользователей)
+  uint32 inspections_per_day = 2; // Новое значение inspections_per_day
+}
+
+// UpdateInspectionsPerDayResponse ответ на изменение inspections_per_day
+message UpdateInspectionsPerDayResponse {
+  bool success = 1;             // Статус успешности операции
+  string message = 2;           // Сообщение о результате
+  uint32 updated_count = 3;     // Количество обновленных записей
 }
