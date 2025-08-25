@@ -97,8 +97,8 @@ func GetUserInfoHandler(
 		}
 
 		// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
-		versions = make([]TechnicalSpecificationVersion, len(tzVersions))
-		for i, tzVersion := range tzVersions {
+		versions = make([]TechnicalSpecificationVersion, len(tzVersions.Versions))
+		for i, tzVersion := range tzVersions.Versions {
 			versions[i] = TechnicalSpecificationVersion{
 				VersionId:                  tzVersion.VersionId,
 				TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,

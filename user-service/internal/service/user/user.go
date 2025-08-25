@@ -13,8 +13,6 @@ import (
 	"strconv"
 	"time"
 
-	postgresUser "repairCopilotBot/user-service/internal/repository/postgres/user"
-
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -56,11 +54,11 @@ type UserSaver interface {
 type UserProvider interface {
 	User(ctx context.Context, userID uuid.UUID) (*models.User, error)
 	LoginById(ctx context.Context, uid string) (string, error)
-	GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error)
-	GetUserInfo(ctx context.Context, userID string) (*postgresUser.UserDetailedInfo, error)
-	GetUserDetailsById(ctx context.Context, userID string) (*postgresUser.UserFullDetails, error)
+	GetAllUsers(ctx context.Context) ([]UserShortInfo, error)
+	//GetUserInfo(ctx context.Context, userID string) (UserDetailedInfo, error)
+	GetUserDetailsById(ctx context.Context, userID string) (*UserFullDetails, error)
 	GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID, error)
-	GetUserAuthDataByLogin(ctx context.Context, login string) (*postgresUser.UserAuthData, error)
+	GetUserAuthDataByLogin(ctx context.Context, login string) (*UserAuthData, error)
 	UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay int) (int64, error)
 }
 
@@ -149,6 +147,13 @@ func (u *User) RegisterNewUser(ctx context.Context, login string, pass string, f
 	return uid, nil
 }
 
+type UserAuthData struct {
+	ID       uuid.UUID
+	PassHash []byte
+	IsAdmin1 bool
+	IsAdmin2 bool
+}
+
 func (u *User) Login(ctx context.Context, login string, password string) (uuid.UUID, bool, bool, error) {
 	const op = "User.Login"
 
@@ -232,7 +237,16 @@ func (u *User) GetLoginById(ctx context.Context, userId string) (string, error) 
 	return login, nil
 }
 
-func (u *User) GetAllUsers(ctx context.Context) ([]postgresUser.UserInfo, error) {
+type UserShortInfo struct {
+	ID        uuid.UUID
+	FirstName string
+	LastName  string
+	Email     string
+	IsAdmin1  bool
+	IsAdmin2  bool
+}
+
+func (u *User) GetAllUsers(ctx context.Context) ([]UserShortInfo, error) {
 	const op = "User.GetAllUsers"
 
 	log := u.log.With(
@@ -304,7 +318,19 @@ func (u *User) User(ctx context.Context, userID uuid.UUID) (*models.User, error)
 //	return uid, login, name, surname, email, isAdmin1, isAdmin2, nil
 //}
 
-func (u *User) GetUserDetailsById(ctx context.Context, userID string) (*postgresUser.UserFullDetails, error) {
+type UserFullDetails struct {
+	ID        uuid.UUID
+	Login     string
+	Name      string
+	Surname   string
+	Email     string
+	IsAdmin1  bool
+	IsAdmin2  bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (u *User) GetUserDetailsById(ctx context.Context, userID string) (*UserFullDetails, error) {
 	const op = "User.GetUserDetailsById"
 
 	log := u.log.With(

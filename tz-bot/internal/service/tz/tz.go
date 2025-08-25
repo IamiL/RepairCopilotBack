@@ -290,6 +290,16 @@ func (tz *Tz) GetTechnicalSpecificationVersions(ctx context.Context, userID uuid
 		return nil, fmt.Errorf("failed to get versions by user ID: %w", err)
 	}
 
+	for i := range versions {
+		if versions[i].ReportFileID != "" {
+			versions[i].ReportFileID = "https://timuroid.ru/reports/" + versions[i].ReportFileID + ".docx"
+		}
+
+		if versions[i].OriginalFileID != "" {
+			versions[i].OriginalFileID = "https://timuroid.ru/docx/" + versions[i].OriginalFileID + ".docx"
+		}
+	}
+
 	log.Info("technical specification versions retrieved successfully", slog.Int("count", len(versions)))
 	return versions, nil
 }

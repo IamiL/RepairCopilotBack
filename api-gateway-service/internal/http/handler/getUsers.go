@@ -8,9 +8,9 @@ import (
 	userserviceclient "repairCopilotBot/user-service/client"
 )
 
-type GetUsersResponse struct {
-	Users []userserviceclient.UserInfo `json:"users"`
-}
+//type GetUsersResponse struct {
+//	Users []userserviceclient.UserInfo `json:"users"`
+//}
 
 func GetUsersHandler(
 	log *slog.Logger,
@@ -62,18 +62,18 @@ func GetUsersHandler(
 			return
 		}
 
-		response := GetUsersResponse{
-			Users: users,
-		}
+		//response := GetUsersResponse{
+		//	Users: users,
+		//}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
-		if err := json.NewEncoder(w).Encode(response); err != nil {
+		if err := json.NewEncoder(w).Encode(users); err != nil {
 			log.Error("failed to encode response", slog.String("error", err.Error()))
 			return
 		}
 
-		log.Info("get users request completed successfully", slog.Int("users_count", len(users)))
+		//log.Info("get users request completed successfully", slog.Int("users_count", len(*users.Users)))
 	}
 }

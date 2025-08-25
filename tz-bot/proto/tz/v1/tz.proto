@@ -101,6 +101,8 @@ message TechnicalSpecificationVersion {
   string technical_specification_name = 2;
   int32 version_number = 3;
   string created_at = 4;
+  string original_file_link = 5;
+  string report_file_link = 6;
 }
 
 message GetVersionRequest {

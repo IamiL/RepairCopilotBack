@@ -752,6 +752,8 @@ type TechnicalSpecificationVersion struct {
 	TechnicalSpecificationName string                 `protobuf:"bytes,2,opt,name=technical_specification_name,json=technicalSpecificationName,proto3" json:"technical_specification_name,omitempty"`
 	VersionNumber              int32                  `protobuf:"varint,3,opt,name=version_number,json=versionNumber,proto3" json:"version_number,omitempty"`
 	CreatedAt                  string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	OriginalFileLink           string                 `protobuf:"bytes,5,opt,name=original_file_link,json=originalFileLink,proto3" json:"original_file_link,omitempty"`
+	ReportFileLink             string                 `protobuf:"bytes,6,opt,name=report_file_link,json=reportFileLink,proto3" json:"report_file_link,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -810,6 +812,20 @@ func (x *TechnicalSpecificationVersion) GetVersionNumber() int32 {
 func (x *TechnicalSpecificationVersion) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *TechnicalSpecificationVersion) GetOriginalFileLink() string {
+	if x != nil {
+		return x.OriginalFileLink
+	}
+	return ""
+}
+
+func (x *TechnicalSpecificationVersion) GetReportFileLink() string {
+	if x != nil {
+		return x.ReportFileLink
 	}
 	return ""
 }
@@ -1606,14 +1622,16 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"(GetTechnicalSpecificationVersionsRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"m\n" +
 	")GetTechnicalSpecificationVersionsResponse\x12@\n" +
-	"\bversions\x18\x01 \x03(\v2$.tz.v1.TechnicalSpecificationVersionR\bversions\"\xc6\x01\n" +
+	"\bversions\x18\x01 \x03(\v2$.tz.v1.TechnicalSpecificationVersionR\bversions\"\x9e\x02\n" +
 	"\x1dTechnicalSpecificationVersion\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x01 \x01(\tR\tversionId\x12@\n" +
 	"\x1ctechnical_specification_name\x18\x02 \x01(\tR\x1atechnicalSpecificationName\x12%\n" +
 	"\x0eversion_number\x18\x03 \x01(\x05R\rversionNumber\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\tR\tcreatedAt\"2\n" +
+	"created_at\x18\x04 \x01(\tR\tcreatedAt\x12,\n" +
+	"\x12original_file_link\x18\x05 \x01(\tR\x10originalFileLink\x12(\n" +
+	"\x10report_file_link\x18\x06 \x01(\tR\x0ereportFileLink\"2\n" +
 	"\x11GetVersionRequest\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x01 \x01(\tR\tversionId\"\xf4\x05\n" +

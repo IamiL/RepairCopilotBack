@@ -57,6 +57,8 @@ type VersionSummary struct {
 	TechnicalSpecificationName string    `db:"technical_specification_name"`
 	VersionNumber              int       `db:"version_number"`
 	CreatedAt                  time.Time `db:"created_at"`
+	OriginalFileID             string    `db:"original_file_id"`
+	ReportFileID               string
 }
 
 // VersionWithErrorCounts represents a complete version with all fields and error counts

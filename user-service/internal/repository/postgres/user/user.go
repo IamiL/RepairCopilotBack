@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"repairCopilotBot/user-service/internal/domain/models"
+	userservice "repairCopilotBot/user-service/internal/service/user"
 	"time"
 
 	"github.com/google/uuid"
@@ -169,8 +170,8 @@ type UserInfo struct {
 	IsAdmin2 bool
 }
 
-func (s *Storage) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
-	query := `SELECT id, login, name, surname, email, is_admin1, is_admin2 FROM users ORDER BY login`
+func (s *Storage) GetAllUsers(ctx context.Context) ([]userservice.UserShortInfo, error) {
+	query := `SELECT id, first_name, last_name, email, is_admin1, is_admin2 FROM users ORDER BY created_at DESC`
 
 	rows, err := s.db.Query(ctx, query)
 	if err != nil {
@@ -178,10 +179,10 @@ func (s *Storage) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
 	}
 	defer rows.Close()
 
-	var users []UserInfo
+	var users []userservice.UserShortInfo
 	for rows.Next() {
-		var user UserInfo
-		err := rows.Scan(&user.ID, &user.Login, &user.Name, &user.Surname, &user.Email, &user.IsAdmin1, &user.IsAdmin2)
+		var user userservice.UserShortInfo
+		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.IsAdmin1, &user.IsAdmin2)
 		if err != nil {
 			return nil, fmt.Errorf("scan error: %w", err)
 		}
@@ -195,48 +196,48 @@ func (s *Storage) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
 	return users, nil
 }
 
-type UserDetailedInfo struct {
-	ID        string
-	Login     string
-	Name      string
-	Surname   string
-	Email     string
-	IsAdmin1  bool
-	IsAdmin2  bool
-	CreatedAt time.Time
-}
+//type UserDetailedInfo struct {
+//	ID        string
+//	Login     string
+//	Name      string
+//	Surname   string
+//	Email     string
+//	IsAdmin1  bool
+//	IsAdmin2  bool
+//	CreatedAt time.Time
+//}
 
-type UserFullDetails struct {
-	ID        string
-	Login     string
-	Name      string
-	Surname   string
-	Email     string
-	IsAdmin1  bool
-	IsAdmin2  bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
+//type UserFullDetails struct {
+//	ID        string
+//	Login     string
+//	Name      string
+//	Surname   string
+//	Email     string
+//	IsAdmin1  bool
+//	IsAdmin2  bool
+//	CreatedAt time.Time
+//	UpdatedAt time.Time
+//}
 
-func (s *Storage) GetUserInfo(ctx context.Context, userID string) (*UserDetailedInfo, error) {
-	query := `SELECT id, login, name, surname, email, is_admin1, is_admin2, created_at FROM users WHERE id = $1`
+//func (s *Storage) GetUserInfo(ctx context.Context, userID string) (*userservice.UserDetailedInfo, error) {
+//	query := `SELECT id, login, name, surname, email, is_admin1, is_admin2, created_at FROM users WHERE id = $1`
+//
+//	var user UserDetailedInfo
+//	err := s.db.QueryRow(ctx, query, userID).Scan(&user.ID, &user.Login, &user.Name, &user.Surname, &user.Email, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt)
+//	if err != nil {
+//		if errors.Is(err, pgx.ErrNoRows) {
+//			return nil, repo.ErrUserNotFound
+//		}
+//		return nil, fmt.Errorf("database error: %w", err)
+//	}
+//
+//	return &user, nil
+//}
 
-	var user UserDetailedInfo
-	err := s.db.QueryRow(ctx, query, userID).Scan(&user.ID, &user.Login, &user.Name, &user.Surname, &user.Email, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, repo.ErrUserNotFound
-		}
-		return nil, fmt.Errorf("database error: %w", err)
-	}
-
-	return &user, nil
-}
-
-func (s *Storage) GetUserDetailsById(ctx context.Context, userID string) (*UserFullDetails, error) {
+func (s *Storage) GetUserDetailsById(ctx context.Context, userID string) (*userservice.UserFullDetails, error) {
 	query := `SELECT id, login, name, surname, email, is_admin1, is_admin2, created_at, updated_at FROM users WHERE id = $1`
 
-	var user UserFullDetails
+	var user userservice.UserFullDetails
 	err := s.db.QueryRow(ctx, query, userID).Scan(&user.ID, &user.Login, &user.Name, &user.Surname, &user.Email, &user.IsAdmin1, &user.IsAdmin2, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -268,17 +269,10 @@ func (s *Storage) GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID
 	return uid, nil
 }
 
-type UserAuthData struct {
-	ID       uuid.UUID
-	PassHash []byte
-	IsAdmin1 bool
-	IsAdmin2 bool
-}
-
-func (s *Storage) GetUserAuthDataByLogin(ctx context.Context, login string) (*UserAuthData, error) {
+func (s *Storage) GetUserAuthDataByLogin(ctx context.Context, login string) (*userservice.UserAuthData, error) {
 	query := `SELECT id, pass_hash, is_admin1, is_admin2 FROM users WHERE login = $1`
 
-	var authData UserAuthData
+	var authData userservice.UserAuthData
 	err := s.db.QueryRow(ctx, query, login).Scan(&authData.ID, &authData.PassHash, &authData.IsAdmin1, &authData.IsAdmin2)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

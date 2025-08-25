@@ -230,6 +230,8 @@ func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *
 			TechnicalSpecificationName: version.TechnicalSpecificationName,
 			VersionNumber:              int32(version.VersionNumber),
 			CreatedAt:                  version.CreatedAt.Format(time.RFC3339),
+			OriginalFileLink:           version.OriginalFileID,
+			ReportFileLink:             version.ReportFileID,
 		}
 	}
 

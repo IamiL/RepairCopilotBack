@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
+	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 	userserviceclient "repairCopilotBot/user-service/client"
 
 	"github.com/google/uuid"
@@ -107,7 +108,7 @@ func MeHandler(
 					email = userInfo.Email
 				}
 
-				var tzVersions []client.TechnicalSpecificationVersion
+				var tzVersions *tzv1.GetTechnicalSpecificationVersionsResponse
 
 				if userInfo.IsConfirmed {
 					isConfirmed = true
@@ -117,8 +118,8 @@ func MeHandler(
 						// Не возвращаем ошибку, продолжаем с пустым массивом версий
 					} else {
 						// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
-						versions = make([]TechnicalSpecificationVersion, len(tzVersions))
-						for i, tzVersion := range tzVersions {
+						versions = make([]TechnicalSpecificationVersion, len(tzVersions.Versions))
+						for i, tzVersion := range tzVersions.Versions {
 							versions[i] = TechnicalSpecificationVersion{
 								VersionId:                  tzVersion.VersionId,
 								TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,

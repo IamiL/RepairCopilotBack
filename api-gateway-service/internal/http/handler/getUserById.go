@@ -17,6 +17,8 @@ type UserTechnicalSpecificationVersion struct {
 	TechnicalSpecificationName string `json:"technical_specification_name"`
 	VersionNumber              int32  `json:"version_number"`
 	CreatedAt                  string `json:"created_at"`
+	OriginalFileLink           string `json:"original_file_link"`
+	ReportFileLink             string `json:"report_file_link"`
 }
 
 type GetUserByIdResponse struct {
@@ -112,13 +114,15 @@ func GetUserByIdHandler(
 			versions = []UserTechnicalSpecificationVersion{}
 		} else {
 			// Конвертируем в response структуру
-			versions = make([]UserTechnicalSpecificationVersion, len(tzVersions))
-			for i, tzVersion := range tzVersions {
+			versions = make([]UserTechnicalSpecificationVersion, len(tzVersions.Versions))
+			for i, tzVersion := range tzVersions.Versions {
 				versions[i] = UserTechnicalSpecificationVersion{
 					VersionId:                  tzVersion.VersionId,
 					TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
 					VersionNumber:              tzVersion.VersionNumber,
 					CreatedAt:                  tzVersion.CreatedAt,
+					OriginalFileLink:           tzVersion.OriginalFileLink,
+					ReportFileLink:             tzVersion.ReportFileLink,
 				}
 			}
 		}

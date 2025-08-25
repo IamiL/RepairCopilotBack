@@ -65,13 +65,13 @@ func LoginHandler(
 			// Не возвращаем ошибку, продолжаем с пустым массивом версий
 		} else {
 			// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
-			versions = make([]TechnicalSpecificationVersion, len(tzVersions))
-			for i, tzVersion := range tzVersions {
+			versions = make([]TechnicalSpecificationVersion, len(tzVersions.Versions))
+			for i, tzVersion := range tzVersions.Versions {
 				versions[i] = TechnicalSpecificationVersion{
-					VersionId:                 tzVersion.VersionId,
+					VersionId:                  tzVersion.VersionId,
 					TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
-					VersionNumber:             tzVersion.VersionNumber,
-					CreatedAt:                 tzVersion.CreatedAt,
+					VersionNumber:              tzVersion.VersionNumber,
+					CreatedAt:                  tzVersion.CreatedAt,
 				}
 			}
 		}
@@ -115,7 +115,7 @@ func LoginHandler(
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		
+
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.With(slog.String("op", op)).Error("failed to encode response", slog.String("error", err.Error()))
 			return
@@ -127,8 +127,8 @@ func LoginHandler(
 			log.With(slog.String("op", op)).Error("failed to create action log", slog.String("error", err.Error()))
 		}
 
-		log.With(slog.String("op", op)).Info("user logged in successfully", 
-			slog.String("login", req.Login), 
+		log.With(slog.String("op", op)).Info("user logged in successfully",
+			slog.String("login", req.Login),
 			slog.String("sessionID", sessionId.String()),
 			slog.String("userID", loginResp.UserID),
 			slog.Int("versions_count", len(versions)))

@@ -712,13 +712,12 @@ func (*GetAllUsersRequest) Descriptor() ([]byte, []int) {
 // UserInfo информация о пользователе
 type UserInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`        // UUID пользователя
-	Login         string                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`                        // Логин пользователя
-	IsAdmin1      bool                   `protobuf:"varint,3,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"` // Флаг администратора 1
-	IsAdmin2      bool                   `protobuf:"varint,4,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"` // Флаг администратора 2
-	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`                          // Имя пользователя
-	Surname       string                 `protobuf:"bytes,6,opt,name=surname,proto3" json:"surname,omitempty"`                    // Фамилия пользователя
-	Email         string                 `protobuf:"bytes,7,opt,name=email,proto3" json:"email,omitempty"`                        // Email пользователя
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // UUID пользователя
+	FirstName     string                 `protobuf:"bytes,2,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"` // Логин пользователя
+	LastName      string                 `protobuf:"bytes,3,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`    // Имя пользователя
+	Email         string                 `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
+	IsAdmin1      bool                   `protobuf:"varint,5,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"` // Флаг администратора 1
+	IsAdmin2      bool                   `protobuf:"varint,6,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"` // Флаг администратора 2
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -760,9 +759,23 @@ func (x *UserInfo) GetUserId() string {
 	return ""
 }
 
-func (x *UserInfo) GetLogin() string {
+func (x *UserInfo) GetFirstName() string {
 	if x != nil {
-		return x.Login
+		return x.FirstName
+	}
+	return ""
+}
+
+func (x *UserInfo) GetLastName() string {
+	if x != nil {
+		return x.LastName
+	}
+	return ""
+}
+
+func (x *UserInfo) GetEmail() string {
+	if x != nil {
+		return x.Email
 	}
 	return ""
 }
@@ -779,27 +792,6 @@ func (x *UserInfo) GetIsAdmin2() bool {
 		return x.IsAdmin2
 	}
 	return false
-}
-
-func (x *UserInfo) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *UserInfo) GetSurname() string {
-	if x != nil {
-		return x.Surname
-	}
-	return ""
-}
-
-func (x *UserInfo) GetEmail() string {
-	if x != nil {
-		return x.Email
-	}
-	return ""
 }
 
 // GetAllUsersResponse ответ со списком всех пользователей
@@ -1168,15 +1160,15 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x04name\x18\x05 \x01(\tR\x04name\x12\x18\n" +
 	"\asurname\x18\x06 \x01(\tR\asurname\x12\x14\n" +
 	"\x05email\x18\a \x01(\tR\x05email\"\x14\n" +
-	"\x12GetAllUsersRequest\"\xb7\x01\n" +
+	"\x12GetAllUsersRequest\"\xaf\x01\n" +
 	"\bUserInfo\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
-	"\x05login\x18\x02 \x01(\tR\x05login\x12\x1b\n" +
-	"\tis_admin1\x18\x03 \x01(\bR\bisAdmin1\x12\x1b\n" +
-	"\tis_admin2\x18\x04 \x01(\bR\bisAdmin2\x12\x12\n" +
-	"\x04name\x18\x05 \x01(\tR\x04name\x12\x18\n" +
-	"\asurname\x18\x06 \x01(\tR\asurname\x12\x14\n" +
-	"\x05email\x18\a \x01(\tR\x05email\">\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"first_name\x18\x02 \x01(\tR\tfirstName\x12\x1b\n" +
+	"\tlast_name\x18\x03 \x01(\tR\blastName\x12\x14\n" +
+	"\x05email\x18\x04 \x01(\tR\x05email\x12\x1b\n" +
+	"\tis_admin1\x18\x05 \x01(\bR\bisAdmin1\x12\x1b\n" +
+	"\tis_admin2\x18\x06 \x01(\bR\bisAdmin2\">\n" +
 	"\x13GetAllUsersResponse\x12'\n" +
 	"\x05users\x18\x01 \x03(\v2\x11.user.v1.UserInfoR\x05users\"4\n" +
 	"\x19GetUserDetailsByIdRequest\x12\x17\n" +

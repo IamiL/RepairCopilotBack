@@ -123,7 +123,7 @@ type UserInfo struct {
 }
 
 // GetAllUsers получает список всех пользователей
-func (c *UserClient) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
+func (c *UserClient) GetAllUsers(ctx context.Context) (*pb.GetAllUsersResponse, error) {
 	req := &pb.GetAllUsersRequest{}
 
 	resp, err := c.client.GetAllUsers(ctx, req)
@@ -140,17 +140,17 @@ func (c *UserClient) GetAllUsers(ctx context.Context) ([]UserInfo, error) {
 		return nil, err
 	}
 
-	users := make([]UserInfo, len(resp.Users))
-	for i, user := range resp.Users {
-		users[i] = UserInfo{
-			UserID:   user.UserId,
-			Login:    user.Login,
-			IsAdmin1: user.IsAdmin1,
-			IsAdmin2: user.IsAdmin2,
-		}
-	}
+	//users := make([]UserInfo, len(resp.Users))
+	//for i, user := range resp.Users {
+	//	users[i] = UserInfo{
+	//		UserID:   user.UserId,
+	//		Login:    user.Login,
+	//		IsAdmin1: user.IsAdmin1,
+	//		IsAdmin2: user.IsAdmin2,
+	//	}
+	//}
 
-	return users, nil
+	return resp, nil
 }
 
 // GetUserInfo получает подробную информацию о пользователе по ID

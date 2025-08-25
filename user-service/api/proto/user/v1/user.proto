@@ -116,12 +116,11 @@ message GetAllUsersRequest {
 // UserInfo информация о пользователе
 message UserInfo {
   string user_id = 1;       // UUID пользователя
-  string login = 2;         // Логин пользователя
-  bool is_admin1 = 3;       // Флаг администратора 1
-  bool is_admin2 = 4;       // Флаг администратора 2
-  string name = 5;          // Имя пользователя
-  string surname = 6;       // Фамилия пользователя
-  string email = 7;         // Email пользователя
+  string first_name = 2;         // Логин пользователя
+  string last_name = 3;          // Имя пользователя
+  string email = 4;
+  bool is_admin1 = 5;       // Флаг администратора 1
+  bool is_admin2 = 6;       // Флаг администратора 2
 }
 
 // GetAllUsersResponse ответ со списком всех пользователей

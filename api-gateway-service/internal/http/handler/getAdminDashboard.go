@@ -8,6 +8,7 @@ import (
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
+	v1 "repairCopilotBot/user-service/pkg/user/v1"
 	"sync"
 	"time"
 
@@ -22,22 +23,22 @@ type AdminDashboardUserInfo struct {
 }
 
 type AdminDashboardVersionWithErrorCounts struct {
-	VersionId                     string   `json:"version_id"`
-	TechnicalSpecificationId      string   `json:"technical_specification_id"`
-	TechnicalSpecificationName    string   `json:"technical_specification_name"`
-	UserId                        string   `json:"user_id"`
-	VersionNumber                 int32    `json:"version_number"`
-	CreatedAt                     string   `json:"created_at"`
-	UpdatedAt                     string   `json:"updated_at"`
-	OriginalFileId                string   `json:"original_file_id"`
-	OutHtml                       string   `json:"out_html"`
-	Css                           string   `json:"css"`
-	CheckedFileId                 string   `json:"checked_file_id"`
-	AllRubs                       *float64 `json:"all_rubs"`
-	AllTokens                     *int64   `json:"all_tokens"`
-	InspectionTimeNanoseconds     *int64   `json:"inspection_time_nanoseconds"`
-	InvalidErrorCount             int32    `json:"invalid_error_count"`
-	MissingErrorCount             int32    `json:"missing_error_count"`
+	VersionId                  string   `json:"version_id"`
+	TechnicalSpecificationId   string   `json:"technical_specification_id"`
+	TechnicalSpecificationName string   `json:"technical_specification_name"`
+	UserId                     string   `json:"user_id"`
+	VersionNumber              int32    `json:"version_number"`
+	CreatedAt                  string   `json:"created_at"`
+	UpdatedAt                  string   `json:"updated_at"`
+	OriginalFileId             string   `json:"original_file_id"`
+	OutHtml                    string   `json:"out_html"`
+	Css                        string   `json:"css"`
+	CheckedFileId              string   `json:"checked_file_id"`
+	AllRubs                    *float64 `json:"all_rubs"`
+	AllTokens                  *int64   `json:"all_tokens"`
+	InspectionTimeNanoseconds  *int64   `json:"inspection_time_nanoseconds"`
+	InvalidErrorCount          int32    `json:"invalid_error_count"`
+	MissingErrorCount          int32    `json:"missing_error_count"`
 }
 
 type AdminDashboardVersionStatistics struct {
@@ -55,10 +56,10 @@ type AdminDashboardActionLog struct {
 }
 
 type AdminDashboardResponse struct {
-	Users      []AdminDashboardUserInfo                `json:"users"`
+	Users      *[]*v1.UserInfo                        `json:"users"`
 	Versions   []AdminDashboardVersionWithErrorCounts `json:"versions"`
 	Statistics *AdminDashboardVersionStatistics       `json:"statistics"`
-	ActionLogs []AdminDashboardActionLog               `json:"action_logs"`
+	ActionLogs []AdminDashboardActionLog              `json:"action_logs"`
 }
 
 func GetAdminDashboardHandler(
@@ -108,7 +109,7 @@ func GetAdminDashboardHandler(
 		defer cancel()
 
 		// Структуры для хранения результатов
-		var users []userserviceclient.UserInfo
+		var users *[]*v1.UserInfo
 		var versions []client.VersionWithErrorCounts
 		var statistics *client.VersionStatistics
 		var actionLogs []repository.ActionLog
@@ -128,18 +129,18 @@ func GetAdminDashboardHandler(
 		go func() {
 			defer wg.Done()
 			log.Info("fetching users from user-service")
-			
+
 			usersList, err := userServiceClient.GetAllUsers(ctx)
-			if err != nil {
+			if err != nil || usersList.Users == nil {
 				log.Error("failed to get users", slog.String("error", err.Error()))
 				addError(err)
 				return
 			}
-			
+
 			mu.Lock()
-			users = usersList
+			users = &usersList.Users
 			mu.Unlock()
-			log.Info("users fetched successfully", slog.Int("count", len(usersList)))
+			log.Info("users fetched successfully", slog.Int("count", len(*users)))
 		}()
 
 		// Запрос 2: GetAllVersions из tz-bot
@@ -147,14 +148,14 @@ func GetAdminDashboardHandler(
 		go func() {
 			defer wg.Done()
 			log.Info("fetching versions from tz-bot")
-			
+
 			versionsList, err := tzBotClient.GetAllVersions(ctx)
 			if err != nil {
 				log.Error("failed to get versions", slog.String("error", err.Error()))
 				addError(err)
 				return
 			}
-			
+
 			mu.Lock()
 			versions = versionsList
 			mu.Unlock()
@@ -166,14 +167,14 @@ func GetAdminDashboardHandler(
 		go func() {
 			defer wg.Done()
 			log.Info("fetching statistics from tz-bot")
-			
+
 			stats, err := tzBotClient.GetVersionStatistics(ctx)
 			if err != nil {
 				log.Error("failed to get statistics", slog.String("error", err.Error()))
 				addError(err)
 				return
 			}
-			
+
 			mu.Lock()
 			statistics = stats
 			mu.Unlock()
@@ -185,14 +186,14 @@ func GetAdminDashboardHandler(
 		go func() {
 			defer wg.Done()
 			log.Info("fetching action logs")
-			
+
 			logs, err := actionLogRepo.GetAllActionLogs(ctx)
 			if err != nil {
 				log.Error("failed to get action logs", slog.String("error", err.Error()))
 				addError(err)
 				return
 			}
-			
+
 			mu.Lock()
 			actionLogs = logs
 			mu.Unlock()
@@ -213,36 +214,36 @@ func GetAdminDashboardHandler(
 		}
 
 		// Конвертируем пользователей
-		dashboardUsers := make([]AdminDashboardUserInfo, len(users))
-		for i, user := range users {
-			dashboardUsers[i] = AdminDashboardUserInfo{
-				UserID:   user.UserID,
-				Login:    user.Login,
-				IsAdmin1: user.IsAdmin1,
-				IsAdmin2: user.IsAdmin2,
-			}
-		}
+		//dashboardUsers := make([]AdminDashboardUserInfo, len(users))
+		//for i, user := range users {
+		//	dashboardUsers[i] = AdminDashboardUserInfo{
+		//		UserID:   user.UserID,
+		//		Login:    user.Login,
+		//		IsAdmin1: user.IsAdmin1,
+		//		IsAdmin2: user.IsAdmin2,
+		//	}
+		//}
 
 		// Конвертируем версии
 		dashboardVersions := make([]AdminDashboardVersionWithErrorCounts, len(versions))
 		for i, version := range versions {
 			dashboardVersions[i] = AdminDashboardVersionWithErrorCounts{
-				VersionId:                     version.VersionId,
-				TechnicalSpecificationId:      version.TechnicalSpecificationId,
-				TechnicalSpecificationName:    version.TechnicalSpecificationName,
-				UserId:                        version.UserId,
-				VersionNumber:                 version.VersionNumber,
-				CreatedAt:                     version.CreatedAt,
-				UpdatedAt:                     version.UpdatedAt,
-				OriginalFileId:                version.OriginalFileId,
-				OutHtml:                       version.OutHtml,
-				Css:                           version.Css,
-				CheckedFileId:                 version.CheckedFileId,
-				AllRubs:                       version.AllRubs,
-				AllTokens:                     version.AllTokens,
-				InspectionTimeNanoseconds:     version.InspectionTimeNanoseconds,
-				InvalidErrorCount:             version.InvalidErrorCount,
-				MissingErrorCount:             version.MissingErrorCount,
+				VersionId:                  version.VersionId,
+				TechnicalSpecificationId:   version.TechnicalSpecificationId,
+				TechnicalSpecificationName: version.TechnicalSpecificationName,
+				UserId:                     version.UserId,
+				VersionNumber:              version.VersionNumber,
+				CreatedAt:                  version.CreatedAt,
+				UpdatedAt:                  version.UpdatedAt,
+				OriginalFileId:             version.OriginalFileId,
+				OutHtml:                    version.OutHtml,
+				Css:                        version.Css,
+				CheckedFileId:              version.CheckedFileId,
+				AllRubs:                    version.AllRubs,
+				AllTokens:                  version.AllTokens,
+				InspectionTimeNanoseconds:  version.InspectionTimeNanoseconds,
+				InvalidErrorCount:          version.InvalidErrorCount,
+				MissingErrorCount:          version.MissingErrorCount,
 			}
 		}
 
@@ -269,7 +270,7 @@ func GetAdminDashboardHandler(
 		}
 
 		response := AdminDashboardResponse{
-			Users:      dashboardUsers,
+			Users:      users,
 			Versions:   dashboardVersions,
 			Statistics: dashboardStatistics,
 			ActionLogs: dashboardActionLogs,
@@ -284,7 +285,7 @@ func GetAdminDashboardHandler(
 		}
 
 		log.Info("admin dashboard request completed successfully",
-			slog.Int("users_count", len(users)),
+			slog.Int("users_count", len(*users)),
 			slog.Int("versions_count", len(versions)),
 			slog.Bool("statistics_available", statistics != nil),
 			slog.Int("action_logs_count", len(actionLogs)))

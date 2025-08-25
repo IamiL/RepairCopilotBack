@@ -180,13 +180,12 @@ func (s *serverAPI) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest)
 	var pbUsers []*pb.UserInfo
 	for _, user := range users {
 		pbUsers = append(pbUsers, &pb.UserInfo{
-			UserId:   user.ID,
-			Login:    user.Login,
-			Name:     user.Name,
-			Surname:  user.Surname,
-			Email:    user.Email,
-			IsAdmin1: user.IsAdmin1,
-			IsAdmin2: user.IsAdmin2,
+			UserId:    user.ID.String(),
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			IsAdmin1:  user.IsAdmin1,
+			IsAdmin2:  user.IsAdmin2,
 		})
 	}
 
@@ -233,7 +232,7 @@ func (s *serverAPI) GetUserDetailsById(ctx context.Context, req *pb.GetUserDetai
 	}
 
 	return &pb.GetUserDetailsByIdResponse{
-		UserId:    userDetails.ID,
+		UserId:    userDetails.ID.String(),
 		Login:     userDetails.Login,
 		Name:      userDetails.Name,
 		Surname:   userDetails.Surname,
