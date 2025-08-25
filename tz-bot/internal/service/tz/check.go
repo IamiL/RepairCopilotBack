@@ -130,7 +130,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	//	return
 	//}
 
-	htmlWithPlaceholder, css, paragraphs, err := tz.wordConverterClient2.Convert(file, filename)
+	htmlWithPlaceholder, _, paragraphs, err := tz.wordConverterClient2.Convert(file, filename)
 
 	log.Info("конвертация word файла в htmlText успешна")
 
@@ -320,7 +320,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		ID:             versionID,
 		UpdatedAt:      time.Now(),
 		OutHTML:        outHtml,
-		CSS:            css,
+		CSS:            "",
 		CheckedFileID:  docxReportID,
 		AllRubs:        allRubs,
 		AllTokens:      allTokens,
