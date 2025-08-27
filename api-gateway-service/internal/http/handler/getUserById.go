@@ -8,7 +8,6 @@ import (
 	"repairCopilotBot/tz-bot/client"
 	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 	userserviceclient "repairCopilotBot/user-service/client"
-	grpcUserModel "repairCopilotBot/user-service/pkg/user/v1"
 
 	"github.com/google/uuid"
 )
@@ -23,7 +22,7 @@ type UserTechnicalSpecificationVersion struct {
 }
 
 type GetUserByIdResponse struct {
-	*grpcUserModel.GetUserInfoResponse
+	*userserviceclient.GetUserInfoResponse
 	//Name                string                              `json:"firstName"`
 	//Surname             string                              `json:"lastName"`
 	//Email               string                              `json:"email"`

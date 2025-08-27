@@ -153,8 +153,14 @@ func (c *UserClient) GetAllUsers(ctx context.Context) (*pb.GetAllUsersResponse, 
 	return resp, nil
 }
 
+type GetUserInfoResponse struct {
+	pb.GetUserInfoResponse
+	RegisteredAt time.Time `json:"created_at"`
+	LastVisitAt  time.Time `json:"last_visit_at"`
+}
+
 // GetUserInfo получает подробную информацию о пользователе по ID
-func (c *UserClient) GetUserInfo(ctx context.Context, userID uuid.UUID) (*pb.GetUserInfoResponse, error) {
+func (c *UserClient) GetUserInfo(ctx context.Context, userID uuid.UUID) (*GetUserInfoResponse, error) {
 	req := &pb.GetUserInfoRequest{
 		UserId: userID.String(),
 	}
@@ -175,7 +181,11 @@ func (c *UserClient) GetUserInfo(ctx context.Context, userID uuid.UUID) (*pb.Get
 		return nil, err
 	}
 
-	return resp, nil
+	return &GetUserInfoResponse{
+		GetUserInfoResponse: *resp,
+		RegisteredAt:        resp.RegisteredAt.AsTime(),
+		LastVisitAt:         resp.LastVisitAt.AsTime(),
+	}, nil
 }
 
 // FullName представляет полное имя пользователя
