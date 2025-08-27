@@ -61,26 +61,6 @@ type VersionSummary struct {
 	ReportFileID               string
 }
 
-// VersionWithErrorCounts represents a complete version with all fields and error counts
-type VersionWithErrorCounts struct {
-	ID                         uuid.UUID      `db:"id"`
-	TechnicalSpecificationID   uuid.UUID      `db:"technical_specification_id"`
-	TechnicalSpecificationName string         `db:"technical_specification_name"`
-	UserID                     uuid.UUID      `db:"user_id"`
-	VersionNumber              int            `db:"version_number"`
-	CreatedAt                  time.Time      `db:"created_at"`
-	UpdatedAt                  time.Time      `db:"updated_at"`
-	OriginalFileID             string         `db:"original_file_id"`
-	OutHTML                    string         `db:"out_html"`
-	CSS                        string         `db:"css"`
-	CheckedFileID              string         `db:"checked_file_id"`
-	AllRubs                    *float64       `db:"all_rubs"`
-	AllTokens                  *int64         `db:"all_tokens"`
-	InspectionTime             *time.Duration `db:"inspection_time"`
-	InvalidErrorCount          int            `db:"invalid_error_count"`
-	MissingErrorCount          int            `db:"missing_error_count"`
-}
-
 // VersionStatistics represents aggregated statistics for all versions
 type VersionStatistics struct {
 	TotalVersions         int64          `db:"total_versions"`

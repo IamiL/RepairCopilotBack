@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
+
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 )
 
 type Client struct {
@@ -235,34 +235,29 @@ func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*tzv1.Get
 	return resp, nil
 }
 
-func (c *Client) GetAllVersions(ctx context.Context) ([]VersionWithErrorCounts, error) {
+type VersionAdminDashboard struct {
+	tzv1.VersionAdminDashboard
+	CreatedAt time.Time `json:"created_at"`
+	User      struct {
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+	}
+}
+
+func (c *Client) GetAllVersionsAdminDashboard(ctx context.Context) ([]*VersionAdminDashboard, error) {
 	const op = "tz_client.GetAllVersions"
 
-	resp, err := c.api.GetAllVersions(ctx, &tzv1.GetAllVersionsRequest{})
+	resp, err := c.api.GetAllVersionsAdminDashboard(ctx, &tzv1.GetAllVersionsAdminDashboardRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	versions := make([]VersionWithErrorCounts, len(resp.Versions))
-	for i, version := range resp.Versions {
-		versions[i] = VersionWithErrorCounts{
-			VersionId:                  version.VersionId,
-			TechnicalSpecificationId:   version.TechnicalSpecificationId,
-			TechnicalSpecificationName: version.TechnicalSpecificationName,
-			UserId:                     version.UserId,
-			VersionNumber:              version.VersionNumber,
-			CreatedAt:                  version.CreatedAt,
-			UpdatedAt:                  version.UpdatedAt,
-			OriginalFileId:             version.OriginalFileId,
-			OutHtml:                    version.OutHtml,
-			Css:                        version.Css,
-			CheckedFileId:              version.CheckedFileId,
-			AllRubs:                    version.AllRubs,
-			AllTokens:                  version.AllTokens,
-			InspectionTimeNanoseconds:  version.InspectionTimeNanoseconds,
-			InvalidErrorCount:          version.InvalidErrorCount,
-			MissingErrorCount:          version.MissingErrorCount,
-		}
+	versions := make([]*VersionAdminDashboard, 0, len(resp.Versions))
+	for _, version := range resp.Versions {
+		versions = append(versions, &VersionAdminDashboard{
+			VersionAdminDashboard: *version,
+			CreatedAt:             version.CreatedAt.AsTime(),
+		})
 	}
 
 	return versions, nil
@@ -301,6 +296,100 @@ func (c *Client) NewFeedbackError(ctx context.Context, instanceID uuid.UUID, ins
 	return nil
 }
 
+// DateRange представляет диапазон дат
+type DateRange struct {
+	MinDate string `json:"min_date"` // Формат: 2024-01-01
+	MaxDate string `json:"max_date"` // Формат: 2024-01-01
+}
+
+// GetVersionsDateRange получает минимальную и максимальную даты создания версий
+func (c *Client) GetVersionsDateRange(ctx context.Context) (*DateRange, error) {
+	const op = "tz_client.GetVersionsDateRange"
+
+	resp, err := c.api.GetVersionsDateRange(ctx, &tzv1.GetVersionsDateRangeRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return &DateRange{
+		MinDate: resp.MinDate,
+		MaxDate: resp.MaxDate,
+	}, nil
+}
+
+// DailyAnalyticsPoint представляет одну точку в ежедневной аналитике
+type DailyAnalyticsPoint struct {
+	Date        string   `json:"date"`
+	Consumption *int64   `json:"consumption,omitempty"`
+	ToPay       *float64 `json:"toPay,omitempty"`
+	Tz          *int32   `json:"tz,omitempty"`
+}
+
+// DailyAnalyticsResponse представляет ответ с ежедневной аналитикой
+type DailyAnalyticsResponse struct {
+	Series []*DailyAnalyticsPoint `json:"series"`
+}
+
+// GetDailyAnalytics получает ежедневную аналитику за указанный период
+func (c *Client) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timezone string, metrics []string) (*DailyAnalyticsResponse, error) {
+	const op = "tz_client.GetDailyAnalytics"
+
+	req := &tzv1.GetDailyAnalyticsRequest{
+		FromDate: fromDate,
+		ToDate:   toDate,
+		Metrics:  metrics,
+	}
+
+	if timezone != "" {
+		req.Timezone = &timezone
+	}
+
+	resp, err := c.api.GetDailyAnalytics(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	// Преобразуем protobuf ответ в Go структуры
+	points := make([]*DailyAnalyticsPoint, len(resp.Series))
+	for i, pbPoint := range resp.Series {
+		point := &DailyAnalyticsPoint{
+			Date: pbPoint.Date,
+		}
+
+		if pbPoint.Consumption != nil {
+			point.Consumption = pbPoint.Consumption
+		}
+		if pbPoint.ToPay != nil {
+			point.ToPay = pbPoint.ToPay
+		}
+		if pbPoint.Tz != nil {
+			point.Tz = pbPoint.Tz
+		}
+
+		points[i] = point
+	}
+
+	return &DailyAnalyticsResponse{
+		Series: points,
+	}, nil
+}
+
 func (c *Client) Close() error {
 	return c.cc.Close()
+}
+
+func (c *Client) GetFeedbacks(ctx context.Context, userID uuid.UUID) (*tzv1.GetFeedbacksResponse, error) {
+	const op = "tz_client.GetFeedbacks"
+	var userIDStr *string
+	if userID != uuid.Nil {
+		uid := userID.String()
+		userIDStr = &uid
+	}
+	resp, err := c.api.GetFeedbacks(ctx, &tzv1.GetFeedbacksRequest{
+		UserId: userIDStr,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp, nil
 }

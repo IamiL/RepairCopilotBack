@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
+	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 	userserviceclient "repairCopilotBot/user-service/client"
 	grpcUserModel "repairCopilotBot/user-service/pkg/user/v1"
 
@@ -35,7 +36,8 @@ type GetUserByIdResponse struct {
 	//ErrorFeedbackCount  int                                 `json:"errorFeedbackCount"`
 	//InspectionsPerDay   int                                 `json:"inspectionsPerDay"`
 	//InspectionsForToday int                                 `json:"inspectionsForToday"`
-	Versions []UserTechnicalSpecificationVersion `json:"versions"`
+	Versions  []UserTechnicalSpecificationVersion `json:"versions"`
+	Feedbacks []*tzv1.FeedbackInstance            `json:"feedbacks"`
 }
 
 func GetUserByIdHandler(
@@ -129,9 +131,16 @@ func GetUserByIdHandler(
 
 		log.Info("user versions fetched", slog.Int("versions_count", len(versions)))
 
+		feedbacks, err := tzBotClient.GetFeedbacks(r.Context(), userID)
+		if err != nil {
+			log.Error("failed to get inspections", slog.String("error", err.Error()))
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
 		// Конвертируем в response структуру с правильными JSON тегами
 		response := GetUserByIdResponse{userInfo,
-			versions}
+			versions, feedbacks.Feedbacks}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

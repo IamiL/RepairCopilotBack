@@ -242,7 +242,7 @@ func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *
 	}, nil
 }
 
-func (s *serverAPI) GetAllVersions(ctx context.Context, _ *tzv1.GetAllVersionsRequest) (*tzv1.GetAllVersionsResponse, error) {
+func (s *serverAPI) GetAllVersionsAdminDashboard(ctx context.Context, _ *tzv1.GetAllVersionsAdminDashboardRequest) (*tzv1.GetAllVersionsAdminDashboardResponse, error) {
 	const op = "grpc.tz.GetAllVersions"
 
 	log := s.log.With(
@@ -251,40 +251,29 @@ func (s *serverAPI) GetAllVersions(ctx context.Context, _ *tzv1.GetAllVersionsRe
 
 	log.Info("processing GetAllVersions request")
 
-	versions, err := s.tzService.GetAllVersions(ctx)
+	versions, err := s.tzService.GetAllVersionsAdminDashboard(ctx)
 	if err != nil {
 		log.Error("failed to get all versions", slog.String("error", err.Error()))
-		return nil, status.Error(codes.Internal, "failed to get all versions")
+		return nil, status.Error(codes.Internal, "failed to get all versions for admin dashboard")
 	}
 
 	// Конвертируем repository.VersionWithErrorCounts в proto сообщения
-	grpcVersions := make([]*tzv1.VersionWithErrorCounts, len(versions))
+	grpcVersions := make([]*tzv1.VersionAdminDashboard, len(versions))
 	for i, version := range versions {
-		grpcVersion := &tzv1.VersionWithErrorCounts{
+		grpcVersion := &tzv1.VersionAdminDashboard{
 			VersionId:                  version.ID.String(),
-			TechnicalSpecificationId:   version.TechnicalSpecificationID.String(),
 			TechnicalSpecificationName: version.TechnicalSpecificationName,
 			UserId:                     version.UserID.String(),
 			VersionNumber:              int32(version.VersionNumber),
-			CreatedAt:                  version.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:                  version.UpdatedAt.Format(time.RFC3339),
-			OriginalFileId:             version.OriginalFileID,
-			OutHtml:                    version.OutHTML,
-			Css:                        version.CSS,
-			CheckedFileId:              version.CheckedFileID,
-			InvalidErrorCount:          int32(version.InvalidErrorCount),
-			MissingErrorCount:          int32(version.MissingErrorCount),
-		}
-
-		// Устанавливаем опциональные поля
-		if version.AllRubs != nil {
-			grpcVersion.AllRubs = version.AllRubs
-		}
-		if version.AllTokens != nil {
-			grpcVersion.AllTokens = version.AllTokens
-		}
-		if version.InspectionTime != nil {
-			grpcVersion.InspectionTimeNanoseconds = (*int64)(version.InspectionTime)
+			AllTokens:                  version.AllTokens,
+			AllRubs:                    version.AllRubs,
+			NumberOfErrors:             int32(version.NumberOfErrors),
+			InspectionTime:             version.InspectionTime.Nanoseconds(),
+			OriginalFileSize:           version.OriginalFileSize,
+			NumberOfPages:              int32(version.NumberOfPages),
+			CreatedAt:                  timestamppb.New(version.CreatedAt),
+			OriginalFileLink:           version.OriginalFileLink,
+			ReportFileLink:             version.ReportFileLink,
 		}
 
 		grpcVersions[i] = grpcVersion
@@ -292,7 +281,7 @@ func (s *serverAPI) GetAllVersions(ctx context.Context, _ *tzv1.GetAllVersionsRe
 
 	log.Info("GetAllVersions request processed successfully", slog.Int("versions_count", len(versions)))
 
-	return &tzv1.GetAllVersionsResponse{
+	return &tzv1.GetAllVersionsAdminDashboardResponse{
 		Versions: grpcVersions,
 	}, nil
 }
@@ -551,4 +540,115 @@ func (s *serverAPI) NewFeedbackError(ctx context.Context, req *tzv1.NewFeedbackE
 	log.Info("NewFeedbackError request processed successfully")
 
 	return &tzv1.NewFeedbackErrorResponse{}, nil
+}
+
+func (s *serverAPI) GetVersionsDateRange(ctx context.Context, req *tzv1.GetVersionsDateRangeRequest) (*tzv1.GetVersionsDateRangeResponse, error) {
+	const op = "grpc.tz.GetVersionsDateRange"
+
+	log := s.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("processing GetVersionsDateRange request")
+
+	minDate, maxDate, err := s.tzService.GetVersionsDateRange(ctx)
+	if err != nil {
+		log.Error("failed to get versions date range", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to get versions date range")
+	}
+
+	log.Info("GetVersionsDateRange request processed successfully",
+		slog.String("min_date", minDate),
+		slog.String("max_date", maxDate))
+
+	return &tzv1.GetVersionsDateRangeResponse{
+		MinDate: minDate,
+		MaxDate: maxDate,
+	}, nil
+}
+
+func (s *serverAPI) GetDailyAnalytics(ctx context.Context, req *tzv1.GetDailyAnalyticsRequest) (*tzv1.GetDailyAnalyticsResponse, error) {
+	const op = "grpc.tz.GetDailyAnalytics"
+	var timezone string
+	if req.Timezone != nil {
+		timezone = *req.Timezone
+	}
+	log := s.log.With(
+		slog.String("op", op),
+		slog.String("from_date", req.FromDate),
+		slog.String("to_date", req.ToDate),
+		slog.String("timezone", timezone),
+		slog.Int("metrics_count", len(req.Metrics)),
+	)
+
+	log.Info("processing GetDailyAnalytics request")
+
+	points, err := s.tzService.GetDailyAnalytics(ctx, req.FromDate, req.ToDate, timezone, req.Metrics)
+	if err != nil {
+		log.Error("failed to get daily analytics", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to get daily analytics")
+	}
+
+	// Преобразуем внутренние типы в protobuf типы
+	pbPoints := make([]*tzv1.DailyAnalyticsPoint, len(points))
+	for i, point := range points {
+		pbPoint := &tzv1.DailyAnalyticsPoint{
+			Date: point.Date,
+		}
+
+		if point.Consumption != nil {
+			pbPoint.Consumption = point.Consumption
+		}
+		if point.ToPay != nil {
+			pbPoint.ToPay = point.ToPay
+		}
+		if point.Tz != nil {
+			pbPoint.Tz = point.Tz
+		}
+
+		pbPoints[i] = pbPoint
+	}
+
+	log.Info("GetDailyAnalytics request processed successfully",
+		slog.Int("points_count", len(pbPoints)))
+
+	return &tzv1.GetDailyAnalyticsResponse{
+		Series: pbPoints,
+	}, nil
+}
+
+func (s *serverAPI) GetFeedbacks(ctx context.Context, req *tzv1.GetFeedbacksRequest) (*tzv1.GetFeedbacksResponse, error) {
+	const op = "grpc.tz.GetFeedbacks"
+	var userID string
+	if req.UserId != nil {
+		userID = *req.UserId
+	}
+	log := s.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+	)
+
+	feedbacks, err := s.tzService.GetFeedbacks(ctx, req.UserId)
+	if err != nil {
+		log.Error("failed to get feedbacks", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to get feedbacks")
+	}
+
+	feedbacksOut := make([]*tzv1.FeedbackInstance, 0)
+
+	for _, feedback := range feedbacks {
+		feedbacksOut = append(feedbacksOut, &tzv1.FeedbackInstance{
+			InstanceId:                 feedback.InstanceID,
+			InstanceType:               feedback.InstanceType,
+			FeedbackMark:               feedback.FeedbackMark,
+			FeedbackComment:            feedback.FeedbackComment,
+			FeedbackUser:               feedback.FeedbackUser,
+			ErrorId:                    feedback.ErrorID,
+			VersionId:                  feedback.VersionID,
+			TechnicalSpecificationName: feedback.TechnicalSpecificationName,
+		})
+	}
+	return &tzv1.GetFeedbacksResponse{
+		Feedbacks: feedbacksOut,
+	}, nil
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"repairCopilotBot/tz-bot/internal/repository/models"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -287,37 +288,23 @@ func (s *Storage) GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]
 	return versions, nil
 }
 
-func (s *Storage) GetAllVersions(ctx context.Context) ([]*modelrepo.VersionWithErrorCounts, error) {
+func (s *Storage) GetAllVersionsAdminDashboard(ctx context.Context) ([]*tzservice.VersionAdminDashboard, error) {
 	query := `
 		SELECT 
 			v.id, 
-			v.technical_specification_id,
 			ts.name,
 			ts.user_id,
 			v.version_number, 
-			v.created_at,
-			v.updated_at,
-			v.original_file_id,
-			v.out_html,
-			v.css,
-			v.checked_file_id,
-			v.all_rubs,
 			v.all_tokens,
+			v.all_rubs,
+			v.number_of_errors,
 			v.inspection_time,
-			COALESCE(ie_count.count, 0) as invalid_error_count,
-			COALESCE(me_count.count, 0) as missing_error_count
+			v.original_file_size,
+			v.created_at,
+			v.original_file_id,
+			v.checked_file_id
 		FROM versions v
 		JOIN technical_specifications ts ON v.technical_specification_id = ts.id
-		LEFT JOIN (
-			SELECT version_id, COUNT(*) as count 
-			FROM invalid_errors 
-			GROUP BY version_id
-		) ie_count ON v.id = ie_count.version_id
-		LEFT JOIN (
-			SELECT version_id, COUNT(*) as count 
-			FROM missing_errors 
-			GROUP BY version_id
-		) me_count ON v.id = me_count.version_id
 		ORDER BY v.created_at DESC
 	`
 
@@ -327,30 +314,35 @@ func (s *Storage) GetAllVersions(ctx context.Context) ([]*modelrepo.VersionWithE
 	}
 	defer rows.Close()
 
-	var versions []*modelrepo.VersionWithErrorCounts
+	var versions []*tzservice.VersionAdminDashboard
 	for rows.Next() {
-		var version modelrepo.VersionWithErrorCounts
+		var numberOfErrors *int64
+		var originalFileSize *int64
+		var version tzservice.VersionAdminDashboard
 		err := rows.Scan(
 			&version.ID,
-			&version.TechnicalSpecificationID,
 			&version.TechnicalSpecificationName,
 			&version.UserID,
 			&version.VersionNumber,
-			&version.CreatedAt,
-			&version.UpdatedAt,
-			&version.OriginalFileID,
-			&version.OutHTML,
-			&version.CSS,
-			&version.CheckedFileID,
-			&version.AllRubs,
 			&version.AllTokens,
+			&version.AllRubs,
+			&numberOfErrors,
 			&version.InspectionTime,
-			&version.InvalidErrorCount,
-			&version.MissingErrorCount,
+			&originalFileSize,
+			&version.CreatedAt,
+			&version.OriginalFileId,
+			&version.ReportFileId,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan version with error counts: %w", err)
 		}
+		if numberOfErrors != nil {
+			version.NumberOfErrors = *numberOfErrors
+		}
+		if originalFileSize != nil {
+			version.OriginalFileSize = *originalFileSize
+		}
+
 		versions = append(versions, &version)
 	}
 
@@ -371,14 +363,23 @@ func (s *Storage) GetVersionStatistics(ctx context.Context) (*modelrepo.VersionS
 	`
 
 	var stats modelrepo.VersionStatistics
+	var avgInspectionTime *float64 // временная переменная для сканирования среднего значения
+
 	err := s.db.QueryRow(ctx, query).Scan(
 		&stats.TotalVersions,
 		&stats.TotalTokens,
 		&stats.TotalRubs,
-		&stats.AverageInspectionTime,
+		&avgInspectionTime,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get version statistics: %w", err)
+	}
+
+	// Преобразуем среднее значение в time.Duration, если значение не nil
+	if avgInspectionTime != nil {
+		// Среднее значение в наносекундах, преобразуем в time.Duration
+		duration := time.Duration(int64(*avgInspectionTime))
+		stats.AverageInspectionTime = &duration
 	}
 
 	return &stats, nil
@@ -915,4 +916,212 @@ func (s *Storage) SaveCachedResponse(ctx context.Context, req *modelrepo.CreateL
 	}
 
 	return &cache, nil
+}
+
+func (s *Storage) GetVersionsDateRange(ctx context.Context) (string, string, error) {
+	query := `
+		SELECT 
+			MIN(DATE(created_at)) as min_date,
+			MAX(DATE(created_at)) as max_date
+		FROM versions
+		WHERE created_at IS NOT NULL`
+
+	var minDate, maxDate *time.Time
+	err := s.db.QueryRow(ctx, query).Scan(&minDate, &maxDate)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get versions date range: %w", err)
+	}
+
+	// Форматируем даты в формат 2024-01-01
+	var minDateStr, maxDateStr string
+	if minDate != nil {
+		minDateStr = minDate.Format("2006-01-02")
+	}
+	if maxDate != nil {
+		maxDateStr = maxDate.Format("2006-01-02")
+	}
+
+	return minDateStr, maxDateStr, nil
+}
+
+func (s *Storage) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timezone string, metrics []string) ([]*tzservice.DailyAnalyticsPoint, error) {
+	// Определяем, какие метрики нужно включить
+	includeConsumption := len(metrics) == 0 || contains(metrics, "consumption")
+	includeToPay := len(metrics) == 0 || contains(metrics, "toPay")  
+	includeTz := len(metrics) == 0 || contains(metrics, "tz")
+
+	// Строим SELECT часть запроса
+	selectParts := []string{"TO_CHAR(DATE(created_at"}
+	if timezone != "" {
+		selectParts[0] += fmt.Sprintf(" AT TIME ZONE '%s'", timezone)
+	}
+	selectParts[0] += "), 'YYYY-MM-DD') as date"
+
+	if includeConsumption {
+		selectParts = append(selectParts, "COALESCE(SUM(all_tokens), 0) as consumption")
+	}
+	if includeToPay {
+		selectParts = append(selectParts, "COALESCE(SUM(all_rubs), 0) as to_pay")
+	}
+	if includeTz {
+		selectParts = append(selectParts, "COUNT(*) as tz")
+	}
+
+	query := fmt.Sprintf(`
+		SELECT %s
+		FROM versions 
+		WHERE DATE(created_at%s) >= $1 
+		  AND DATE(created_at%s) <= $2
+		  AND created_at IS NOT NULL
+		GROUP BY DATE(created_at%s)
+		ORDER BY DATE(created_at%s)`,
+		strings.Join(selectParts, ", "),
+		getTimezoneClause(timezone),
+		getTimezoneClause(timezone),
+		getTimezoneClause(timezone),
+		getTimezoneClause(timezone))
+
+	rows, err := s.db.Query(ctx, query, fromDate, toDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get daily analytics: %w", err)
+	}
+	defer rows.Close()
+
+	var points []*tzservice.DailyAnalyticsPoint
+	for rows.Next() {
+		point := &tzservice.DailyAnalyticsPoint{}
+		
+		// Создаём slice для сканирования значений
+		values := make([]interface{}, 1) // дата всегда есть
+		values[0] = &point.Date
+
+		if includeConsumption {
+			var consumption int64
+			point.Consumption = &consumption
+			values = append(values, &consumption)
+		}
+		if includeToPay {
+			var toPay float64
+			point.ToPay = &toPay
+			values = append(values, &toPay)
+		}
+		if includeTz {
+			var tz int32
+			point.Tz = &tz
+			values = append(values, &tz)
+		}
+
+		err := rows.Scan(values...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan daily analytics row: %w", err)
+		}
+
+		points = append(points, point)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return points, nil
+}
+
+func getTimezoneClause(timezone string) string {
+	if timezone != "" {
+		return fmt.Sprintf(" AT TIME ZONE '%s'", timezone)
+	}
+	return ""
+}
+
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Storage) GetFeedbacks(ctx context.Context, userID *string) ([]*tzservice.FeedbackInstance, error) {
+	// SQL запрос объединяет обе таблицы через UNION ALL и делает JOIN с errors, versions, technical_specifications
+	query := `
+		WITH feedbacks AS (
+			-- Invalid instances with feedback
+			SELECT 
+				ii.id as instance_id,
+				'invalid' as instance_type,
+				ii.feedback_mark,
+				ii.feedback_comment,
+				ii.feedback_user,
+				ii.error_id
+			FROM invalid_instances ii
+			WHERE ii.feedback_exists = true
+			
+			UNION ALL
+			
+			-- Missing instances with feedback  
+			SELECT 
+				mi.id as instance_id,
+				'missing' as instance_type,
+				mi.feedback_mark,
+				mi.feedback_comment,
+				mi.feedback_user,
+				mi.error_id
+			FROM missing_instances mi
+			WHERE mi.feedback_exists = true
+		)
+		SELECT 
+			f.instance_id,
+			f.instance_type,
+			f.feedback_mark,
+			f.feedback_comment,
+			f.feedback_user,
+			f.error_id,
+			v.id as version_id,
+			ts.name as technical_specification_name
+		FROM feedbacks f
+		JOIN errors e ON f.error_id = e.id
+		JOIN versions v ON e.version_id = v.id  
+		JOIN technical_specifications ts ON v.technical_specification_id = ts.id`
+
+	args := []interface{}{}
+	
+	// Добавляем фильтрацию по user_id если он передан
+	if userID != nil && *userID != "" {
+		query += " WHERE f.feedback_user = $1"
+		args = append(args, *userID)
+	}
+	
+	query += " ORDER BY ts.name, v.id, f.instance_type, f.instance_id"
+
+	rows, err := s.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get feedbacks: %w", err)
+	}
+	defer rows.Close()
+
+	var feedbacks []*tzservice.FeedbackInstance
+	for rows.Next() {
+		var feedback tzservice.FeedbackInstance
+		err := rows.Scan(
+			&feedback.InstanceID,
+			&feedback.InstanceType,
+			&feedback.FeedbackMark,
+			&feedback.FeedbackComment,
+			&feedback.FeedbackUser,
+			&feedback.ErrorID,
+			&feedback.VersionID,
+			&feedback.TechnicalSpecificationName,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan feedback instance: %w", err)
+		}
+		feedbacks = append(feedbacks, &feedback)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return feedbacks, nil
 }

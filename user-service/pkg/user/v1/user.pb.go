@@ -1107,6 +1107,182 @@ func (x *UpdateInspectionsPerDayResponse) GetUpdatedCount() uint32 {
 	return 0
 }
 
+type GetFullNamesByIdRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ids           map[string]*Empty      `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFullNamesByIdRequest) Reset() {
+	*x = GetFullNamesByIdRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFullNamesByIdRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFullNamesByIdRequest) ProtoMessage() {}
+
+func (x *GetFullNamesByIdRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFullNamesByIdRequest.ProtoReflect.Descriptor instead.
+func (*GetFullNamesByIdRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GetFullNamesByIdRequest) GetIds() map[string]*Empty {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+type Empty struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Empty) Reset() {
+	*x = Empty{}
+	mi := &file_user_v1_user_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Empty) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Empty) ProtoMessage() {}
+
+func (x *Empty) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Empty.ProtoReflect.Descriptor instead.
+func (*Empty) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{18}
+}
+
+type GetFullNamesByIdResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         map[string]*FullName   `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFullNamesByIdResponse) Reset() {
+	*x = GetFullNamesByIdResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFullNamesByIdResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFullNamesByIdResponse) ProtoMessage() {}
+
+func (x *GetFullNamesByIdResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFullNamesByIdResponse.ProtoReflect.Descriptor instead.
+func (*GetFullNamesByIdResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetFullNamesByIdResponse) GetUsers() map[string]*FullName {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+type FullName struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FirstName     string                 `protobuf:"bytes,1,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	LastName      string                 `protobuf:"bytes,2,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FullName) Reset() {
+	*x = FullName{}
+	mi := &file_user_v1_user_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FullName) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FullName) ProtoMessage() {}
+
+func (x *FullName) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FullName.ProtoReflect.Descriptor instead.
+func (*FullName) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *FullName) GetFirstName() string {
+	if x != nil {
+		return x.FirstName
+	}
+	return ""
+}
+
+func (x *FullName) GetLastName() string {
+	if x != nil {
+		return x.LastName
+	}
+	return ""
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
@@ -1191,7 +1367,23 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x1fUpdateInspectionsPerDayResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12#\n" +
-	"\rupdated_count\x18\x03 \x01(\rR\fupdatedCount2\x93\x05\n" +
+	"\rupdated_count\x18\x03 \x01(\rR\fupdatedCount\"\x9e\x01\n" +
+	"\x17GetFullNamesByIdRequest\x12;\n" +
+	"\x03ids\x18\x01 \x03(\v2).user.v1.GetFullNamesByIdRequest.IdsEntryR\x03ids\x1aF\n" +
+	"\bIdsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12$\n" +
+	"\x05value\x18\x02 \x01(\v2\x0e.user.v1.EmptyR\x05value:\x028\x01\"\a\n" +
+	"\x05Empty\"\xab\x01\n" +
+	"\x18GetFullNamesByIdResponse\x12B\n" +
+	"\x05users\x18\x01 \x03(\v2,.user.v1.GetFullNamesByIdResponse.UsersEntryR\x05users\x1aK\n" +
+	"\n" +
+	"UsersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12'\n" +
+	"\x05value\x18\x02 \x01(\v2\x11.user.v1.FullNameR\x05value:\x028\x01\"F\n" +
+	"\bFullName\x12\x1d\n" +
+	"\n" +
+	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
+	"\tlast_name\x18\x02 \x01(\tR\blastName2\xec\x05\n" +
 	"\vUserService\x12H\n" +
 	"\vGetUserInfo\x12\x1b.user.v1.GetUserInfoRequest\x1a\x1c.user.v1.GetUserInfoResponse\x12K\n" +
 	"\fRegisterUser\x12\x1c.user.v1.RegisterUserRequest\x1a\x1d.user.v1.RegisterUserResponse\x126\n" +
@@ -1200,7 +1392,8 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x0eGetUserByLogin\x12\x1e.user.v1.GetUserByLoginRequest\x1a\x1f.user.v1.GetUserByLoginResponse\x12H\n" +
 	"\vGetAllUsers\x12\x1b.user.v1.GetAllUsersRequest\x1a\x1c.user.v1.GetAllUsersResponse\x12]\n" +
 	"\x12GetUserDetailsById\x12\".user.v1.GetUserDetailsByIdRequest\x1a#.user.v1.GetUserDetailsByIdResponse\x12l\n" +
-	"\x17UpdateInspectionsPerDay\x12'.user.v1.UpdateInspectionsPerDayRequest\x1a(.user.v1.UpdateInspectionsPerDayResponseB\tZ\auser/v1b\x06proto3"
+	"\x17UpdateInspectionsPerDay\x12'.user.v1.UpdateInspectionsPerDayRequest\x1a(.user.v1.UpdateInspectionsPerDayResponse\x12W\n" +
+	"\x10GetFullNamesById\x12 .user.v1.GetFullNamesByIdRequest\x1a!.user.v1.GetFullNamesByIdResponseB\tZ\auser/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
@@ -1214,7 +1407,7 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_user_v1_user_proto_rawDescData
 }
 
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_user_v1_user_proto_goTypes = []any{
 	(*GetUserInfoRequest)(nil),              // 0: user.v1.GetUserInfoRequest
 	(*GetUserInfoResponse)(nil),             // 1: user.v1.GetUserInfoResponse
@@ -1233,33 +1426,45 @@ var file_user_v1_user_proto_goTypes = []any{
 	(*GetUserDetailsByIdResponse)(nil),      // 14: user.v1.GetUserDetailsByIdResponse
 	(*UpdateInspectionsPerDayRequest)(nil),  // 15: user.v1.UpdateInspectionsPerDayRequest
 	(*UpdateInspectionsPerDayResponse)(nil), // 16: user.v1.UpdateInspectionsPerDayResponse
-	(*timestamppb.Timestamp)(nil),           // 17: google.protobuf.Timestamp
+	(*GetFullNamesByIdRequest)(nil),         // 17: user.v1.GetFullNamesByIdRequest
+	(*Empty)(nil),                           // 18: user.v1.Empty
+	(*GetFullNamesByIdResponse)(nil),        // 19: user.v1.GetFullNamesByIdResponse
+	(*FullName)(nil),                        // 20: user.v1.FullName
+	nil,                                     // 21: user.v1.GetFullNamesByIdRequest.IdsEntry
+	nil,                                     // 22: user.v1.GetFullNamesByIdResponse.UsersEntry
+	(*timestamppb.Timestamp)(nil),           // 23: google.protobuf.Timestamp
 }
 var file_user_v1_user_proto_depIdxs = []int32{
-	17, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
-	17, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	23, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
+	23, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
 	11, // 2: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
-	0,  // 3: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
-	2,  // 4: user.v1.UserService.RegisterUser:input_type -> user.v1.RegisterUserRequest
-	4,  // 5: user.v1.UserService.Login:input_type -> user.v1.LoginRequest
-	6,  // 6: user.v1.UserService.GetLoginById:input_type -> user.v1.GetLoginByIdRequest
-	8,  // 7: user.v1.UserService.GetUserByLogin:input_type -> user.v1.GetUserByLoginRequest
-	10, // 8: user.v1.UserService.GetAllUsers:input_type -> user.v1.GetAllUsersRequest
-	13, // 9: user.v1.UserService.GetUserDetailsById:input_type -> user.v1.GetUserDetailsByIdRequest
-	15, // 10: user.v1.UserService.UpdateInspectionsPerDay:input_type -> user.v1.UpdateInspectionsPerDayRequest
-	1,  // 11: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
-	3,  // 12: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	5,  // 13: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	7,  // 14: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
-	9,  // 15: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
-	12, // 16: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
-	14, // 17: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
-	16, // 18: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
-	11, // [11:19] is the sub-list for method output_type
-	3,  // [3:11] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	21, // 3: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
+	22, // 4: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
+	18, // 5: user.v1.GetFullNamesByIdRequest.IdsEntry.value:type_name -> user.v1.Empty
+	20, // 6: user.v1.GetFullNamesByIdResponse.UsersEntry.value:type_name -> user.v1.FullName
+	0,  // 7: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
+	2,  // 8: user.v1.UserService.RegisterUser:input_type -> user.v1.RegisterUserRequest
+	4,  // 9: user.v1.UserService.Login:input_type -> user.v1.LoginRequest
+	6,  // 10: user.v1.UserService.GetLoginById:input_type -> user.v1.GetLoginByIdRequest
+	8,  // 11: user.v1.UserService.GetUserByLogin:input_type -> user.v1.GetUserByLoginRequest
+	10, // 12: user.v1.UserService.GetAllUsers:input_type -> user.v1.GetAllUsersRequest
+	13, // 13: user.v1.UserService.GetUserDetailsById:input_type -> user.v1.GetUserDetailsByIdRequest
+	15, // 14: user.v1.UserService.UpdateInspectionsPerDay:input_type -> user.v1.UpdateInspectionsPerDayRequest
+	17, // 15: user.v1.UserService.GetFullNamesById:input_type -> user.v1.GetFullNamesByIdRequest
+	1,  // 16: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
+	3,  // 17: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	5,  // 18: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	7,  // 19: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	9,  // 20: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
+	12, // 21: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
+	14, // 22: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
+	16, // 23: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
+	19, // 24: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
+	16, // [16:25] is the sub-list for method output_type
+	7,  // [7:16] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_user_v1_user_proto_init() }
@@ -1273,7 +1478,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

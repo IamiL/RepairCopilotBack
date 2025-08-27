@@ -304,7 +304,25 @@ func (tz *Tz) GetTechnicalSpecificationVersions(ctx context.Context, userID uuid
 	return versions, nil
 }
 
-func (tz *Tz) GetAllVersions(ctx context.Context) ([]*modelrepo.VersionWithErrorCounts, error) {
+type VersionAdminDashboard struct {
+	ID                         uuid.UUID
+	TechnicalSpecificationName string
+	UserID                     uuid.UUID
+	VersionNumber              int
+	AllTokens                  int64
+	AllRubs                    float64
+	NumberOfErrors             int64
+	InspectionTime             time.Duration
+	OriginalFileSize           int64
+	NumberOfPages              int
+	CreatedAt                  time.Time
+	OriginalFileId             string
+	OriginalFileLink           string
+	ReportFileId               string
+	ReportFileLink             string
+}
+
+func (tz *Tz) GetAllVersionsAdminDashboard(ctx context.Context) ([]*VersionAdminDashboard, error) {
 	const op = "Tz.GetAllVersions"
 
 	log := tz.log.With(
@@ -313,10 +331,15 @@ func (tz *Tz) GetAllVersions(ctx context.Context) ([]*modelrepo.VersionWithError
 
 	log.Info("getting all versions with error counts")
 
-	versions, err := tz.repo.GetAllVersions(ctx)
+	versions, err := tz.repo.GetAllVersionsAdminDashboard(ctx)
 	if err != nil {
 		log.Error("failed to get all versions: ", sl.Err(err))
 		return nil, fmt.Errorf("failed to get all versions: %w", err)
+	}
+
+	for i := range versions {
+		versions[i].OriginalFileLink = "https://timuroid.ru/docx/" + versions[i].OriginalFileId + ".docx"
+		versions[i].ReportFileLink = "https://timuroid.ru/reports/" + versions[i].ReportFileId + ".docx"
 	}
 
 	log.Info("all versions retrieved successfully", slog.Int("count", len(versions)))
@@ -345,6 +368,78 @@ func (tz *Tz) GetVersionStatistics(ctx context.Context) (*modelrepo.VersionStati
 		slog.Any("average_inspection_time", stats.AverageInspectionTime))
 
 	return stats, nil
+}
+
+func (tz *Tz) GetVersionsDateRange(ctx context.Context) (string, string, error) {
+	const op = "Tz.GetVersionsDateRange"
+
+	log := tz.log.With(
+		slog.String("op", op),
+	)
+
+	log.Info("getting versions date range")
+
+	minDate, maxDate, err := tz.repo.GetVersionsDateRange(ctx)
+	if err != nil {
+		log.Error("failed to get versions date range: ", sl.Err(err))
+		return "", "", fmt.Errorf("failed to get versions date range: %w", err)
+	}
+
+	log.Info("versions date range retrieved successfully",
+		slog.String("min_date", minDate),
+		slog.String("max_date", maxDate))
+
+	return minDate, maxDate, nil
+}
+
+func (tz *Tz) GetFeedbacks(ctx context.Context, userID *string) ([]*FeedbackInstance, error) {
+	const op = "Tz.GetFeedbacks"
+
+	log := tz.log.With(
+		slog.String("op", op),
+	)
+
+	if userID != nil {
+		log = log.With(slog.String("user_id", *userID))
+	}
+
+	log.Info("getting feedbacks")
+
+	feedbacks, err := tz.repo.GetFeedbacks(ctx, userID)
+	if err != nil {
+		log.Error("failed to get feedbacks: ", sl.Err(err))
+		return nil, fmt.Errorf("failed to get feedbacks: %w", err)
+	}
+
+	log.Info("feedbacks retrieved successfully",
+		slog.Int("feedbacks_count", len(feedbacks)))
+
+	return feedbacks, nil
+}
+
+func (tz *Tz) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timezone string, metrics []string) ([]*DailyAnalyticsPoint, error) {
+	const op = "Tz.GetDailyAnalytics"
+
+	log := tz.log.With(
+		slog.String("op", op),
+		slog.String("from_date", fromDate),
+		slog.String("to_date", toDate),
+		slog.String("timezone", timezone),
+		slog.Int("metrics_count", len(metrics)),
+	)
+
+	log.Info("getting daily analytics")
+
+	points, err := tz.repo.GetDailyAnalytics(ctx, fromDate, toDate, timezone, metrics)
+	if err != nil {
+		log.Error("failed to get daily analytics: ", sl.Err(err))
+		return nil, fmt.Errorf("failed to get daily analytics: %w", err)
+	}
+
+	log.Info("daily analytics retrieved successfully",
+		slog.Int("points_count", len(points)))
+
+	return points, nil
 }
 
 func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time.Time, float64, int64, time.Duration, string, string, string, *[]Error, *[]OutInvalidError, string, int64, int, error) {

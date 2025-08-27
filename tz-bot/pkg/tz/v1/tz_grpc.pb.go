@@ -21,10 +21,13 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	TzService_CheckTz_FullMethodName                           = "/tz.v1.TzService/CheckTz"
 	TzService_GetTechnicalSpecificationVersions_FullMethodName = "/tz.v1.TzService/GetTechnicalSpecificationVersions"
-	TzService_GetAllVersions_FullMethodName                    = "/tz.v1.TzService/GetAllVersions"
+	TzService_GetAllVersionsAdminDashboard_FullMethodName      = "/tz.v1.TzService/GetAllVersionsAdminDashboard"
 	TzService_GetVersionStatistics_FullMethodName              = "/tz.v1.TzService/GetVersionStatistics"
 	TzService_GetVersion_FullMethodName                        = "/tz.v1.TzService/GetVersion"
 	TzService_NewFeedbackError_FullMethodName                  = "/tz.v1.TzService/NewFeedbackError"
+	TzService_GetVersionsDateRange_FullMethodName              = "/tz.v1.TzService/GetVersionsDateRange"
+	TzService_GetDailyAnalytics_FullMethodName                 = "/tz.v1.TzService/GetDailyAnalytics"
+	TzService_GetFeedbacks_FullMethodName                      = "/tz.v1.TzService/GetFeedbacks"
 )
 
 // TzServiceClient is the client API for TzService service.
@@ -33,10 +36,13 @@ const (
 type TzServiceClient interface {
 	CheckTz(ctx context.Context, in *CheckTzRequest, opts ...grpc.CallOption) (*CheckTzResponse, error)
 	GetTechnicalSpecificationVersions(ctx context.Context, in *GetTechnicalSpecificationVersionsRequest, opts ...grpc.CallOption) (*GetTechnicalSpecificationVersionsResponse, error)
-	GetAllVersions(ctx context.Context, in *GetAllVersionsRequest, opts ...grpc.CallOption) (*GetAllVersionsResponse, error)
+	GetAllVersionsAdminDashboard(ctx context.Context, in *GetAllVersionsAdminDashboardRequest, opts ...grpc.CallOption) (*GetAllVersionsAdminDashboardResponse, error)
 	GetVersionStatistics(ctx context.Context, in *GetVersionStatisticsRequest, opts ...grpc.CallOption) (*GetVersionStatisticsResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
 	NewFeedbackError(ctx context.Context, in *NewFeedbackErrorRequest, opts ...grpc.CallOption) (*NewFeedbackErrorResponse, error)
+	GetVersionsDateRange(ctx context.Context, in *GetVersionsDateRangeRequest, opts ...grpc.CallOption) (*GetVersionsDateRangeResponse, error)
+	GetDailyAnalytics(ctx context.Context, in *GetDailyAnalyticsRequest, opts ...grpc.CallOption) (*GetDailyAnalyticsResponse, error)
+	GetFeedbacks(ctx context.Context, in *GetFeedbacksRequest, opts ...grpc.CallOption) (*GetFeedbacksResponse, error)
 }
 
 type tzServiceClient struct {
@@ -67,10 +73,10 @@ func (c *tzServiceClient) GetTechnicalSpecificationVersions(ctx context.Context,
 	return out, nil
 }
 
-func (c *tzServiceClient) GetAllVersions(ctx context.Context, in *GetAllVersionsRequest, opts ...grpc.CallOption) (*GetAllVersionsResponse, error) {
+func (c *tzServiceClient) GetAllVersionsAdminDashboard(ctx context.Context, in *GetAllVersionsAdminDashboardRequest, opts ...grpc.CallOption) (*GetAllVersionsAdminDashboardResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllVersionsResponse)
-	err := c.cc.Invoke(ctx, TzService_GetAllVersions_FullMethodName, in, out, cOpts...)
+	out := new(GetAllVersionsAdminDashboardResponse)
+	err := c.cc.Invoke(ctx, TzService_GetAllVersionsAdminDashboard_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,16 +113,49 @@ func (c *tzServiceClient) NewFeedbackError(ctx context.Context, in *NewFeedbackE
 	return out, nil
 }
 
+func (c *tzServiceClient) GetVersionsDateRange(ctx context.Context, in *GetVersionsDateRangeRequest, opts ...grpc.CallOption) (*GetVersionsDateRangeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVersionsDateRangeResponse)
+	err := c.cc.Invoke(ctx, TzService_GetVersionsDateRange_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tzServiceClient) GetDailyAnalytics(ctx context.Context, in *GetDailyAnalyticsRequest, opts ...grpc.CallOption) (*GetDailyAnalyticsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDailyAnalyticsResponse)
+	err := c.cc.Invoke(ctx, TzService_GetDailyAnalytics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tzServiceClient) GetFeedbacks(ctx context.Context, in *GetFeedbacksRequest, opts ...grpc.CallOption) (*GetFeedbacksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFeedbacksResponse)
+	err := c.cc.Invoke(ctx, TzService_GetFeedbacks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TzServiceServer is the server API for TzService service.
 // All implementations must embed UnimplementedTzServiceServer
 // for forward compatibility.
 type TzServiceServer interface {
 	CheckTz(context.Context, *CheckTzRequest) (*CheckTzResponse, error)
 	GetTechnicalSpecificationVersions(context.Context, *GetTechnicalSpecificationVersionsRequest) (*GetTechnicalSpecificationVersionsResponse, error)
-	GetAllVersions(context.Context, *GetAllVersionsRequest) (*GetAllVersionsResponse, error)
+	GetAllVersionsAdminDashboard(context.Context, *GetAllVersionsAdminDashboardRequest) (*GetAllVersionsAdminDashboardResponse, error)
 	GetVersionStatistics(context.Context, *GetVersionStatisticsRequest) (*GetVersionStatisticsResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
 	NewFeedbackError(context.Context, *NewFeedbackErrorRequest) (*NewFeedbackErrorResponse, error)
+	GetVersionsDateRange(context.Context, *GetVersionsDateRangeRequest) (*GetVersionsDateRangeResponse, error)
+	GetDailyAnalytics(context.Context, *GetDailyAnalyticsRequest) (*GetDailyAnalyticsResponse, error)
+	GetFeedbacks(context.Context, *GetFeedbacksRequest) (*GetFeedbacksResponse, error)
 	mustEmbedUnimplementedTzServiceServer()
 }
 
@@ -133,8 +172,8 @@ func (UnimplementedTzServiceServer) CheckTz(context.Context, *CheckTzRequest) (*
 func (UnimplementedTzServiceServer) GetTechnicalSpecificationVersions(context.Context, *GetTechnicalSpecificationVersionsRequest) (*GetTechnicalSpecificationVersionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTechnicalSpecificationVersions not implemented")
 }
-func (UnimplementedTzServiceServer) GetAllVersions(context.Context, *GetAllVersionsRequest) (*GetAllVersionsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllVersions not implemented")
+func (UnimplementedTzServiceServer) GetAllVersionsAdminDashboard(context.Context, *GetAllVersionsAdminDashboardRequest) (*GetAllVersionsAdminDashboardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllVersionsAdminDashboard not implemented")
 }
 func (UnimplementedTzServiceServer) GetVersionStatistics(context.Context, *GetVersionStatisticsRequest) (*GetVersionStatisticsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVersionStatistics not implemented")
@@ -144,6 +183,15 @@ func (UnimplementedTzServiceServer) GetVersion(context.Context, *GetVersionReque
 }
 func (UnimplementedTzServiceServer) NewFeedbackError(context.Context, *NewFeedbackErrorRequest) (*NewFeedbackErrorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewFeedbackError not implemented")
+}
+func (UnimplementedTzServiceServer) GetVersionsDateRange(context.Context, *GetVersionsDateRangeRequest) (*GetVersionsDateRangeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVersionsDateRange not implemented")
+}
+func (UnimplementedTzServiceServer) GetDailyAnalytics(context.Context, *GetDailyAnalyticsRequest) (*GetDailyAnalyticsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDailyAnalytics not implemented")
+}
+func (UnimplementedTzServiceServer) GetFeedbacks(context.Context, *GetFeedbacksRequest) (*GetFeedbacksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeedbacks not implemented")
 }
 func (UnimplementedTzServiceServer) mustEmbedUnimplementedTzServiceServer() {}
 func (UnimplementedTzServiceServer) testEmbeddedByValue()                   {}
@@ -202,20 +250,20 @@ func _TzService_GetTechnicalSpecificationVersions_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TzService_GetAllVersions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAllVersionsRequest)
+func _TzService_GetAllVersionsAdminDashboard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllVersionsAdminDashboardRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TzServiceServer).GetAllVersions(ctx, in)
+		return srv.(TzServiceServer).GetAllVersionsAdminDashboard(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TzService_GetAllVersions_FullMethodName,
+		FullMethod: TzService_GetAllVersionsAdminDashboard_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TzServiceServer).GetAllVersions(ctx, req.(*GetAllVersionsRequest))
+		return srv.(TzServiceServer).GetAllVersionsAdminDashboard(ctx, req.(*GetAllVersionsAdminDashboardRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -274,6 +322,60 @@ func _TzService_NewFeedbackError_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TzService_GetVersionsDateRange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVersionsDateRangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TzServiceServer).GetVersionsDateRange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TzService_GetVersionsDateRange_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TzServiceServer).GetVersionsDateRange(ctx, req.(*GetVersionsDateRangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TzService_GetDailyAnalytics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDailyAnalyticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TzServiceServer).GetDailyAnalytics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TzService_GetDailyAnalytics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TzServiceServer).GetDailyAnalytics(ctx, req.(*GetDailyAnalyticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TzService_GetFeedbacks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeedbacksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TzServiceServer).GetFeedbacks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TzService_GetFeedbacks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TzServiceServer).GetFeedbacks(ctx, req.(*GetFeedbacksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TzService_ServiceDesc is the grpc.ServiceDesc for TzService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -290,8 +392,8 @@ var TzService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TzService_GetTechnicalSpecificationVersions_Handler,
 		},
 		{
-			MethodName: "GetAllVersions",
-			Handler:    _TzService_GetAllVersions_Handler,
+			MethodName: "GetAllVersionsAdminDashboard",
+			Handler:    _TzService_GetAllVersionsAdminDashboard_Handler,
 		},
 		{
 			MethodName: "GetVersionStatistics",
@@ -304,6 +406,18 @@ var TzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NewFeedbackError",
 			Handler:    _TzService_NewFeedbackError_Handler,
+		},
+		{
+			MethodName: "GetVersionsDateRange",
+			Handler:    _TzService_GetVersionsDateRange_Handler,
+		},
+		{
+			MethodName: "GetDailyAnalytics",
+			Handler:    _TzService_GetDailyAnalytics_Handler,
+		},
+		{
+			MethodName: "GetFeedbacks",
+			Handler:    _TzService_GetFeedbacks_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

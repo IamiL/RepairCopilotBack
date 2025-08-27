@@ -60,6 +60,7 @@ type UserProvider interface {
 	GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID, error)
 	GetUserAuthDataByLogin(ctx context.Context, login string) (*UserAuthData, error)
 	UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay int) (int64, error)
+	GetFullNamesById(ctx context.Context, ids []string) (map[string]FullName, error)
 }
 
 func New(
@@ -380,4 +381,30 @@ func (u *User) UpdateInspectionsPerDay(ctx context.Context, userID string, inspe
 	log.Info("inspections_per_day updated successfully", slog.Int64("rowsAffected", rowsAffected))
 
 	return rowsAffected, nil
+}
+
+type FullName struct {
+	FirstName string
+	LastName  string
+}
+
+func (u *User) GetFullNamesById(ctx context.Context, ids []string) (map[string]FullName, error) {
+	const op = "User.GetFullNamesById"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.Int("ids_count", len(ids)),
+	)
+
+	log.Info("getting full names by ids")
+
+	fullNames, err := u.usrProvider.GetFullNamesById(ctx, ids)
+	if err != nil {
+		log.Error("failed to get full names by ids", sl.Err(err))
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("full names retrieved successfully", slog.Int("result_count", len(fullNames)))
+
+	return fullNames, nil
 }

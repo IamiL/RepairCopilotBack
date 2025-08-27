@@ -10,10 +10,13 @@ import "google/protobuf/timestamp.proto";
 service TzService {
   rpc CheckTz(CheckTzRequest) returns (CheckTzResponse);
   rpc GetTechnicalSpecificationVersions(GetTechnicalSpecificationVersionsRequest) returns (GetTechnicalSpecificationVersionsResponse);
-  rpc GetAllVersions(GetAllVersionsRequest) returns (GetAllVersionsResponse);
+  rpc GetAllVersionsAdminDashboard(GetAllVersionsAdminDashboardRequest) returns (GetAllVersionsAdminDashboardResponse);
   rpc GetVersionStatistics(GetVersionStatisticsRequest) returns (GetVersionStatisticsResponse);
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
   rpc NewFeedbackError(NewFeedbackErrorRequest) returns (NewFeedbackErrorResponse);
+  rpc GetVersionsDateRange(GetVersionsDateRangeRequest) returns (GetVersionsDateRangeResponse);
+  rpc GetDailyAnalytics(GetDailyAnalyticsRequest) returns (GetDailyAnalyticsResponse);
+  rpc GetFeedbacks(GetFeedbacksRequest) returns (GetFeedbacksResponse);
 }
 
 message CheckTzRequest {
@@ -126,31 +129,28 @@ message GetVersionResponse {
   string status = 14;
 }
 
-message GetAllVersionsRequest {
+message GetAllVersionsAdminDashboardRequest {
   // No parameters needed - returns all versions
 }
 
-message GetAllVersionsResponse {
-  repeated VersionWithErrorCounts versions = 1;
+message GetAllVersionsAdminDashboardResponse {
+  repeated VersionAdminDashboard versions = 1;
 }
 
-message VersionWithErrorCounts {
+message VersionAdminDashboard {
   string version_id = 1;
-  string technical_specification_id = 2;
   string technical_specification_name = 3;
   string user_id = 4;
   int32 version_number = 5;
-  string created_at = 6;
-  string updated_at = 7;
-  string original_file_id = 8;
-  string out_html = 9;
-  string css = 10;
-  string checked_file_id = 11;
-  optional double all_rubs = 12;
-  optional int64 all_tokens = 13;
-  optional int64 inspection_time_nanoseconds = 14;
-  int32 invalid_error_count = 15;
-  int32 missing_error_count = 16;
+  int64 all_tokens = 6;
+  double all_rubs = 7;
+  int32 number_of_errors = 8;
+  int64 inspection_time = 9;
+  int64 original_file_size = 10;
+  int32 number_of_pages = 11;
+  google.protobuf.Timestamp created_at = 12;
+  string original_file_link = 13;
+  string report_file_link = 14;
 }
 
 message GetVersionStatisticsRequest {
@@ -177,4 +177,51 @@ message NewFeedbackErrorRequest {
 }
 
 message NewFeedbackErrorResponse {
+}
+
+message GetVersionsDateRangeRequest {
+  // No parameters needed - returns date range for all versions
+}
+
+message GetVersionsDateRangeResponse {
+  string min_date = 1; // Format: 2024-01-01
+  string max_date = 2; // Format: 2024-01-01
+}
+
+message GetDailyAnalyticsRequest {
+  string from_date = 1;    // Format: YYYY-MM-DD (required)
+  string to_date = 2;      // Format: YYYY-MM-DD (required, inclusive)
+  optional string timezone = 3; // IANA timezone (e.g., Asia/Almaty)
+  optional string group_by = 4; // default: "day"
+  repeated string metrics = 5;  // consumption,toPay,tz (if empty - return all)
+}
+
+message GetDailyAnalyticsResponse {
+  repeated DailyAnalyticsPoint series = 1;
+}
+
+message DailyAnalyticsPoint {
+  string date = 1;                 // Format: YYYY-MM-DD
+  optional int64 consumption = 2;  // all_tokens sum for the day
+  optional double to_pay = 3;      // all_rubs sum for the day  
+  optional int32 tz = 4;           // count of versions for the day
+}
+
+message GetFeedbacksRequest {
+  optional string user_id = 1; // If provided, filter feedbacks by this user_id
+}
+
+message GetFeedbacksResponse {
+  repeated FeedbackInstance feedbacks = 1;
+}
+
+message FeedbackInstance {
+  string instance_id = 1;                        // UUID of invalid_instance or missing_instance
+  string instance_type = 2;                      // "invalid" or "missing"
+  bool feedback_mark = 3;                        // feedback_mark field
+  string feedback_comment = 4;                   // feedback_comment field
+  string feedback_user = 5;                      // feedback_user UUID
+  string error_id = 6;                           // error_id UUID
+  string version_id = 7;                         // version_id UUID  
+  string technical_specification_name = 8;       // name from technical_specifications table
 }

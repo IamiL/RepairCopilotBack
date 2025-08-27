@@ -269,6 +269,36 @@ func (s *serverAPI) UpdateInspectionsPerDay(ctx context.Context, req *pb.UpdateI
 	}, nil
 }
 
+func (s *serverAPI) GetFullNamesById(ctx context.Context, req *pb.GetFullNamesByIdRequest) (*pb.GetFullNamesByIdResponse, error) {
+	if req == nil || len(req.Ids) == 0 {
+		return &pb.GetFullNamesByIdResponse{
+			Users: make(map[string]*pb.FullName),
+		}, nil
+	}
+
+	ids := make([]string, 0, len(req.Ids))
+	for id := range req.Ids {
+		ids = append(ids, id)
+	}
+
+	fullNames, err := s.userService.GetFullNamesById(ctx, ids)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get full names")
+	}
+
+	pbUsers := make(map[string]*pb.FullName, len(fullNames))
+	for id, fullName := range fullNames {
+		pbUsers[id] = &pb.FullName{
+			FirstName: fullName.FirstName,
+			LastName:  fullName.LastName,
+		}
+	}
+
+	return &pb.GetFullNamesByIdResponse{
+		Users: pbUsers,
+	}, nil
+}
+
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {
 //	s.log.Error("GetLoginById not implemented")
 //}

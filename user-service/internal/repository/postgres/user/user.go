@@ -303,3 +303,36 @@ func (s *Storage) UpdateInspectionsPerDay(ctx context.Context, userID string, in
 
 	return result.RowsAffected(), nil
 }
+
+func (s *Storage) GetFullNamesById(ctx context.Context, ids []string) (map[string]userservice.FullName, error) {
+	if len(ids) == 0 {
+		return make(map[string]userservice.FullName), nil
+	}
+
+	query := `SELECT id, first_name, last_name FROM users WHERE id = ANY($1)`
+
+	rows, err := s.db.Query(ctx, query, ids)
+	if err != nil {
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+	defer rows.Close()
+
+	result := make(map[string]userservice.FullName)
+	for rows.Next() {
+		var id, firstName, lastName string
+		err := rows.Scan(&id, &firstName, &lastName)
+		if err != nil {
+			return nil, fmt.Errorf("scan error: %w", err)
+		}
+		result[id] = userservice.FullName{
+			FirstName: firstName,
+			LastName:  lastName,
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return result, nil
+}

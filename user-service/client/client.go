@@ -177,3 +177,79 @@ func (c *UserClient) GetUserInfo(ctx context.Context, userID uuid.UUID) (*pb.Get
 
 	return resp, nil
 }
+
+// FullName представляет полное имя пользователя
+type FullName struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}
+
+// GetFullNamesById получает полные имена пользователей по их ID
+func (c *UserClient) GetFullNamesById(ctx context.Context, userIDs []string) (map[string]FullName, error) {
+	if len(userIDs) == 0 {
+		return make(map[string]FullName), nil
+	}
+
+	// Преобразуем массив ID в map для protobuf
+	idsMap := make(map[string]*pb.Empty, len(userIDs))
+	for _, id := range userIDs {
+		idsMap[id] = &pb.Empty{}
+	}
+
+	req := &pb.GetFullNamesByIdRequest{
+		Ids: idsMap,
+	}
+
+	resp, err := c.client.GetFullNamesById(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.Internal:
+				return nil, fmt.Errorf("internal server error")
+			default:
+				return nil, fmt.Errorf("failed to get full names: %s", st.Message())
+			}
+		}
+		return nil, err
+	}
+
+	// Преобразуем protobuf ответ в обычный map
+	result := make(map[string]FullName, len(resp.Users))
+	for id, fullName := range resp.Users {
+		result[id] = FullName{
+			FirstName: fullName.FirstName,
+			LastName:  fullName.LastName,
+		}
+	}
+
+	return result, nil
+}
+
+// UpdateInspectionsPerDay обновляет лимит проверок в день для пользователя
+func (c *UserClient) UpdateInspectionsPerDay(ctx context.Context, userID uuid.UUID, inspectionsPerDay int32) error {
+	req := &pb.UpdateInspectionsPerDayRequest{
+		UserId:            userID.String(),
+		InspectionsPerDay: uint32(inspectionsPerDay),
+	}
+
+	_, err := c.client.UpdateInspectionsPerDay(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return fmt.Errorf("invalid input: %s", st.Message())
+			case codes.NotFound:
+				return fmt.Errorf("user not found")
+			case codes.Internal:
+				return fmt.Errorf("internal server error")
+			default:
+				return fmt.Errorf("failed to update inspections per day: %s", st.Message())
+			}
+		}
+		return err
+	}
+
+	return nil
+}

@@ -27,6 +27,7 @@ const (
 	UserService_GetAllUsers_FullMethodName             = "/user.v1.UserService/GetAllUsers"
 	UserService_GetUserDetailsById_FullMethodName      = "/user.v1.UserService/GetUserDetailsById"
 	UserService_UpdateInspectionsPerDay_FullMethodName = "/user.v1.UserService/UpdateInspectionsPerDay"
+	UserService_GetFullNamesById_FullMethodName        = "/user.v1.UserService/GetFullNamesById"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -51,6 +52,7 @@ type UserServiceClient interface {
 	GetUserDetailsById(ctx context.Context, in *GetUserDetailsByIdRequest, opts ...grpc.CallOption) (*GetUserDetailsByIdResponse, error)
 	// UpdateInspectionsPerDay изменяет inspections_per_day для пользователей
 	UpdateInspectionsPerDay(ctx context.Context, in *UpdateInspectionsPerDayRequest, opts ...grpc.CallOption) (*UpdateInspectionsPerDayResponse, error)
+	GetFullNamesById(ctx context.Context, in *GetFullNamesByIdRequest, opts ...grpc.CallOption) (*GetFullNamesByIdResponse, error)
 }
 
 type userServiceClient struct {
@@ -141,6 +143,16 @@ func (c *userServiceClient) UpdateInspectionsPerDay(ctx context.Context, in *Upd
 	return out, nil
 }
 
+func (c *userServiceClient) GetFullNamesById(ctx context.Context, in *GetFullNamesByIdRequest, opts ...grpc.CallOption) (*GetFullNamesByIdResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFullNamesByIdResponse)
+	err := c.cc.Invoke(ctx, UserService_GetFullNamesById_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -163,6 +175,7 @@ type UserServiceServer interface {
 	GetUserDetailsById(context.Context, *GetUserDetailsByIdRequest) (*GetUserDetailsByIdResponse, error)
 	// UpdateInspectionsPerDay изменяет inspections_per_day для пользователей
 	UpdateInspectionsPerDay(context.Context, *UpdateInspectionsPerDayRequest) (*UpdateInspectionsPerDayResponse, error)
+	GetFullNamesById(context.Context, *GetFullNamesByIdRequest) (*GetFullNamesByIdResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -196,6 +209,9 @@ func (UnimplementedUserServiceServer) GetUserDetailsById(context.Context, *GetUs
 }
 func (UnimplementedUserServiceServer) UpdateInspectionsPerDay(context.Context, *UpdateInspectionsPerDayRequest) (*UpdateInspectionsPerDayResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateInspectionsPerDay not implemented")
+}
+func (UnimplementedUserServiceServer) GetFullNamesById(context.Context, *GetFullNamesByIdRequest) (*GetFullNamesByIdResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFullNamesById not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -362,6 +378,24 @@ func _UserService_UpdateInspectionsPerDay_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetFullNamesById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFullNamesByIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetFullNamesById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetFullNamesById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetFullNamesById(ctx, req.(*GetFullNamesByIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -400,6 +434,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateInspectionsPerDay",
 			Handler:    _UserService_UpdateInspectionsPerDay_Handler,
+		},
+		{
+			MethodName: "GetFullNamesById",
+			Handler:    _UserService_GetFullNamesById_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

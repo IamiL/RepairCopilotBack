@@ -99,10 +99,10 @@ func MeHandler(
 				userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), userID)
 				if userInfoErr == nil {
 					// Логируем событие входа на сайт
-					actionText := "Пользователь " + userInfo.FirstName + " " + userInfo.LastName + " зашёл на сайт"
-					if err := actionLogRepo.CreateActionLog(r.Context(), actionText, userID); err != nil {
-						log.Error("failed to create action log for site access", slog.String("error", err.Error()))
-					}
+					//actionText := "Пользователь " + userInfo.FirstName + " " + userInfo.LastName + " зашёл на сайт"
+					//if err := actionLogRepo.CreateActionLog(r.Context(), actionText, userID); err != nil {
+					//	log.Error("failed to create action log for site access", slog.String("error", err.Error()))
+					//}
 					firstName = userInfo.FirstName
 					lastName = userInfo.LastName
 					email = userInfo.Email

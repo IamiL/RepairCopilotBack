@@ -88,8 +88,28 @@ func New(
 	)
 
 	router.HandleFunc(
+		"GET /api/admin/inspections",
+		handler.GetInspectionsHandler(log, tzBotClient, userServiceClient, sessionRepo),
+	)
+
+	router.HandleFunc(
 		"POST /api/feedback",
 		handler.NewFeedbackErrorHandler(log, tzBotClient, sessionRepo, actionLogRepo),
+	)
+
+	router.HandleFunc(
+		"GET /api/analytics/billing/limits",
+		handler.GetBillingLimits(log, tzBotClient),
+	)
+
+	router.HandleFunc(
+		"GET /api/analytics/billing/daily",
+		handler.GetBillingDaily(log, tzBotClient),
+	)
+
+	router.HandleFunc(
+		"GET /api/feedbacks",
+		handler.GetFeedbacks(log, tzBotClient, userServiceClient, sessionRepo),
 	)
 
 	routerWithCorsHandler := corsMiddleware(log, router)

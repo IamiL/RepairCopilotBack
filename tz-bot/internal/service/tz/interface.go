@@ -8,6 +8,26 @@ import (
 	"github.com/google/uuid"
 )
 
+// DailyAnalyticsPoint represents a single point in daily analytics
+type DailyAnalyticsPoint struct {
+	Date        string
+	Consumption *int64
+	ToPay       *float64
+	Tz          *int32
+}
+
+// FeedbackInstance represents a feedback instance with full context information
+type FeedbackInstance struct {
+	InstanceID                   string
+	InstanceType                 string // "invalid" or "missing"
+	FeedbackMark                 bool
+	FeedbackComment              string
+	FeedbackUser                 string
+	ErrorID                      string
+	VersionID                    string
+	TechnicalSpecificationName   string
+}
+
 // TechnicalSpecificationRepository defines the interface for technical specification operations
 type TechnicalSpecificationRepository interface {
 	// CreateTechnicalSpecification creates a new technical specification
@@ -44,10 +64,19 @@ type VersionRepository interface {
 	GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]*modelrepo.VersionSummary, error)
 
 	// GetAllVersions retrieves all versions with complete data and error counts
-	GetAllVersions(ctx context.Context) ([]*modelrepo.VersionWithErrorCounts, error)
+	GetAllVersionsAdminDashboard(ctx context.Context) ([]*VersionAdminDashboard, error)
 
 	// GetVersionStatistics retrieves aggregated statistics for all versions
 	GetVersionStatistics(ctx context.Context) (*modelrepo.VersionStatistics, error)
+
+	// GetVersionsDateRange retrieves min and max dates from versions table
+	GetVersionsDateRange(ctx context.Context) (string, string, error)
+
+	// GetDailyAnalytics retrieves daily analytics for versions
+	GetDailyAnalytics(ctx context.Context, fromDate, toDate, timezone string, metrics []string) ([]*DailyAnalyticsPoint, error)
+
+	// GetFeedbacks retrieves all feedbacks from invalid_instances and missing_instances
+	GetFeedbacks(ctx context.Context, userID *string) ([]*FeedbackInstance, error)
 
 	// GetLatestVersion retrieves the latest version for a technical specification
 	GetLatestVersion(ctx context.Context, technicalSpecificationID uuid.UUID) (*modelrepo.Version, error)
