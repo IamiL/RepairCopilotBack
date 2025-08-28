@@ -311,7 +311,7 @@ func GetAdminDashboardHandler(
 		feedbacks, err := tzBotClient.GetFeedbacks(ctx, uuid.Nil)
 		if err != nil {
 			log.Error("failed to get inspections", slog.String("error", err.Error()))
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			//http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 

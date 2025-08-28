@@ -559,6 +559,16 @@ func (tz *Tz) NewFeedbackError(ctx context.Context, instanceID uuid.UUID, instan
 
 	log.Info("creating new feedback")
 
+	if feedbackMark == nil {
+		log.Error("feedbackMark not exists")
+		return fmt.Errorf("failed to update instance feedback: feedbackMark not exists")
+	}
+
+	if *feedbackMark == false && (feedbackComment == nil || *feedbackComment == "") {
+		log.Error("feedbackComment not exists for bad feedback")
+		return fmt.Errorf("failed to update instance feedback: feedbackComment not exists for bad feedback")
+	}
+
 	switch instanceType {
 	case "invalid":
 		err := tz.repo.UpdateInvalidInstanceFeedback(ctx, instanceID, feedbackMark, feedbackComment, userID)
