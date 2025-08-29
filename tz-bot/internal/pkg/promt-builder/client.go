@@ -55,9 +55,9 @@ type Promt struct {
 }
 
 type ErrorDescription struct {
-	Name     string
-	Desc     string
-	Detector string
+	Name     string `json:"name"`
+	Desc     string `json:"desc"`
+	Detector string `json:"detector"`
 }
 
 type ErrorResponse struct {

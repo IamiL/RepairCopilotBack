@@ -18,10 +18,10 @@ llm_client:
 word_parser_client:
   url: http://94.241.142.172:8082
 word_parser_client2:
-  host: localhost
+  host: 94.241.142.172
   port: 8060
 markdown_service_client:
-  url: http://localhost:8089
+  url: http://94.241.142.172:8089
 s3minio:
   host: 94.241.142.172
   port: 9000

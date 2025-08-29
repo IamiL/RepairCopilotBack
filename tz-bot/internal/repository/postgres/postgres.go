@@ -161,11 +161,11 @@ func (s *Storage) CreateVersion(ctx context.Context, req *modelrepo.CreateVersio
 func (s *Storage) UpdateVersion(ctx context.Context, req *modelrepo.UpdateVersionRequest) error {
 	query := `
 		UPDATE versions 
-		SET updated_at = $2, out_html = $3, css = $4, checked_file_id = $5, all_rubs = $6, all_tokens = $7, inspection_time = $8, number_of_errors = $9, status = $10
+		SET updated_at = $2, out_html = $3, css = $4, checked_file_id = $5, all_rubs = $6, all_tokens = $7, inspection_time = $8, number_of_errors = $9, status = $10, html_from_word_parser = $11, html_with_placeholder = $12, html_paragraphs = $13, markdown_from_markdown_service = $14, html_with_ids_from_markdown_service = $15, mappings_from_markdown_service = $16, promts_from_promt_builder = $17, group_reports_from_llm = $18, html_paragraphs_with_wrapped_errors = $19
 		WHERE id = $1`
 
 	result, err := s.db.Exec(ctx, query, req.ID, req.UpdatedAt, req.OutHTML, req.CSS, req.CheckedFileID,
-		&req.AllRubs, &req.AllTokens, int64(req.InspectionTime), req.NumberOfErrors, req.Status)
+		&req.AllRubs, &req.AllTokens, int64(req.InspectionTime), req.NumberOfErrors, req.Status, req.HtmlFromWordParser, req.HtmlWithPlacrholder, req.HtmlParagraphs, req.MarkdownFromMarkdownService, req.HtmlWithIdsFromMarkdownService, req.MappingsFromMarkdownService, req.PromtsFromPromtBuilder, req.GroupReportsFromLlm, req.HtmlParagraphsWithWrappesErrors)
 	if err != nil {
 		return fmt.Errorf("failed to update version: %w", err)
 	}
@@ -947,7 +947,7 @@ func (s *Storage) GetVersionsDateRange(ctx context.Context) (string, string, err
 func (s *Storage) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timezone string, metrics []string) ([]*tzservice.DailyAnalyticsPoint, error) {
 	// Определяем, какие метрики нужно включить
 	includeConsumption := len(metrics) == 0 || contains(metrics, "consumption")
-	includeToPay := len(metrics) == 0 || contains(metrics, "toPay")  
+	includeToPay := len(metrics) == 0 || contains(metrics, "toPay")
 	includeTz := len(metrics) == 0 || contains(metrics, "tz")
 
 	// Строим SELECT часть запроса
@@ -990,7 +990,7 @@ func (s *Storage) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timez
 	var points []*tzservice.DailyAnalyticsPoint
 	for rows.Next() {
 		point := &tzservice.DailyAnalyticsPoint{}
-		
+
 		// Создаём slice для сканирования значений
 		values := make([]interface{}, 1) // дата всегда есть
 		values[0] = &point.Date
@@ -1085,13 +1085,13 @@ func (s *Storage) GetFeedbacks(ctx context.Context, userID *string) ([]*tzservic
 		JOIN technical_specifications ts ON v.technical_specification_id = ts.id`
 
 	args := []interface{}{}
-	
+
 	// Добавляем фильтрацию по user_id если он передан
 	if userID != nil && *userID != "" {
 		query += " WHERE f.feedback_user = $1"
 		args = append(args, *userID)
 	}
-	
+
 	query += " ORDER BY ts.name, v.id, f.instance_type, f.instance_id"
 
 	rows, err := s.db.Query(ctx, query, args...)

@@ -135,16 +135,25 @@ type CreateVersionRequest struct {
 
 // UpdateVersionRequest represents request to update an existing version
 type UpdateVersionRequest struct {
-	ID             uuid.UUID
-	UpdatedAt      time.Time
-	OutHTML        string
-	CSS            string
-	CheckedFileID  string
-	AllRubs        float64
-	AllTokens      int64
-	InspectionTime time.Duration
-	NumberOfErrors int
-	Status         string
+	ID                              uuid.UUID
+	UpdatedAt                       time.Time
+	OutHTML                         string
+	CSS                             string
+	CheckedFileID                   string
+	AllRubs                         float64
+	AllTokens                       int64
+	InspectionTime                  time.Duration
+	NumberOfErrors                  int
+	Status                          string
+	HtmlFromWordParser              string
+	HtmlWithPlacrholder             string
+	HtmlParagraphs                  string
+	MarkdownFromMarkdownService     string
+	HtmlWithIdsFromMarkdownService  string
+	MappingsFromMarkdownService     []byte
+	PromtsFromPromtBuilder          []byte
+	GroupReportsFromLlm             []byte
+	HtmlParagraphsWithWrappesErrors string
 }
 
 // CreateInvalidErrorsRequest represents request to create invalid errors

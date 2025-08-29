@@ -55,7 +55,7 @@ func NewWordConverterClient(host string, port int) *WordConverterClient {
 }
 
 // Convert uploads a DOCX file and returns the HTML with placeholder, CSS content, and extracted paragraphs
-func (c *WordConverterClient) Convert(fileData []byte, filename string) (string, string, string, error) {
+func (c *WordConverterClient) Convert(fileData []byte, filename string) (string, string, error) {
 	// Create a buffer to store the multipart form data
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
@@ -63,26 +63,26 @@ func (c *WordConverterClient) Convert(fileData []byte, filename string) (string,
 	// Create a form file field
 	part, err := writer.CreateFormFile("file", filename)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to create form file: %w", err)
+		return "", "", fmt.Errorf("failed to create form file: %w", err)
 	}
 
 	// Write the file data to the form
 	_, err = part.Write(fileData)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to write file data: %w", err)
+		return "", "", fmt.Errorf("failed to write file data: %w", err)
 	}
 
 	// Close the writer to finalize the form data
 	err = writer.Close()
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to close form writer: %w", err)
+		return "", "", fmt.Errorf("failed to close form writer: %w", err)
 	}
 
 	// Create the HTTP request
 	url := fmt.Sprintf("http://%s:%d/convert", c.Host, c.Port)
 	req, err := http.NewRequest("POST", url, &buf)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to create request: %w", err)
+		return "", "", fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Set the content type header
@@ -91,42 +91,42 @@ func (c *WordConverterClient) Convert(fileData []byte, filename string) (string,
 	// Send the request
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to send request: %w", err)
+		return "", "", fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", "", "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+		return "", "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to read response body: %w", err)
+		return "", "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	// Parse the JSON response
 	var convertResp ConvertResponse
 	err = json.Unmarshal(body, &convertResp)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to parse JSON response: %w", err)
+		return "", "", fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
 	// Replace escaped quotes with regular quotes in HTML
 	cleanedHTML := strings.ReplaceAll(convertResp.HTML, `\"`, `"`)
-	
-	// Extract paragraphs from HTML
-	extraction := extractParagraphs(cleanedHTML)
 
-	return extraction.HTMLWithPlaceholder, convertResp.CSS, extraction.Paragraphs, nil
+	// Extract paragraphs from HTML
+	//extraction := extractParagraphs(cleanedHTML)
+
+	return cleanedHTML, convertResp.CSS, nil
 }
 
 const paragraphPlaceholder = "{{PARAGRAPHS_PLACEHOLDER}}"
 
 // extractParagraphs extracts paragraphs from HTML and replaces them with a placeholder
-func extractParagraphs(html string) ParagraphExtractionResult {
+func ExtractParagraphs(html string) ParagraphExtractionResult {
 	// Regular expression to find the article content with paragraphs (with possible attributes)
 	articleRegex := regexp.MustCompile(`<article[^>]*>(.*?)</article>`)
 	matches := articleRegex.FindStringSubmatch(html)

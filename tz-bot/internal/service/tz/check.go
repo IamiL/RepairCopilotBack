@@ -130,7 +130,16 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	//	return
 	//}
 
-	htmlWithPlaceholder, _, paragraphs, err := tz.wordConverterClient2.Convert(file, filename)
+	html, _, err := tz.wordConverterClient2.Convert(file, filename)
+	if err != nil {
+		log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
+	}
+
+	resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
+
+	paragraphs := resultExtractParagraphs.Paragraphs
+
+	htmlWithPlaceholder := resultExtractParagraphs.HTMLWithPlaceholder
 
 	log.Info("конвертация word файла в htmlText успешна")
 
@@ -260,9 +269,9 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		errors[i].OrderNumber = i
 	}
 
-	outInvalidErrors, outMissingErrors, html := HandleErrors(&groupReports, &markdownResponse.Mappings)
+	outInvalidErrors, outMissingErrors, htmlParagrapsWithWrappedErrors := HandleErrors(&groupReports, &markdownResponse.Mappings)
 
-	outHtml := word_parser2.InsertParagraphs(htmlWithPlaceholder, html)
+	outHtml := word_parser2.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
 
 	for i := range *outInvalidErrors {
 		(*outInvalidErrors)[i].OrderNumber = i
@@ -314,19 +323,45 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		tz.updateVersionWithError(ctx, versionID, "error")
 		return
 	}
+	mappingsFromMarkdownServiceJSON := make([]byte, 1)
+	mappingsFromMarkdownServiceJSON, mappingsFromMarkdownServiceJSONErr := json.Marshal(markdownResponse.Mappings)
+	if mappingsFromMarkdownServiceJSONErr != nil {
+		log.Error("ошибка сериализации mappingsFromMarkdownService: ", sl.Err(mappingsFromMarkdownServiceJSONErr))
+	}
+
+	promtsFromPromtBuilderJSON := make([]byte, 1)
+	promtsFromPromtBuilderJSON, promtsFromPromtBuilderJSONErr := json.Marshal(promts)
+	if promtsFromPromtBuilderJSONErr != nil {
+		log.Error("ошибка сериализации promtsFromPromtBuilder: ", sl.Err(promtsFromPromtBuilderJSONErr))
+	}
+
+	groupReportsFromLlmJSON := make([]byte, 1)
+	groupReportsFromLlmJSON, groupReportsFromLlmJSONErr := json.Marshal(groupReports)
+	if groupReportsFromLlmJSONErr != nil {
+		log.Error("ошибка сериализации groupReportsFromLlm: ", sl.Err(groupReportsFromLlmJSONErr))
+	}
 
 	// Обновляем версию с результатами обработки
 	updateReq := &modelrepo.UpdateVersionRequest{
-		ID:             versionID,
-		UpdatedAt:      time.Now(),
-		OutHTML:        outHtml,
-		CSS:            "",
-		CheckedFileID:  docxReportID,
-		AllRubs:        allRubs,
-		AllTokens:      allTokens,
-		InspectionTime: inspectionTime,
-		NumberOfErrors: len(*outMissingErrors) + len(*outInvalidErrors),
-		Status:         "completed",
+		ID:                              versionID,
+		UpdatedAt:                       time.Now(),
+		OutHTML:                         outHtml,
+		CSS:                             "",
+		CheckedFileID:                   docxReportID,
+		AllRubs:                         allRubs,
+		AllTokens:                       allTokens,
+		InspectionTime:                  inspectionTime,
+		NumberOfErrors:                  len(*outMissingErrors) + len(*outInvalidErrors),
+		Status:                          "completed",
+		HtmlFromWordParser:              html,
+		HtmlWithPlacrholder:             htmlWithPlaceholder,
+		HtmlParagraphs:                  paragraphs,
+		MarkdownFromMarkdownService:     markdownResponse.Markdown,
+		HtmlWithIdsFromMarkdownService:  markdownResponse.HtmlWithIds,
+		MappingsFromMarkdownService:     mappingsFromMarkdownServiceJSON,
+		PromtsFromPromtBuilder:          promtsFromPromtBuilderJSON,
+		GroupReportsFromLlm:             groupReportsFromLlmJSON,
+		HtmlParagraphsWithWrappesErrors: htmlParagrapsWithWrappedErrors,
 	}
 	err = tz.repo.UpdateVersion(ctx, updateReq)
 	if err != nil {
