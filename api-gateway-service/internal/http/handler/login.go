@@ -134,3 +134,23 @@ func LoginHandler(
 			slog.Int("versions_count", len(versions)))
 	}
 }
+
+func LogoutHandler(log *slog.Logger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handler.LogoutHandler"
+
+		cookie := &http.Cookie{
+			Name:     "auth_token",
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		}
+		http.SetCookie(w, cookie)
+
+		w.WriteHeader(http.StatusOK)
+		log.With(slog.String("op", op)).Info("user logged out successfully")
+	}
+}

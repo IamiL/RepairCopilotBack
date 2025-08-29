@@ -53,6 +53,10 @@ func New(
 	)
 
 	router.HandleFunc(
+		"GET /api/logout",
+		handler.LogoutHandler(log))
+
+	router.HandleFunc(
 		"GET /api/me",
 		handler.MeHandler(log, sessionRepo, tzBotClient, userServiceClient, actionLogRepo),
 	)
