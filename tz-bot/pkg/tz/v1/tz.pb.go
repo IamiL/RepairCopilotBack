@@ -1884,14 +1884,15 @@ func (x *GetFeedbacksResponse) GetFeedbacks() []*FeedbackInstance {
 
 type FeedbackInstance struct {
 	state                      protoimpl.MessageState `protogen:"open.v1"`
-	InstanceId                 string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`                                                   // UUID of invalid_instance or missing_instance
-	InstanceType               string                 `protobuf:"bytes,2,opt,name=instance_type,json=instanceType,proto3" json:"instance_type,omitempty"`                                             // "invalid" or "missing"
-	FeedbackMark               bool                   `protobuf:"varint,3,opt,name=feedback_mark,json=feedbackMark,proto3" json:"feedback_mark,omitempty"`                                            // feedback_mark field
-	FeedbackComment            string                 `protobuf:"bytes,4,opt,name=feedback_comment,json=feedbackComment,proto3" json:"feedback_comment,omitempty"`                                    // feedback_comment field
-	FeedbackUser               string                 `protobuf:"bytes,5,opt,name=feedback_user,json=feedbackUser,proto3" json:"feedback_user,omitempty"`                                             // feedback_user UUID
-	ErrorId                    string                 `protobuf:"bytes,6,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`                                                            // error_id UUID
-	VersionId                  string                 `protobuf:"bytes,7,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`                                                      // version_id UUID
-	TechnicalSpecificationName string                 `protobuf:"bytes,8,opt,name=technical_specification_name,json=technicalSpecificationName,proto3" json:"technical_specification_name,omitempty"` // name from technical_specifications table
+	InstanceId                 string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`                // UUID of invalid_instance or missing_instance
+	InstanceType               string                 `protobuf:"bytes,2,opt,name=instance_type,json=instanceType,proto3" json:"instance_type,omitempty"`          // "invalid" or "missing"
+	FeedbackMark               bool                   `protobuf:"varint,3,opt,name=feedback_mark,json=feedbackMark,proto3" json:"feedback_mark,omitempty"`         // feedback_mark field
+	FeedbackComment            string                 `protobuf:"bytes,4,opt,name=feedback_comment,json=feedbackComment,proto3" json:"feedback_comment,omitempty"` // feedback_comment field
+	FeedbackUser               string                 `protobuf:"bytes,5,opt,name=feedback_user,json=feedbackUser,proto3" json:"feedback_user,omitempty"`          // feedback_user UUID
+	ErrorId                    string                 `protobuf:"bytes,6,opt,name=error_id,json=errorId,proto3" json:"error_id,omitempty"`                         // error_id UUID
+	ErrorCode                  string                 `protobuf:"bytes,7,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	VersionId                  string                 `protobuf:"bytes,8,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`                                                      // version_id UUID
+	TechnicalSpecificationName string                 `protobuf:"bytes,9,opt,name=technical_specification_name,json=technicalSpecificationName,proto3" json:"technical_specification_name,omitempty"` // name from technical_specifications table
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -1964,6 +1965,13 @@ func (x *FeedbackInstance) GetFeedbackUser() string {
 func (x *FeedbackInstance) GetErrorId() string {
 	if x != nil {
 		return x.ErrorId
+	}
+	return ""
+}
+
+func (x *FeedbackInstance) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
 	}
 	return ""
 }
@@ -2197,7 +2205,7 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\n" +
 	"\b_user_id\"M\n" +
 	"\x14GetFeedbacksResponse\x125\n" +
-	"\tfeedbacks\x18\x01 \x03(\v2\x17.tz.v1.FeedbackInstanceR\tfeedbacks\"\xc9\x02\n" +
+	"\tfeedbacks\x18\x01 \x03(\v2\x17.tz.v1.FeedbackInstanceR\tfeedbacks\"\xe8\x02\n" +
 	"\x10FeedbackInstance\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\tR\n" +
 	"instanceId\x12#\n" +
@@ -2207,8 +2215,10 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\rfeedback_user\x18\x05 \x01(\tR\ffeedbackUser\x12\x19\n" +
 	"\berror_id\x18\x06 \x01(\tR\aerrorId\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\a \x01(\tR\tversionId\x12@\n" +
-	"\x1ctechnical_specification_name\x18\b \x01(\tR\x1atechnicalSpecificationName2\x85\x06\n" +
+	"error_code\x18\a \x01(\tR\terrorCode\x12\x1d\n" +
+	"\n" +
+	"version_id\x18\b \x01(\tR\tversionId\x12@\n" +
+	"\x1ctechnical_specification_name\x18\t \x01(\tR\x1atechnicalSpecificationName2\x85\x06\n" +
 	"\tTzService\x128\n" +
 	"\aCheckTz\x12\x15.tz.v1.CheckTzRequest\x1a\x16.tz.v1.CheckTzResponse\x12J\n" +
 	"\rGetVersionsMe\x12\x1b.tz.v1.GetVersionsMeRequest\x1a\x1c.tz.v1.GetVersionsMeResponse\x12w\n" +

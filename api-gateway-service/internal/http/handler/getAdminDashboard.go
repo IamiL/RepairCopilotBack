@@ -133,14 +133,14 @@ func GetAdminDashboardHandler(
 			log.Info("fetching users from user-service")
 
 			usersList, err := userServiceClient.GetAllUsers(ctx)
-			if err != nil || usersList.Users == nil {
+			if err != nil || usersList == nil {
 				log.Error("failed to get users", slog.String("error", err.Error()))
 				addError(err)
 				return
 			}
 
 			mu.Lock()
-			users = usersList.Users
+			users = usersList
 			mu.Unlock()
 			log.Info("users fetched successfully", slog.Int("count", len(users)))
 		}()

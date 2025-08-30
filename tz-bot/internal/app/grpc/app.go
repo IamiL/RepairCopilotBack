@@ -557,7 +557,7 @@ func (s *serverAPI) NewFeedbackError(ctx context.Context, req *tzv1.NewFeedbackE
 	err = s.tzService.NewFeedbackError(ctx, instanceID, req.InstanceType, req.FeedbackMark, req.FeedbackComment, userID)
 	if err != nil {
 		log.Error("failed to create feedback", slog.String("error", err.Error()))
-		return nil, status.Error(codes.Internal, "failed to create feedback")
+		return nil, status.Error(codes.Internal, "failed to create feedback: "+err.Error())
 	}
 
 	log.Info("NewFeedbackError request processed successfully")
@@ -667,6 +667,7 @@ func (s *serverAPI) GetFeedbacks(ctx context.Context, req *tzv1.GetFeedbacksRequ
 			FeedbackComment:            feedback.FeedbackComment,
 			FeedbackUser:               feedback.FeedbackUser,
 			ErrorId:                    feedback.ErrorID,
+			ErrorCode:                  feedback.ErrorCode,
 			VersionId:                  feedback.VersionID,
 			TechnicalSpecificationName: feedback.TechnicalSpecificationName,
 		})

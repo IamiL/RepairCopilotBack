@@ -1077,6 +1077,7 @@ func (s *Storage) GetFeedbacks(ctx context.Context, userID *string) ([]*tzservic
 			f.feedback_comment,
 			f.feedback_user,
 			f.error_id,
+			e.error_code,
 			v.id as version_id,
 			ts.name as technical_specification_name
 		FROM feedbacks f
@@ -1102,19 +1103,25 @@ func (s *Storage) GetFeedbacks(ctx context.Context, userID *string) ([]*tzservic
 
 	var feedbacks []*tzservice.FeedbackInstance
 	for rows.Next() {
+		var feedbackComment *string
 		var feedback tzservice.FeedbackInstance
 		err := rows.Scan(
 			&feedback.InstanceID,
 			&feedback.InstanceType,
 			&feedback.FeedbackMark,
-			&feedback.FeedbackComment,
+			&feedbackComment,
 			&feedback.FeedbackUser,
 			&feedback.ErrorID,
+			&feedback.ErrorCode,
 			&feedback.VersionID,
 			&feedback.TechnicalSpecificationName,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan feedback instance: %w", err)
+		}
+
+		if feedbackComment != nil {
+			feedback.FeedbackComment = *feedbackComment
 		}
 		feedbacks = append(feedbacks, &feedback)
 	}

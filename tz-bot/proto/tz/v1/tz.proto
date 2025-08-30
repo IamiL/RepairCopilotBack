@@ -224,6 +224,7 @@ message FeedbackInstance {
   string feedback_comment = 4;                   // feedback_comment field
   string feedback_user = 5;                      // feedback_user UUID
   string error_id = 6;                           // error_id UUID
-  string version_id = 7;                         // version_id UUID  
-  string technical_specification_name = 8;       // name from technical_specifications table
+  string error_code = 7;
+  string version_id = 8;                         // version_id UUID
+  string technical_specification_name = 9;       // name from technical_specifications table
 }

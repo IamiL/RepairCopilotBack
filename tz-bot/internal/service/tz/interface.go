@@ -24,6 +24,7 @@ type FeedbackInstance struct {
 	FeedbackComment            string
 	FeedbackUser               string
 	ErrorID                    string
+	ErrorCode                  string
 	VersionID                  string
 	TechnicalSpecificationName string
 }

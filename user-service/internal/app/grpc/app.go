@@ -245,9 +245,9 @@ func (s *serverAPI) GetUserDetailsById(ctx context.Context, req *pb.GetUserDetai
 }
 
 func (s *serverAPI) UpdateInspectionsPerDay(ctx context.Context, req *pb.UpdateInspectionsPerDayRequest) (*pb.UpdateInspectionsPerDayResponse, error) {
-	if req.InspectionsPerDay == 0 {
-		return nil, status.Error(codes.InvalidArgument, "inspections_per_day must be greater than 0")
-	}
+	//if req.InspectionsPerDay == 0 {
+	//	return nil, status.Error(codes.InvalidArgument, "inspections_per_day must be greater than 0")
+	//}
 
 	rowsAffected, err := s.userService.UpdateInspectionsPerDay(ctx, req.UserId, int(req.InspectionsPerDay))
 	if err != nil {

@@ -128,7 +128,7 @@ type UserInfo struct {
 }
 
 // GetAllUsers получает список всех пользователей
-func (c *UserClient) GetAllUsers(ctx context.Context) (*pb.GetAllUsersResponse, error) {
+func (c *UserClient) GetAllUsers(ctx context.Context) ([]*pb.UserInfo, error) {
 	req := &pb.GetAllUsersRequest{}
 
 	resp, err := c.client.GetAllUsers(ctx, req)
@@ -155,7 +155,7 @@ func (c *UserClient) GetAllUsers(ctx context.Context) (*pb.GetAllUsersResponse, 
 	//	}
 	//}
 
-	return resp, nil
+	return resp.Users, nil
 }
 
 type GetUserInfoResponse struct {
@@ -241,30 +241,30 @@ func (c *UserClient) GetFullNamesById(ctx context.Context, userIDs []string) (ma
 	return result, nil
 }
 
-// UpdateInspectionsPerDay обновляет лимит проверок в день для пользователя
-func (c *UserClient) UpdateInspectionsPerDay(ctx context.Context, userID uuid.UUID, inspectionsPerDay int32) error {
+// UpdateInspectionsPerDay изменяет inspections_per_day для пользователя или всех пользователей
+func (c *UserClient) UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay uint32) (*pb.UpdateInspectionsPerDayResponse, error) {
 	req := &pb.UpdateInspectionsPerDayRequest{
-		UserId:            userID.String(),
-		InspectionsPerDay: uint32(inspectionsPerDay),
+		UserId:            userID,
+		InspectionsPerDay: inspectionsPerDay,
 	}
 
-	_, err := c.client.UpdateInspectionsPerDay(ctx, req)
+	resp, err := c.client.UpdateInspectionsPerDay(ctx, req)
 	if err != nil {
 		// Обработка gRPC статусов
 		if st, ok := status.FromError(err); ok {
 			switch st.Code() {
 			case codes.InvalidArgument:
-				return fmt.Errorf("invalid input: %s", st.Message())
+				return nil, fmt.Errorf("invalid input: %s", st.Message())
 			case codes.NotFound:
-				return fmt.Errorf("user not found")
+				return nil, fmt.Errorf("user not found")
 			case codes.Internal:
-				return fmt.Errorf("internal server error")
+				return nil, fmt.Errorf("internal server error")
 			default:
-				return fmt.Errorf("failed to update inspections per day: %s", st.Message())
+				return nil, fmt.Errorf("failed to update inspections per day: %s", st.Message())
 			}
 		}
-		return err
+		return nil, err
 	}
 
-	return nil
+	return resp, nil
 }

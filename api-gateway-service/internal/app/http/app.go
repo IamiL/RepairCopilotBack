@@ -116,6 +116,11 @@ func New(
 		handler.GetFeedbacks(log, tzBotClient, userServiceClient, sessionRepo),
 	)
 
+	router.HandleFunc(
+		"POST /api/admin/users/update-inspections-per-day",
+		handler.UpdateInspectionsPerDayHandler(log, userServiceClient, sessionRepo),
+	)
+
 	routerWithCorsHandler := corsMiddleware(log, router)
 
 	srv := &http.Server{
