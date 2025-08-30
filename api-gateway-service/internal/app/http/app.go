@@ -58,7 +58,7 @@ func New(
 
 	router.HandleFunc(
 		"GET /api/me",
-		handler.MeHandler(log, sessionRepo, tzBotClient, userServiceClient, actionLogRepo),
+		handler.MeHandler(log, sessionRepo, tzBotClient, userServiceClient),
 	)
 
 	router.HandleFunc(

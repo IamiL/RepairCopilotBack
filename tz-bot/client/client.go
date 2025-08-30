@@ -400,7 +400,15 @@ func (c *Client) Close() error {
 	return c.cc.Close()
 }
 
-func (c *Client) GetFeedbacks(ctx context.Context, userID uuid.UUID) (*tzv1.GetFeedbacksResponse, error) {
+type GetFeedbacksFeedbackResponse struct {
+	*tzv1.FeedbackInstance
+	User struct {
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+	} `json:"user"`
+}
+
+func (c *Client) GetFeedbacks(ctx context.Context, userID uuid.UUID) (*[]*GetFeedbacksFeedbackResponse, error) {
 	const op = "tz_client.GetFeedbacks"
 	var userIDStr *string
 	if userID != uuid.Nil {
@@ -413,5 +421,12 @@ func (c *Client) GetFeedbacks(ctx context.Context, userID uuid.UUID) (*tzv1.GetF
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-	return resp, nil
+
+	feedbacksResp := make([]*GetFeedbacksFeedbackResponse, len(resp.Feedbacks))
+	for i, pbFeedback := range resp.Feedbacks {
+		feedbacksResp[i] = &GetFeedbacksFeedbackResponse{
+			FeedbackInstance: pbFeedback,
+		}
+	}
+	return &feedbacksResp, nil
 }

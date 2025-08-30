@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
-	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 	userserviceclient "repairCopilotBot/user-service/client"
 
 	"github.com/google/uuid"
@@ -35,8 +34,8 @@ type GetUserByIdResponse struct {
 	//ErrorFeedbackCount  int                                 `json:"errorFeedbackCount"`
 	//InspectionsPerDay   int                                 `json:"inspectionsPerDay"`
 	//InspectionsForToday int                                 `json:"inspectionsForToday"`
-	Versions  []UserTechnicalSpecificationVersion `json:"versions"`
-	Feedbacks []*tzv1.FeedbackInstance            `json:"feedbacks"`
+	Versions  []UserTechnicalSpecificationVersion     `json:"versions"`
+	Feedbacks *[]*client.GetFeedbacksFeedbackResponse `json:"feedbacks"`
 }
 
 func GetUserByIdHandler(
@@ -139,7 +138,7 @@ func GetUserByIdHandler(
 
 		// Конвертируем в response структуру с правильными JSON тегами
 		response := GetUserByIdResponse{userInfo,
-			versions, feedbacks.Feedbacks}
+			versions, feedbacks}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

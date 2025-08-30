@@ -61,6 +61,7 @@ type UserProvider interface {
 	GetUserAuthDataByLogin(ctx context.Context, login string) (*UserAuthData, error)
 	UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay int) (int64, error)
 	GetFullNamesById(ctx context.Context, ids []string) (map[string]FullName, error)
+	UpdateLastVisit(ctx context.Context, userID string) error
 }
 
 func New(
@@ -407,4 +408,30 @@ func (u *User) GetFullNamesById(ctx context.Context, ids []string) (map[string]F
 	log.Info("full names retrieved successfully", slog.Int("result_count", len(fullNames)))
 
 	return fullNames, nil
+}
+
+func (u *User) RegisterVisit(ctx context.Context, userID string) error {
+	const op = "User.RegisterVisit"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+	)
+
+	log.Info("registering user visit")
+
+	err := u.usrProvider.UpdateLastVisit(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+			return fmt.Errorf("%s: user not found", op)
+		}
+
+		u.log.Error("failed to update last visit", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("user visit registered successfully")
+
+	return nil
 }

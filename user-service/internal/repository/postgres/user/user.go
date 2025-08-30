@@ -336,3 +336,18 @@ func (s *Storage) GetFullNamesById(ctx context.Context, ids []string) (map[strin
 
 	return result, nil
 }
+
+func (s *Storage) UpdateLastVisit(ctx context.Context, userID string) error {
+	query := `UPDATE users SET last_visit_at = NOW() WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrUserNotFound
+	}
+
+	return nil
+}

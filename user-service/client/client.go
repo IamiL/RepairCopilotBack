@@ -268,3 +268,30 @@ func (c *UserClient) UpdateInspectionsPerDay(ctx context.Context, userID string,
 
 	return resp, nil
 }
+
+// RegisterVisit регистрирует посещение пользователя
+func (c *UserClient) RegisterVisit(ctx context.Context, userID string) error {
+	req := &pb.RegisterVisitRequest{
+		UserId: userID,
+	}
+
+	_, err := c.client.RegisterVisit(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return fmt.Errorf("invalid user_id: %s", st.Message())
+			case codes.NotFound:
+				return fmt.Errorf("user not found")
+			case codes.Internal:
+				return fmt.Errorf("internal server error")
+			default:
+				return fmt.Errorf("failed to register visit: %s", st.Message())
+			}
+		}
+		return err
+	}
+
+	return nil
+}

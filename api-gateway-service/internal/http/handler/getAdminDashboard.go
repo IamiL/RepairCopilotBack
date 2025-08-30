@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
-	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 	userserviceclient "repairCopilotBot/user-service/client"
 	v1 "repairCopilotBot/user-service/pkg/user/v1"
 	"sync"
@@ -57,11 +56,11 @@ type AdminDashboardActionLog struct {
 }
 
 type AdminDashboardResponse struct {
-	Users      []*v1.UserInfo                   `json:"users"`
-	Versions   []*client.VersionAdminDashboard  `json:"versions"`
-	Statistics *AdminDashboardVersionStatistics `json:"statistics"`
-	ActionLogs []AdminDashboardActionLog        `json:"action_logs"`
-	Feedbacks  []*tzv1.FeedbackInstance         `json:"feedbacks"`
+	Users      []*v1.UserInfo                          `json:"users"`
+	Versions   []*client.VersionAdminDashboard         `json:"versions"`
+	Statistics *AdminDashboardVersionStatistics        `json:"statistics"`
+	ActionLogs []AdminDashboardActionLog               `json:"action_logs"`
+	Feedbacks  *[]*client.GetFeedbacksFeedbackResponse `json:"feedbacks"`
 }
 
 func GetAdminDashboardHandler(
@@ -315,12 +314,48 @@ func GetAdminDashboardHandler(
 			return
 		}
 
+		if feedbacks != nil && len(*feedbacks) > 0 {
+			// Собираем уникальные ID пользователей из versions
+			userIDsMap := make(map[string]struct{})
+			for _, feedback := range *feedbacks {
+				if feedback.FeedbackUser != "" {
+					userIDsMap[feedback.FeedbackUser] = struct{}{}
+				}
+			}
+
+			// Преобразуем в slice
+			userIDs := make([]string, 0, len(userIDsMap))
+			for id := range userIDsMap {
+				userIDs = append(userIDs, id)
+			}
+
+			// Получаем имена пользователей если есть ID
+			if len(userIDs) > 0 {
+				log.Info("fetching user names", slog.Int("user_ids_count", len(userIDs)))
+
+				fullNames, err := userServiceClient.GetFullNamesById(ctx, userIDs)
+				if err != nil {
+					log.Error("failed to get user names", slog.String("error", err.Error()))
+				} else {
+					log.Info("user names fetched successfully", slog.Int("names_count", len(fullNames)))
+
+					// Обогащаем versions именами
+					for _, feedback := range *feedbacks {
+						if fullName, exists := fullNames[feedback.FeedbackUser]; exists {
+							feedback.User.FirstName = fullName.FirstName
+							feedback.User.LastName = fullName.LastName
+						}
+					}
+				}
+			}
+		}
+
 		response := AdminDashboardResponse{
 			Users:      users,
 			Versions:   versions,
 			Statistics: dashboardStatistics,
 			ActionLogs: dashboardActionLogs,
-			Feedbacks:  feedbacks.Feedbacks,
+			Feedbacks:  feedbacks,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

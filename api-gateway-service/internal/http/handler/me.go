@@ -34,7 +34,6 @@ func MeHandler(
 	sessionRepo *repository.SessionRepository,
 	tzBotClient *client.Client,
 	userServiceClient *userserviceclient.UserClient,
-	actionLogRepo repository.ActionLogRepository,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.MeHandler"
@@ -97,6 +96,13 @@ func MeHandler(
 					//}
 
 					userInfo = userInfoResp
+
+					// Асинхронно регистрируем посещение пользователя
+					go func() {
+						if err := userServiceClient.RegisterVisit(r.Context(), userID.String()); err != nil {
+							log.Error("failed to register user visit", slog.String("user_id", userID.String()), slog.String("error", err.Error()))
+						}
+					}()
 					if userInfo.IsAdmin1 {
 						level = 1
 					} else if userInfo.IsAdmin2 {

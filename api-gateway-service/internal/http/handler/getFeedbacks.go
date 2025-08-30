@@ -74,6 +74,42 @@ func GetFeedbacks(
 			return
 		}
 
+		if feedbacks != nil && len(*feedbacks) > 0 {
+			// Собираем уникальные ID пользователей из versions
+			userIDsMap := make(map[string]struct{})
+			for _, feedback := range *feedbacks {
+				if feedback.FeedbackUser != "" {
+					userIDsMap[feedback.FeedbackUser] = struct{}{}
+				}
+			}
+
+			// Преобразуем в slice
+			userIDs := make([]string, 0, len(userIDsMap))
+			for id := range userIDsMap {
+				userIDs = append(userIDs, id)
+			}
+
+			// Получаем имена пользователей если есть ID
+			if len(userIDs) > 0 {
+				log.Info("fetching user names", slog.Int("user_ids_count", len(userIDs)))
+
+				fullNames, err := userServiceClient.GetFullNamesById(ctx, userIDs)
+				if err != nil {
+					log.Error("failed to get user names", slog.String("error", err.Error()))
+				} else {
+					log.Info("user names fetched successfully", slog.Int("names_count", len(fullNames)))
+
+					// Обогащаем versions именами
+					for _, feedback := range *feedbacks {
+						if fullName, exists := fullNames[feedback.FeedbackUser]; exists {
+							feedback.User.FirstName = fullName.FirstName
+							feedback.User.LastName = fullName.LastName
+						}
+					}
+				}
+			}
+		}
+
 		//// Обогащаем версии именами пользователей
 		//if inspections != nil && len(inspections) > 0 {
 		//	// Собираем уникальные ID пользователей из versions
@@ -115,11 +151,11 @@ func GetFeedbacks(
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
-		if err := json.NewEncoder(w).Encode(feedbacks.Feedbacks); err != nil {
+		if err := json.NewEncoder(w).Encode(feedbacks); err != nil {
 			log.Error("failed to encode response", slog.String("error", err.Error()))
 			return
 		}
 
-		log.Info("inspections request completed successfully", slog.Int("inspections_count", len(feedbacks.Feedbacks)))
+		log.Info("inspections request completed successfully", slog.Int("inspections_count", len(*feedbacks)))
 	}
 }

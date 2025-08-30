@@ -299,6 +299,20 @@ func (s *serverAPI) GetFullNamesById(ctx context.Context, req *pb.GetFullNamesBy
 	}, nil
 }
 
+func (s *serverAPI) RegisterVisit(ctx context.Context, req *pb.RegisterVisitRequest) (*pb.RegisterVisitResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	err := s.userService.RegisterVisit(ctx, req.UserId)
+	if err != nil {
+		s.log.Error("failed to register visit", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to register visit")
+	}
+
+	return &pb.RegisterVisitResponse{}, nil
+}
+
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {
 //	s.log.Error("GetLoginById not implemented")
 //}

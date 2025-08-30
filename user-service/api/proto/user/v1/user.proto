@@ -33,6 +33,9 @@ service UserService {
   rpc UpdateInspectionsPerDay(UpdateInspectionsPerDayRequest) returns (UpdateInspectionsPerDayResponse);
 
   rpc GetFullNamesById(GetFullNamesByIdRequest) returns (GetFullNamesByIdResponse);
+
+  // RegisterVisit регистрирует посещение пользователя
+  rpc RegisterVisit(RegisterVisitRequest) returns (RegisterVisitResponse);
 }
 
 // GetUserInfoRequest запрос для получения информации о пользователе по ID
@@ -186,4 +189,13 @@ message GetFullNamesByIdResponse {
 message FullName {
   string first_name = 1;
   string last_name = 2;
+}
+
+// RegisterVisitRequest запрос для регистрации посещения пользователя
+message RegisterVisitRequest {
+  string user_id = 1;               // UUID пользователя
+}
+
+// RegisterVisitResponse ответ на регистрацию посещения (пустой)
+message RegisterVisitResponse {
 }
