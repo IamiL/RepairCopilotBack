@@ -19,13 +19,14 @@ import (
 //}
 
 type MeResponse struct {
-	Login       string                         `json:"login"`
-	Level       int                            `json:"level"`
-	FirstName   string                         `json:"firstName"`
-	LastName    string                         `json:"lastName"`
-	Versions    []*client.GetVersionMeResponse `json:"versions"`
-	Email       string                         `json:"email"`
-	IsConfirmed bool                           `json:"is_confirmed"`
+	//Login       string                         `json:"login"`
+	Level int `json:"level"`
+	//FirstName   string                         `json:"firstName"`
+	//LastName    string                         `json:"lastName"`
+	Versions []*client.GetVersionMeResponse `json:"versions"`
+	//Email       string                         `json:"email"`
+	//IsConfirmed bool                           `json:"is_confirmed"`
+	*userserviceclient.GetUserInfoResponse
 }
 
 func MeHandler(
@@ -76,17 +77,9 @@ func MeHandler(
 			return
 		}
 
+		var userInfo *userserviceclient.GetUserInfoResponse
 		// Определяем уровень пользователя из данных сессии
 		level := 0
-		if session.IsAdmin1 {
-			level = 1
-		} else if session.IsAdmin2 {
-			level = 2
-		}
-		firstName := ""
-		lastName := ""
-		email := ""
-		isConfirmed := false
 		var tzVersions []*client.GetVersionMeResponse
 		// Получаем версии технических заданий от tz-bot
 		if session.UserID != "" {
@@ -95,20 +88,23 @@ func MeHandler(
 				log.Error("invalid user ID format in session", slog.String("user_id", session.UserID), slog.String("error", err.Error()))
 			} else {
 				// Получаем информацию о пользователе для логирования
-				userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), userID)
+				userInfoResp, userInfoErr := userServiceClient.GetUserInfo(r.Context(), userID)
 				if userInfoErr == nil {
 					// Логируем событие входа на сайт
 					//actionText := "Пользователь " + userInfo.FirstName + " " + userInfo.LastName + " зашёл на сайт"
 					//if err := actionLogRepo.CreateActionLog(r.Context(), actionText, userID); err != nil {
 					//	log.Error("failed to create action log for site access", slog.String("error", err.Error()))
 					//}
-					firstName = userInfo.FirstName
-					lastName = userInfo.LastName
-					email = userInfo.Email
+
+					userInfo = userInfoResp
+					if userInfo.IsAdmin1 {
+						level = 1
+					} else if userInfo.IsAdmin2 {
+						level = 2
+					}
 				}
 
 				if userInfo.IsConfirmed {
-					isConfirmed = true
 					tzVersions, err = tzBotClient.GetVersionsMe(r.Context(), userID)
 					if err != nil || tzVersions == nil {
 						log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
@@ -131,13 +127,9 @@ func MeHandler(
 		}
 
 		response := MeResponse{
-			Login:       session.Login,
-			Level:       level,
-			Versions:    tzVersions,
-			FirstName:   firstName,
-			LastName:    lastName,
-			Email:       email,
-			IsConfirmed: isConfirmed,
+			Level:               level,
+			Versions:            tzVersions,
+			GetUserInfoResponse: userInfo,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

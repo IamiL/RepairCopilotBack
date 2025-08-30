@@ -160,7 +160,7 @@ func (c *UserClient) GetAllUsers(ctx context.Context) (*pb.GetAllUsersResponse, 
 
 type GetUserInfoResponse struct {
 	*pb.GetUserInfoResponse
-	RegisteredAt time.Time `json:"created_at"`
+	RegisteredAt time.Time `json:"registered_at"`
 	LastVisitAt  time.Time `json:"last_visit_at"`
 }
 

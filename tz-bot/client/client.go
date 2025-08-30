@@ -111,7 +111,12 @@ func New(ctx context.Context, addr string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requestID uuid.UUID) (*tzv1.CheckTzResponse, error) {
+type CheckTzResponse struct {
+	*tzv1.CheckTzResponse
+	СreatedAt time.Time `json:"created_at"`
+}
+
+func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requestID uuid.UUID) (*CheckTzResponse, error) {
 	const op = "tz_client.CheckTz"
 
 	// Создаем контекст с таймаутом 30 минут для gRPC запроса
@@ -130,7 +135,10 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 
 	fmt.Println("точка 12")
 
-	return resp, nil
+	return &CheckTzResponse{
+		CheckTzResponse: resp,
+		СreatedAt:       resp.CreatedAt.AsTime(),
+	}, nil
 
 	// Конвертация OutInvalidError из proto в клиентские структуры
 	//invalidErrors := make([]OutInvalidError, len(resp.InvalidErrors))
