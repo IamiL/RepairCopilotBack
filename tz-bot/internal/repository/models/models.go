@@ -52,14 +52,14 @@ type VersionWithTechnicalSpec struct {
 }
 
 // VersionSummary represents minimal version data for API responses
-type VersionSummary struct {
-	ID                         uuid.UUID `db:"id"`
-	TechnicalSpecificationName string    `db:"technical_specification_name"`
-	VersionNumber              int       `db:"version_number"`
-	CreatedAt                  time.Time `db:"created_at"`
-	OriginalFileID             string    `db:"original_file_id"`
-	ReportFileID               string
-}
+//type VersionSummary struct {
+//	ID                         uuid.UUID `db:"id"`
+//	TechnicalSpecificationName string    `db:"technical_specification_name"`
+//	VersionNumber              int       `db:"version_number"`
+//	CreatedAt                  time.Time `db:"created_at"`
+//	OriginalFileID             string    `db:"original_file_id"`
+//	ReportFileID               string
+//}
 
 // VersionStatistics represents aggregated statistics for all versions
 type VersionStatistics struct {

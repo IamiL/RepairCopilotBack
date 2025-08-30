@@ -259,9 +259,9 @@ func (s *Storage) GetLatestVersion(ctx context.Context, technicalSpecificationID
 	return &version, nil
 }
 
-func (s *Storage) GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]*modelrepo.VersionSummary, error) {
+func (s *Storage) GetVersionsMeByUserID(ctx context.Context, userID uuid.UUID) ([]*tzservice.VersionMe, error) {
 	query := `
-		SELECT v.id, ts.name, v.version_number, v.created_at, v.original_file_id, v.checked_file_id
+		SELECT v.id, ts.name, v.version_number, v.created_at, v.original_file_id, v.checked_file_id, v.status
 		FROM versions v
 		JOIN technical_specifications ts ON v.technical_specification_id = ts.id
 		WHERE ts.user_id = $1
@@ -274,11 +274,11 @@ func (s *Storage) GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]
 	}
 	defer rows.Close()
 
-	var versions []*modelrepo.VersionSummary
+	var versions []*tzservice.VersionMe
 	for rows.Next() {
-		var version modelrepo.VersionSummary
+		var version tzservice.VersionMe
 		err := rows.Scan(&version.ID, &version.TechnicalSpecificationName,
-			&version.VersionNumber, &version.CreatedAt, &version.OriginalFileID, &version.ReportFileID)
+			&version.VersionNumber, &version.CreatedAt, &version.OriginalFileID, &version.ReportFileID, &version.Status)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan version summary: %w", err)
 		}

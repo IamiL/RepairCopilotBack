@@ -200,14 +200,28 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 	//}, nil
 }
 
-func (c *Client) GetTechnicalSpecificationVersions(ctx context.Context, userID uuid.UUID) (*tzv1.GetTechnicalSpecificationVersionsResponse, error) {
+type GetVersionMeResponse struct {
+	*tzv1.VersionMe
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (c *Client) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*GetVersionMeResponse, error) {
 	const op = "tz_client.GetTechnicalSpecificationVersions"
 
-	resp, err := c.api.GetTechnicalSpecificationVersions(ctx, &tzv1.GetTechnicalSpecificationVersionsRequest{
+	resp, err := c.api.GetVersionsMe(ctx, &tzv1.GetVersionsMeRequest{
 		UserId: userID.String(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	versions := make([]*GetVersionMeResponse, 0, len(resp.Versions))
+
+	for _, version := range resp.Versions {
+		versions = append(versions, &GetVersionMeResponse{
+			VersionMe: version,
+			CreatedAt: version.CreatedAt.AsTime(),
+		})
 	}
 
 	//versions := make([]TechnicalSpecificationVersion, len(resp.Versions))
@@ -220,7 +234,7 @@ func (c *Client) GetTechnicalSpecificationVersions(ctx context.Context, userID u
 	//	}
 	//}
 
-	return resp, nil
+	return versions, nil
 }
 
 func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*tzv1.GetVersionResponse, error) {

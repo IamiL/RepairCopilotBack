@@ -6,27 +6,26 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
-	tzv1 "repairCopilotBot/tz-bot/pkg/tz/v1"
 	userserviceclient "repairCopilotBot/user-service/client"
 
 	"github.com/google/uuid"
 )
 
-type TechnicalSpecificationVersion struct {
-	VersionId                  string `json:"version_id"`
-	TechnicalSpecificationName string `json:"technical_specification_name"`
-	VersionNumber              int32  `json:"version_number"`
-	CreatedAt                  string `json:"created_at"`
-}
+//type TechnicalSpecificationVersion struct {
+//	VersionId                  string `json:"version_id"`
+//	TechnicalSpecificationName string `json:"technical_specification_name"`
+//	VersionNumber              int32  `json:"version_number"`
+//	CreatedAt                  string `json:"created_at"`
+//}
 
 type MeResponse struct {
-	Login       string                          `json:"login"`
-	Level       int                             `json:"level"`
-	FirstName   string                          `json:"firstName"`
-	LastName    string                          `json:"lastName"`
-	Versions    []TechnicalSpecificationVersion `json:"versions"`
-	Email       string                          `json:"email"`
-	IsConfirmed bool                            `json:"is_confirmed"`
+	Login       string                         `json:"login"`
+	Level       int                            `json:"level"`
+	FirstName   string                         `json:"firstName"`
+	LastName    string                         `json:"lastName"`
+	Versions    []*client.GetVersionMeResponse `json:"versions"`
+	Email       string                         `json:"email"`
+	IsConfirmed bool                           `json:"is_confirmed"`
 }
 
 func MeHandler(
@@ -88,8 +87,8 @@ func MeHandler(
 		lastName := ""
 		email := ""
 		isConfirmed := false
+		var tzVersions []*client.GetVersionMeResponse
 		// Получаем версии технических заданий от tz-bot
-		var versions []TechnicalSpecificationVersion
 		if session.UserID != "" {
 			userID, err := uuid.Parse(session.UserID)
 			if err != nil {
@@ -108,26 +107,25 @@ func MeHandler(
 					email = userInfo.Email
 				}
 
-				var tzVersions *tzv1.GetTechnicalSpecificationVersionsResponse
-
 				if userInfo.IsConfirmed {
 					isConfirmed = true
-					tzVersions, err = tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
-					if err != nil {
+					tzVersions, err = tzBotClient.GetVersionsMe(r.Context(), userID)
+					if err != nil || tzVersions == nil {
 						log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
 						// Не возвращаем ошибку, продолжаем с пустым массивом версий
-					} else {
-						// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
-						versions = make([]TechnicalSpecificationVersion, len(tzVersions.Versions))
-						for i, tzVersion := range tzVersions.Versions {
-							versions[i] = TechnicalSpecificationVersion{
-								VersionId:                  tzVersion.VersionId,
-								TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
-								VersionNumber:              tzVersion.VersionNumber,
-								CreatedAt:                  tzVersion.CreatedAt,
-							}
-						}
 					}
+					//else {
+					//	// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
+					//	//versions = make([]TechnicalSpecificationVersion, len(tzVersions))
+					//	//for i, tzVersion := range tzVersions {
+					//	//	versions[i] = TechnicalSpecificationVersion{
+					//	//		VersionId:                  tzVersion.VersionId,
+					//	//		TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
+					//	//		VersionNumber:              tzVersion.VersionNumber,
+					//	//		CreatedAt:                  tzVersion.CreatedAt,
+					//	//	}
+					//	//}
+					//}
 				}
 			}
 		}
@@ -135,7 +133,7 @@ func MeHandler(
 		response := MeResponse{
 			Login:       session.Login,
 			Level:       level,
-			Versions:    versions,
+			Versions:    tzVersions,
 			FirstName:   firstName,
 			LastName:    lastName,
 			Email:       email,

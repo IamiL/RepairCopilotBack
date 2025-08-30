@@ -109,7 +109,8 @@ func New(
 }
 
 // saveTechnicalSpecificationData saves technical specification data to database
-//func (tz *Tz) saveTechnicalSpecificationData(
+// func (tz *Tz) saveTechnicalSpecificationData(
+//
 //	ctx context.Context,
 //	filename string,
 //	userID uuid.UUID,
@@ -123,158 +124,170 @@ func New(
 //	allTokens int64,
 //	inspectionTime time.Duration,
 //	log *slog.Logger,
-//) error {
-//	now := time.Now()
 //
-//	// Создаем техническое задание
-//	tsID := uuid.New()
-//	tsReq := &modelrepo.CreateTechnicalSpecificationRequest{
-//		ID:        tsID,
-//		Name:      filename,
-//		UserID:    userID,
-//		CreatedAt: now,
-//		UpdatedAt: now,
-//	}
+//	) error {
+//		now := time.Now()
 //
-//	ts, err := tz.repo.CreateTechnicalSpecification(ctx, tsReq)
-//	if err != nil {
-//		return fmt.Errorf("failed to create technical specification: %w", err)
-//	}
-//
-//	log.Info("technical specification created", slog.String("ts_id", ts.ID.String()))
-//
-//	// Создаем версию
-//	versionID := uuid.New()
-//	versionReq := &repository.CreateVersionRequest{
-//		ID:                       versionID,
-//		TechnicalSpecificationID: tsID,
-//		VersionNumber:            1, // Первая версия
-//		CreatedAt:                now,
-//		UpdatedAt:                now,
-//		OriginalFileID:           originalFileID,
-//		OutHTML:                  outHTML,
-//		CSS:                      css,
-//		CheckedFileID:            "", // Пока пустое
-//		AllRubs:                  allRubs,
-//		AllTokens:                allTokens,
-//		InspectionTime:           inspectionTime,
-//	}
-//
-//	version, err := tz.repo.CreateVersion(ctx, versionReq)
-//	if err != nil {
-//		return fmt.Errorf("failed to create version: %w", err)
-//	}
-//
-//	log.Info("version created", slog.String("version_id", version.ID.String()))
-//
-//	// Сохраняем InvalidErrors
-//	if invalidErrors != nil && len(*invalidErrors) > 0 {
-//		invalidErrorData := make([]repository.InvalidErrorData, 0, len(*invalidErrors))
-//		for i, err := range *invalidErrors {
-//			invalidErrorData = append(invalidErrorData, repository.InvalidErrorData{
-//				ID:           uuid.New(),
-//				ErrorID:      int(err.Id),
-//				ErrorIDStr:   err.IdStr,
-//				GroupID:      err.GroupID,
-//				ErrorCode:    err.ErrorCode,
-//				Quote:        err.Quote,
-//				Analysis:     err.Analysis,
-//				Critique:     err.Critique,
-//				Verification: err.Verification,
-//				SuggestedFix: err.SuggestedFix,
-//				Rationale:    err.Rationale,
-//				OrderNumber:  i, // Порядковый номер (индекс в массиве)
-//				CreatedAt:    now,
-//			})
+//		// Создаем техническое задание
+//		tsID := uuid.New()
+//		tsReq := &modelrepo.CreateTechnicalSpecificationRequest{
+//			ID:        tsID,
+//			Name:      filename,
+//			UserID:    userID,
+//			CreatedAt: now,
+//			UpdatedAt: now,
 //		}
 //
-//		invalidReq := &repository.CreateInvalidErrorsRequest{
-//			VersionID: versionID,
-//			Errors:    invalidErrorData,
-//		}
-//
-//		err = tz.repo.CreateInvalidErrors(ctx, invalidReq)
+//		ts, err := tz.repo.CreateTechnicalSpecification(ctx, tsReq)
 //		if err != nil {
-//			return fmt.Errorf("failed to create invalid errors: %w", err)
+//			return fmt.Errorf("failed to create technical specification: %w", err)
 //		}
 //
-//		log.Info("invalid errors saved", slog.Int("count", len(invalidErrorData)))
-//	}
+//		log.Info("technical specification created", slog.String("ts_id", ts.ID.String()))
 //
-//	// Сохраняем MissingErrors
-//	if missingErrors != nil && len(*missingErrors) > 0 {
-//		missingErrorData := make([]repository.MissingErrorData, 0, len(*missingErrors))
-//		for _, err := range *missingErrors {
-//			missingErrorData = append(missingErrorData, repository.MissingErrorData{
-//				ID:           uuid.New(),
-//				ErrorID:      int(err.Id),
-//				ErrorIDStr:   err.IdStr,
-//				GroupID:      err.GroupID,
-//				ErrorCode:    err.ErrorCode,
-//				Analysis:     err.Analysis,
-//				Critique:     err.Critique,
-//				Verification: err.Verification,
-//				SuggestedFix: err.SuggestedFix,
-//				Rationale:    err.Rationale,
-//				CreatedAt:    now,
-//			})
+//		// Создаем версию
+//		versionID := uuid.New()
+//		versionReq := &repository.CreateVersionRequest{
+//			ID:                       versionID,
+//			TechnicalSpecificationID: tsID,
+//			VersionNumber:            1, // Первая версия
+//			CreatedAt:                now,
+//			UpdatedAt:                now,
+//			OriginalFileID:           originalFileID,
+//			OutHTML:                  outHTML,
+//			CSS:                      css,
+//			CheckedFileID:            "", // Пока пустое
+//			AllRubs:                  allRubs,
+//			AllTokens:                allTokens,
+//			InspectionTime:           inspectionTime,
 //		}
 //
-//		missingReq := &repository.CreateMissingErrorsRequest{
-//			VersionID: versionID,
-//			Errors:    missingErrorData,
-//		}
-//
-//		err = tz.repo.CreateMissingErrors(ctx, missingReq)
+//		version, err := tz.repo.CreateVersion(ctx, versionReq)
 //		if err != nil {
-//			return fmt.Errorf("failed to create missing errors: %w", err)
+//			return fmt.Errorf("failed to create version: %w", err)
 //		}
 //
-//		log.Info("missing errors saved", slog.Int("count", len(missingErrorData)))
-//	}
+//		log.Info("version created", slog.String("version_id", version.ID.String()))
 //
-//	// Сохраняем Errors
-//	if errors != nil && len(*errors) > 0 {
-//		errorData := make([]repository.ErrorData, 0, len(*errors))
-//		for _, err := range *errors {
-//			instancesJSON, jsonErr := json.Marshal(err.Instances)
-//			if jsonErr != nil {
-//				return fmt.Errorf("failed to marshal instances: %w", jsonErr)
+//		// Сохраняем InvalidErrors
+//		if invalidErrors != nil && len(*invalidErrors) > 0 {
+//			invalidErrorData := make([]repository.InvalidErrorData, 0, len(*invalidErrors))
+//			for i, err := range *invalidErrors {
+//				invalidErrorData = append(invalidErrorData, repository.InvalidErrorData{
+//					ID:           uuid.New(),
+//					ErrorID:      int(err.Id),
+//					ErrorIDStr:   err.IdStr,
+//					GroupID:      err.GroupID,
+//					ErrorCode:    err.ErrorCode,
+//					Quote:        err.Quote,
+//					Analysis:     err.Analysis,
+//					Critique:     err.Critique,
+//					Verification: err.Verification,
+//					SuggestedFix: err.SuggestedFix,
+//					Rationale:    err.Rationale,
+//					OrderNumber:  i, // Порядковый номер (индекс в массиве)
+//					CreatedAt:    now,
+//				})
 //			}
 //
-//			errorData = append(errorData, repository.ErrorData{
-//				ID:                  err.ID,
-//				GroupID:             &err.GroupID,
-//				ErrorCode:           &err.ErrorCode,
-//				PreliminaryNotes:    err.PreliminaryNotes,
-//				OverallCritique:     err.OverallCritique,
-//				Verdict:             &err.Verdict,
-//				ProcessAnalysis:     err.ProcessAnalysis,
-//				ProcessCritique:     err.ProcessCritique,
-//				ProcessVerification: err.ProcessVerification,
-//				ProcessRetrieval:    err.ProcessRetrieval,
-//				Instances:           instancesJSON,
-//			})
+//			invalidReq := &repository.CreateInvalidErrorsRequest{
+//				VersionID: versionID,
+//				Errors:    invalidErrorData,
+//			}
+//
+//			err = tz.repo.CreateInvalidErrors(ctx, invalidReq)
+//			if err != nil {
+//				return fmt.Errorf("failed to create invalid errors: %w", err)
+//			}
+//
+//			log.Info("invalid errors saved", slog.Int("count", len(invalidErrorData)))
 //		}
 //
-//		errorsReq := &repository.CreateErrorsRequest{
-//			VersionID: versionID,
-//			Errors:    errorData,
+//		// Сохраняем MissingErrors
+//		if missingErrors != nil && len(*missingErrors) > 0 {
+//			missingErrorData := make([]repository.MissingErrorData, 0, len(*missingErrors))
+//			for _, err := range *missingErrors {
+//				missingErrorData = append(missingErrorData, repository.MissingErrorData{
+//					ID:           uuid.New(),
+//					ErrorID:      int(err.Id),
+//					ErrorIDStr:   err.IdStr,
+//					GroupID:      err.GroupID,
+//					ErrorCode:    err.ErrorCode,
+//					Analysis:     err.Analysis,
+//					Critique:     err.Critique,
+//					Verification: err.Verification,
+//					SuggestedFix: err.SuggestedFix,
+//					Rationale:    err.Rationale,
+//					CreatedAt:    now,
+//				})
+//			}
+//
+//			missingReq := &repository.CreateMissingErrorsRequest{
+//				VersionID: versionID,
+//				Errors:    missingErrorData,
+//			}
+//
+//			err = tz.repo.CreateMissingErrors(ctx, missingReq)
+//			if err != nil {
+//				return fmt.Errorf("failed to create missing errors: %w", err)
+//			}
+//
+//			log.Info("missing errors saved", slog.Int("count", len(missingErrorData)))
 //		}
 //
-//		err = tz.repo.CreateErrors(ctx, errorsReq)
-//		if err != nil {
-//			return fmt.Errorf("failed to create errors: %w", err)
+//		// Сохраняем Errors
+//		if errors != nil && len(*errors) > 0 {
+//			errorData := make([]repository.ErrorData, 0, len(*errors))
+//			for _, err := range *errors {
+//				instancesJSON, jsonErr := json.Marshal(err.Instances)
+//				if jsonErr != nil {
+//					return fmt.Errorf("failed to marshal instances: %w", jsonErr)
+//				}
+//
+//				errorData = append(errorData, repository.ErrorData{
+//					ID:                  err.ID,
+//					GroupID:             &err.GroupID,
+//					ErrorCode:           &err.ErrorCode,
+//					PreliminaryNotes:    err.PreliminaryNotes,
+//					OverallCritique:     err.OverallCritique,
+//					Verdict:             &err.Verdict,
+//					ProcessAnalysis:     err.ProcessAnalysis,
+//					ProcessCritique:     err.ProcessCritique,
+//					ProcessVerification: err.ProcessVerification,
+//					ProcessRetrieval:    err.ProcessRetrieval,
+//					Instances:           instancesJSON,
+//				})
+//			}
+//
+//			errorsReq := &repository.CreateErrorsRequest{
+//				VersionID: versionID,
+//				Errors:    errorData,
+//			}
+//
+//			err = tz.repo.CreateErrors(ctx, errorsReq)
+//			if err != nil {
+//				return fmt.Errorf("failed to create errors: %w", err)
+//			}
+//
+//			log.Info("errors saved", slog.Int("count", len(errorData)))
 //		}
 //
-//		log.Info("errors saved", slog.Int("count", len(errorData)))
+//		log.Info("technical specification data saved successfully")
+//		return nil
 //	}
-//
-//	log.Info("technical specification data saved successfully")
-//	return nil
-//}
+type VersionMe struct {
+	ID                         uuid.UUID `db:"id"`
+	TechnicalSpecificationName string    `db:"technical_specification_name"`
+	VersionNumber              int       `db:"version_number"`
+	CreatedAt                  time.Time `db:"created_at"`
+	OriginalFileID             string    `db:"original_file_id"`
+	OriginalFileLink           string    `db:"original_file_link"`
+	ReportFileID               *string
+	ReportFileLink             *string
+	Status                     string
+}
 
-func (tz *Tz) GetTechnicalSpecificationVersions(ctx context.Context, userID uuid.UUID) ([]*modelrepo.VersionSummary, error) {
+func (tz *Tz) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*VersionMe, error) {
 	const op = "Tz.GetTechnicalSpecificationVersions"
 
 	log := tz.log.With(
@@ -284,19 +297,20 @@ func (tz *Tz) GetTechnicalSpecificationVersions(ctx context.Context, userID uuid
 
 	log.Info("getting technical specification versions")
 
-	versions, err := tz.repo.GetVersionsByUserID(ctx, userID)
+	versions, err := tz.repo.GetVersionsMeByUserID(ctx, userID)
 	if err != nil {
 		log.Error("failed to get versions by user ID: ", sl.Err(err))
 		return nil, fmt.Errorf("failed to get versions by user ID: %w", err)
 	}
 
 	for i := range versions {
-		if versions[i].ReportFileID != "" {
-			versions[i].ReportFileID = "https://timuroid.ru/reports/" + versions[i].ReportFileID + ".docx"
+		if versions[i].ReportFileID != nil && *versions[i].ReportFileID != "" {
+			reportFileLink := "https://timuroid.ru/reports/" + *versions[i].ReportFileID + ".docx"
+			versions[i].ReportFileLink = &reportFileLink
 		}
 
 		if versions[i].OriginalFileID != "" {
-			versions[i].OriginalFileID = "https://timuroid.ru/docx/" + versions[i].OriginalFileID + ".docx"
+			versions[i].OriginalFileLink = "https://timuroid.ru/docx/" + versions[i].OriginalFileID + ".docx"
 		}
 	}
 

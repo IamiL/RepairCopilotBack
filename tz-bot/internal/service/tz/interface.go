@@ -18,14 +18,14 @@ type DailyAnalyticsPoint struct {
 
 // FeedbackInstance represents a feedback instance with full context information
 type FeedbackInstance struct {
-	InstanceID                   string
-	InstanceType                 string // "invalid" or "missing"
-	FeedbackMark                 bool
-	FeedbackComment              string
-	FeedbackUser                 string
-	ErrorID                      string
-	VersionID                    string
-	TechnicalSpecificationName   string
+	InstanceID                 string
+	InstanceType               string // "invalid" or "missing"
+	FeedbackMark               bool
+	FeedbackComment            string
+	FeedbackUser               string
+	ErrorID                    string
+	VersionID                  string
+	TechnicalSpecificationName string
 }
 
 // TechnicalSpecificationRepository defines the interface for technical specification operations
@@ -61,7 +61,7 @@ type VersionRepository interface {
 	GetVersionsByTechnicalSpecificationID(ctx context.Context, technicalSpecificationID uuid.UUID) ([]*modelrepo.Version, error)
 
 	// GetVersionsByUserID retrieves all versions with minimal data for a user
-	GetVersionsByUserID(ctx context.Context, userID uuid.UUID) ([]*modelrepo.VersionSummary, error)
+	GetVersionsMeByUserID(ctx context.Context, userID uuid.UUID) ([]*VersionMe, error)
 
 	// GetAllVersions retrieves all versions with complete data and error counts
 	GetAllVersionsAdminDashboard(ctx context.Context) ([]*VersionAdminDashboard, error)

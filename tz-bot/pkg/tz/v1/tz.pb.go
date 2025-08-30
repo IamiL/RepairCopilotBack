@@ -658,27 +658,27 @@ func (x *MissingInstance) GetFeedbackVerificationUser() string {
 	return ""
 }
 
-type GetTechnicalSpecificationVersionsRequest struct {
+type GetVersionsMeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetTechnicalSpecificationVersionsRequest) Reset() {
-	*x = GetTechnicalSpecificationVersionsRequest{}
+func (x *GetVersionsMeRequest) Reset() {
+	*x = GetVersionsMeRequest{}
 	mi := &file_tz_v1_tz_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTechnicalSpecificationVersionsRequest) String() string {
+func (x *GetVersionsMeRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTechnicalSpecificationVersionsRequest) ProtoMessage() {}
+func (*GetVersionsMeRequest) ProtoMessage() {}
 
-func (x *GetTechnicalSpecificationVersionsRequest) ProtoReflect() protoreflect.Message {
+func (x *GetVersionsMeRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_tz_v1_tz_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -690,39 +690,39 @@ func (x *GetTechnicalSpecificationVersionsRequest) ProtoReflect() protoreflect.M
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTechnicalSpecificationVersionsRequest.ProtoReflect.Descriptor instead.
-func (*GetTechnicalSpecificationVersionsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetVersionsMeRequest.ProtoReflect.Descriptor instead.
+func (*GetVersionsMeRequest) Descriptor() ([]byte, []int) {
 	return file_tz_v1_tz_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetTechnicalSpecificationVersionsRequest) GetUserId() string {
+func (x *GetVersionsMeRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
 	}
 	return ""
 }
 
-type GetTechnicalSpecificationVersionsResponse struct {
-	state         protoimpl.MessageState           `protogen:"open.v1"`
-	Versions      []*TechnicalSpecificationVersion `protobuf:"bytes,1,rep,name=versions,proto3" json:"versions,omitempty"`
+type GetVersionsMeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Versions      []*VersionMe           `protobuf:"bytes,1,rep,name=versions,proto3" json:"versions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetTechnicalSpecificationVersionsResponse) Reset() {
-	*x = GetTechnicalSpecificationVersionsResponse{}
+func (x *GetVersionsMeResponse) Reset() {
+	*x = GetVersionsMeResponse{}
 	mi := &file_tz_v1_tz_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetTechnicalSpecificationVersionsResponse) String() string {
+func (x *GetVersionsMeResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetTechnicalSpecificationVersionsResponse) ProtoMessage() {}
+func (*GetVersionsMeResponse) ProtoMessage() {}
 
-func (x *GetTechnicalSpecificationVersionsResponse) ProtoReflect() protoreflect.Message {
+func (x *GetVersionsMeResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_tz_v1_tz_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -734,44 +734,45 @@ func (x *GetTechnicalSpecificationVersionsResponse) ProtoReflect() protoreflect.
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetTechnicalSpecificationVersionsResponse.ProtoReflect.Descriptor instead.
-func (*GetTechnicalSpecificationVersionsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetVersionsMeResponse.ProtoReflect.Descriptor instead.
+func (*GetVersionsMeResponse) Descriptor() ([]byte, []int) {
 	return file_tz_v1_tz_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *GetTechnicalSpecificationVersionsResponse) GetVersions() []*TechnicalSpecificationVersion {
+func (x *GetVersionsMeResponse) GetVersions() []*VersionMe {
 	if x != nil {
 		return x.Versions
 	}
 	return nil
 }
 
-type TechnicalSpecificationVersion struct {
+type VersionMe struct {
 	state                      protoimpl.MessageState `protogen:"open.v1"`
 	VersionId                  string                 `protobuf:"bytes,1,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
 	TechnicalSpecificationName string                 `protobuf:"bytes,2,opt,name=technical_specification_name,json=technicalSpecificationName,proto3" json:"technical_specification_name,omitempty"`
 	VersionNumber              int32                  `protobuf:"varint,3,opt,name=version_number,json=versionNumber,proto3" json:"version_number,omitempty"`
-	CreatedAt                  string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedAt                  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	OriginalFileLink           string                 `protobuf:"bytes,5,opt,name=original_file_link,json=originalFileLink,proto3" json:"original_file_link,omitempty"`
-	ReportFileLink             string                 `protobuf:"bytes,6,opt,name=report_file_link,json=reportFileLink,proto3" json:"report_file_link,omitempty"`
+	ReportFileLink             *string                `protobuf:"bytes,6,opt,name=report_file_link,json=reportFileLink,proto3,oneof" json:"report_file_link,omitempty"`
+	Status                     string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
 
-func (x *TechnicalSpecificationVersion) Reset() {
-	*x = TechnicalSpecificationVersion{}
+func (x *VersionMe) Reset() {
+	*x = VersionMe{}
 	mi := &file_tz_v1_tz_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TechnicalSpecificationVersion) String() string {
+func (x *VersionMe) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TechnicalSpecificationVersion) ProtoMessage() {}
+func (*VersionMe) ProtoMessage() {}
 
-func (x *TechnicalSpecificationVersion) ProtoReflect() protoreflect.Message {
+func (x *VersionMe) ProtoReflect() protoreflect.Message {
 	mi := &file_tz_v1_tz_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -783,49 +784,56 @@ func (x *TechnicalSpecificationVersion) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TechnicalSpecificationVersion.ProtoReflect.Descriptor instead.
-func (*TechnicalSpecificationVersion) Descriptor() ([]byte, []int) {
+// Deprecated: Use VersionMe.ProtoReflect.Descriptor instead.
+func (*VersionMe) Descriptor() ([]byte, []int) {
 	return file_tz_v1_tz_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *TechnicalSpecificationVersion) GetVersionId() string {
+func (x *VersionMe) GetVersionId() string {
 	if x != nil {
 		return x.VersionId
 	}
 	return ""
 }
 
-func (x *TechnicalSpecificationVersion) GetTechnicalSpecificationName() string {
+func (x *VersionMe) GetTechnicalSpecificationName() string {
 	if x != nil {
 		return x.TechnicalSpecificationName
 	}
 	return ""
 }
 
-func (x *TechnicalSpecificationVersion) GetVersionNumber() int32 {
+func (x *VersionMe) GetVersionNumber() int32 {
 	if x != nil {
 		return x.VersionNumber
 	}
 	return 0
 }
 
-func (x *TechnicalSpecificationVersion) GetCreatedAt() string {
+func (x *VersionMe) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
 	}
-	return ""
+	return nil
 }
 
-func (x *TechnicalSpecificationVersion) GetOriginalFileLink() string {
+func (x *VersionMe) GetOriginalFileLink() string {
 	if x != nil {
 		return x.OriginalFileLink
 	}
 	return ""
 }
 
-func (x *TechnicalSpecificationVersion) GetReportFileLink() string {
+func (x *VersionMe) GetReportFileLink() string {
+	if x != nil && x.ReportFileLink != nil {
+		return *x.ReportFileLink
+	}
+	return ""
+}
+
+func (x *VersionMe) GetStatus() string {
 	if x != nil {
-		return x.ReportFileLink
+		return x.Status
 	}
 	return ""
 }
@@ -888,8 +896,9 @@ type GetVersionResponse struct {
 	AverageInspectionTimeNanoseconds *int64                 `protobuf:"varint,10,opt,name=average_inspection_time_nanoseconds,json=averageInspectionTimeNanoseconds,proto3,oneof" json:"average_inspection_time_nanoseconds,omitempty"`
 	OriginalFileSize                 *int64                 `protobuf:"varint,11,opt,name=original_file_size,json=originalFileSize,proto3,oneof" json:"original_file_size,omitempty"`
 	NumberOfErrors                   *int32                 `protobuf:"varint,12,opt,name=numberOfErrors,proto3,oneof" json:"numberOfErrors,omitempty"`
-	Name                             string                 `protobuf:"bytes,13,opt,name=name,proto3" json:"name,omitempty"`
-	Status                           string                 `protobuf:"bytes,14,opt,name=status,proto3" json:"status,omitempty"`
+	ErrorsMap                        map[string]*Error      `protobuf:"bytes,13,rep,name=errorsMap,proto3" json:"errorsMap,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Name                             string                 `protobuf:"bytes,14,opt,name=name,proto3" json:"name,omitempty"`
+	Status                           string                 `protobuf:"bytes,15,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields                    protoimpl.UnknownFields
 	sizeCache                        protoimpl.SizeCache
 }
@@ -1006,6 +1015,13 @@ func (x *GetVersionResponse) GetNumberOfErrors() int32 {
 		return *x.NumberOfErrors
 	}
 	return 0
+}
+
+func (x *GetVersionResponse) GetErrorsMap() map[string]*Error {
+	if x != nil {
+		return x.ErrorsMap
+	}
+	return nil
 }
 
 func (x *GetVersionResponse) GetName() string {
@@ -2058,23 +2074,25 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x0e_feedback_userB\x1d\n" +
 	"\x1b_feedback_verification_markB \n" +
 	"\x1e_feedback_verification_commentB\x1d\n" +
-	"\x1b_feedback_verification_user\"C\n" +
-	"(GetTechnicalSpecificationVersionsRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"m\n" +
-	")GetTechnicalSpecificationVersionsResponse\x12@\n" +
-	"\bversions\x18\x01 \x03(\v2$.tz.v1.TechnicalSpecificationVersionR\bversions\"\x9e\x02\n" +
-	"\x1dTechnicalSpecificationVersion\x12\x1d\n" +
+	"\x1b_feedback_verification_user\"/\n" +
+	"\x14GetVersionsMeRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"E\n" +
+	"\x15GetVersionsMeResponse\x12,\n" +
+	"\bversions\x18\x01 \x03(\v2\x10.tz.v1.VersionMeR\bversions\"\xd8\x02\n" +
+	"\tVersionMe\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x01 \x01(\tR\tversionId\x12@\n" +
 	"\x1ctechnical_specification_name\x18\x02 \x01(\tR\x1atechnicalSpecificationName\x12%\n" +
-	"\x0eversion_number\x18\x03 \x01(\x05R\rversionNumber\x12\x1d\n" +
+	"\x0eversion_number\x18\x03 \x01(\x05R\rversionNumber\x129\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\tR\tcreatedAt\x12,\n" +
-	"\x12original_file_link\x18\x05 \x01(\tR\x10originalFileLink\x12(\n" +
-	"\x10report_file_link\x18\x06 \x01(\tR\x0ereportFileLink\"2\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12,\n" +
+	"\x12original_file_link\x18\x05 \x01(\tR\x10originalFileLink\x12-\n" +
+	"\x10report_file_link\x18\x06 \x01(\tH\x00R\x0ereportFileLink\x88\x01\x01\x12\x16\n" +
+	"\x06status\x18\a \x01(\tR\x06statusB\x13\n" +
+	"\x11_report_file_link\"2\n" +
 	"\x11GetVersionRequest\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x01 \x01(\tR\tversionId\"\xf4\x05\n" +
+	"version_id\x18\x01 \x01(\tR\tversionId\"\x88\a\n" +
 	"\x12GetVersionResponse\x12 \n" +
 	"\thtml_text\x18\x01 \x01(\tH\x00R\bhtmlText\x88\x01\x01\x12\x15\n" +
 	"\x03css\x18\x02 \x01(\tH\x01R\x03css\x88\x01\x01\x12\x19\n" +
@@ -2090,9 +2108,13 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"#average_inspection_time_nanoseconds\x18\n" +
 	" \x01(\x03H\x06R averageInspectionTimeNanoseconds\x88\x01\x01\x121\n" +
 	"\x12original_file_size\x18\v \x01(\x03H\aR\x10originalFileSize\x88\x01\x01\x12+\n" +
-	"\x0enumberOfErrors\x18\f \x01(\x05H\bR\x0enumberOfErrors\x88\x01\x01\x12\x12\n" +
-	"\x04name\x18\r \x01(\tR\x04name\x12\x16\n" +
-	"\x06status\x18\x0e \x01(\tR\x06statusB\f\n" +
+	"\x0enumberOfErrors\x18\f \x01(\x05H\bR\x0enumberOfErrors\x88\x01\x01\x12F\n" +
+	"\terrorsMap\x18\r \x03(\v2(.tz.v1.GetVersionResponse.ErrorsMapEntryR\terrorsMap\x12\x12\n" +
+	"\x04name\x18\x0e \x01(\tR\x04name\x12\x16\n" +
+	"\x06status\x18\x0f \x01(\tR\x06status\x1aJ\n" +
+	"\x0eErrorsMapEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\"\n" +
+	"\x05value\x18\x02 \x01(\v2\f.tz.v1.ErrorR\x05value:\x028\x01B\f\n" +
 	"\n" +
 	"_html_textB\x06\n" +
 	"\x04_cssB\b\n" +
@@ -2186,10 +2208,10 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\berror_id\x18\x06 \x01(\tR\aerrorId\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\a \x01(\tR\tversionId\x12@\n" +
-	"\x1ctechnical_specification_name\x18\b \x01(\tR\x1atechnicalSpecificationName2\xc2\x06\n" +
+	"\x1ctechnical_specification_name\x18\b \x01(\tR\x1atechnicalSpecificationName2\x85\x06\n" +
 	"\tTzService\x128\n" +
-	"\aCheckTz\x12\x15.tz.v1.CheckTzRequest\x1a\x16.tz.v1.CheckTzResponse\x12\x86\x01\n" +
-	"!GetTechnicalSpecificationVersions\x12/.tz.v1.GetTechnicalSpecificationVersionsRequest\x1a0.tz.v1.GetTechnicalSpecificationVersionsResponse\x12w\n" +
+	"\aCheckTz\x12\x15.tz.v1.CheckTzRequest\x1a\x16.tz.v1.CheckTzResponse\x12J\n" +
+	"\rGetVersionsMe\x12\x1b.tz.v1.GetVersionsMeRequest\x1a\x1c.tz.v1.GetVersionsMeResponse\x12w\n" +
 	"\x1cGetAllVersionsAdminDashboard\x12*.tz.v1.GetAllVersionsAdminDashboardRequest\x1a+.tz.v1.GetAllVersionsAdminDashboardResponse\x12_\n" +
 	"\x14GetVersionStatistics\x12\".tz.v1.GetVersionStatisticsRequest\x1a#.tz.v1.GetVersionStatisticsResponse\x12A\n" +
 	"\n" +
@@ -2211,73 +2233,77 @@ func file_tz_v1_tz_proto_rawDescGZIP() []byte {
 	return file_tz_v1_tz_proto_rawDescData
 }
 
-var file_tz_v1_tz_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_tz_v1_tz_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_tz_v1_tz_proto_goTypes = []any{
-	(*CheckTzRequest)(nil),                            // 0: tz.v1.CheckTzRequest
-	(*CheckTzResponse)(nil),                           // 1: tz.v1.CheckTzResponse
-	(*Error)(nil),                                     // 2: tz.v1.Error
-	(*InvalidInstance)(nil),                           // 3: tz.v1.InvalidInstance
-	(*MissingInstance)(nil),                           // 4: tz.v1.MissingInstance
-	(*GetTechnicalSpecificationVersionsRequest)(nil),  // 5: tz.v1.GetTechnicalSpecificationVersionsRequest
-	(*GetTechnicalSpecificationVersionsResponse)(nil), // 6: tz.v1.GetTechnicalSpecificationVersionsResponse
-	(*TechnicalSpecificationVersion)(nil),             // 7: tz.v1.TechnicalSpecificationVersion
-	(*GetVersionRequest)(nil),                         // 8: tz.v1.GetVersionRequest
-	(*GetVersionResponse)(nil),                        // 9: tz.v1.GetVersionResponse
-	(*GetAllVersionsAdminDashboardRequest)(nil),       // 10: tz.v1.GetAllVersionsAdminDashboardRequest
-	(*GetAllVersionsAdminDashboardResponse)(nil),      // 11: tz.v1.GetAllVersionsAdminDashboardResponse
-	(*VersionAdminDashboard)(nil),                     // 12: tz.v1.VersionAdminDashboard
-	(*GetVersionStatisticsRequest)(nil),               // 13: tz.v1.GetVersionStatisticsRequest
-	(*GetVersionStatisticsResponse)(nil),              // 14: tz.v1.GetVersionStatisticsResponse
-	(*VersionStatistics)(nil),                         // 15: tz.v1.VersionStatistics
-	(*NewFeedbackErrorRequest)(nil),                   // 16: tz.v1.NewFeedbackErrorRequest
-	(*NewFeedbackErrorResponse)(nil),                  // 17: tz.v1.NewFeedbackErrorResponse
-	(*GetVersionsDateRangeRequest)(nil),               // 18: tz.v1.GetVersionsDateRangeRequest
-	(*GetVersionsDateRangeResponse)(nil),              // 19: tz.v1.GetVersionsDateRangeResponse
-	(*GetDailyAnalyticsRequest)(nil),                  // 20: tz.v1.GetDailyAnalyticsRequest
-	(*GetDailyAnalyticsResponse)(nil),                 // 21: tz.v1.GetDailyAnalyticsResponse
-	(*DailyAnalyticsPoint)(nil),                       // 22: tz.v1.DailyAnalyticsPoint
-	(*GetFeedbacksRequest)(nil),                       // 23: tz.v1.GetFeedbacksRequest
-	(*GetFeedbacksResponse)(nil),                      // 24: tz.v1.GetFeedbacksResponse
-	(*FeedbackInstance)(nil),                          // 25: tz.v1.FeedbackInstance
-	(*timestamppb.Timestamp)(nil),                     // 26: google.protobuf.Timestamp
+	(*CheckTzRequest)(nil),                       // 0: tz.v1.CheckTzRequest
+	(*CheckTzResponse)(nil),                      // 1: tz.v1.CheckTzResponse
+	(*Error)(nil),                                // 2: tz.v1.Error
+	(*InvalidInstance)(nil),                      // 3: tz.v1.InvalidInstance
+	(*MissingInstance)(nil),                      // 4: tz.v1.MissingInstance
+	(*GetVersionsMeRequest)(nil),                 // 5: tz.v1.GetVersionsMeRequest
+	(*GetVersionsMeResponse)(nil),                // 6: tz.v1.GetVersionsMeResponse
+	(*VersionMe)(nil),                            // 7: tz.v1.VersionMe
+	(*GetVersionRequest)(nil),                    // 8: tz.v1.GetVersionRequest
+	(*GetVersionResponse)(nil),                   // 9: tz.v1.GetVersionResponse
+	(*GetAllVersionsAdminDashboardRequest)(nil),  // 10: tz.v1.GetAllVersionsAdminDashboardRequest
+	(*GetAllVersionsAdminDashboardResponse)(nil), // 11: tz.v1.GetAllVersionsAdminDashboardResponse
+	(*VersionAdminDashboard)(nil),                // 12: tz.v1.VersionAdminDashboard
+	(*GetVersionStatisticsRequest)(nil),          // 13: tz.v1.GetVersionStatisticsRequest
+	(*GetVersionStatisticsResponse)(nil),         // 14: tz.v1.GetVersionStatisticsResponse
+	(*VersionStatistics)(nil),                    // 15: tz.v1.VersionStatistics
+	(*NewFeedbackErrorRequest)(nil),              // 16: tz.v1.NewFeedbackErrorRequest
+	(*NewFeedbackErrorResponse)(nil),             // 17: tz.v1.NewFeedbackErrorResponse
+	(*GetVersionsDateRangeRequest)(nil),          // 18: tz.v1.GetVersionsDateRangeRequest
+	(*GetVersionsDateRangeResponse)(nil),         // 19: tz.v1.GetVersionsDateRangeResponse
+	(*GetDailyAnalyticsRequest)(nil),             // 20: tz.v1.GetDailyAnalyticsRequest
+	(*GetDailyAnalyticsResponse)(nil),            // 21: tz.v1.GetDailyAnalyticsResponse
+	(*DailyAnalyticsPoint)(nil),                  // 22: tz.v1.DailyAnalyticsPoint
+	(*GetFeedbacksRequest)(nil),                  // 23: tz.v1.GetFeedbacksRequest
+	(*GetFeedbacksResponse)(nil),                 // 24: tz.v1.GetFeedbacksResponse
+	(*FeedbackInstance)(nil),                     // 25: tz.v1.FeedbackInstance
+	nil,                                          // 26: tz.v1.GetVersionResponse.ErrorsMapEntry
+	(*timestamppb.Timestamp)(nil),                // 27: google.protobuf.Timestamp
 }
 var file_tz_v1_tz_proto_depIdxs = []int32{
-	26, // 0: tz.v1.CheckTzResponse.created_at:type_name -> google.protobuf.Timestamp
+	27, // 0: tz.v1.CheckTzResponse.created_at:type_name -> google.protobuf.Timestamp
 	3,  // 1: tz.v1.Error.invalid_instances:type_name -> tz.v1.InvalidInstance
 	4,  // 2: tz.v1.Error.missing_instances:type_name -> tz.v1.MissingInstance
 	2,  // 3: tz.v1.InvalidInstance.parent_error:type_name -> tz.v1.Error
-	7,  // 4: tz.v1.GetTechnicalSpecificationVersionsResponse.versions:type_name -> tz.v1.TechnicalSpecificationVersion
-	2,  // 5: tz.v1.GetVersionResponse.errors:type_name -> tz.v1.Error
-	3,  // 6: tz.v1.GetVersionResponse.invalid_instances:type_name -> tz.v1.InvalidInstance
-	26, // 7: tz.v1.GetVersionResponse.created_at:type_name -> google.protobuf.Timestamp
-	12, // 8: tz.v1.GetAllVersionsAdminDashboardResponse.versions:type_name -> tz.v1.VersionAdminDashboard
-	26, // 9: tz.v1.VersionAdminDashboard.created_at:type_name -> google.protobuf.Timestamp
-	15, // 10: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
-	22, // 11: tz.v1.GetDailyAnalyticsResponse.series:type_name -> tz.v1.DailyAnalyticsPoint
-	25, // 12: tz.v1.GetFeedbacksResponse.feedbacks:type_name -> tz.v1.FeedbackInstance
-	0,  // 13: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
-	5,  // 14: tz.v1.TzService.GetTechnicalSpecificationVersions:input_type -> tz.v1.GetTechnicalSpecificationVersionsRequest
-	10, // 15: tz.v1.TzService.GetAllVersionsAdminDashboard:input_type -> tz.v1.GetAllVersionsAdminDashboardRequest
-	13, // 16: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
-	8,  // 17: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
-	16, // 18: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
-	18, // 19: tz.v1.TzService.GetVersionsDateRange:input_type -> tz.v1.GetVersionsDateRangeRequest
-	20, // 20: tz.v1.TzService.GetDailyAnalytics:input_type -> tz.v1.GetDailyAnalyticsRequest
-	23, // 21: tz.v1.TzService.GetFeedbacks:input_type -> tz.v1.GetFeedbacksRequest
-	1,  // 22: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
-	6,  // 23: tz.v1.TzService.GetTechnicalSpecificationVersions:output_type -> tz.v1.GetTechnicalSpecificationVersionsResponse
-	11, // 24: tz.v1.TzService.GetAllVersionsAdminDashboard:output_type -> tz.v1.GetAllVersionsAdminDashboardResponse
-	14, // 25: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
-	9,  // 26: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
-	17, // 27: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
-	19, // 28: tz.v1.TzService.GetVersionsDateRange:output_type -> tz.v1.GetVersionsDateRangeResponse
-	21, // 29: tz.v1.TzService.GetDailyAnalytics:output_type -> tz.v1.GetDailyAnalyticsResponse
-	24, // 30: tz.v1.TzService.GetFeedbacks:output_type -> tz.v1.GetFeedbacksResponse
-	22, // [22:31] is the sub-list for method output_type
-	13, // [13:22] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	7,  // 4: tz.v1.GetVersionsMeResponse.versions:type_name -> tz.v1.VersionMe
+	27, // 5: tz.v1.VersionMe.created_at:type_name -> google.protobuf.Timestamp
+	2,  // 6: tz.v1.GetVersionResponse.errors:type_name -> tz.v1.Error
+	3,  // 7: tz.v1.GetVersionResponse.invalid_instances:type_name -> tz.v1.InvalidInstance
+	27, // 8: tz.v1.GetVersionResponse.created_at:type_name -> google.protobuf.Timestamp
+	26, // 9: tz.v1.GetVersionResponse.errorsMap:type_name -> tz.v1.GetVersionResponse.ErrorsMapEntry
+	12, // 10: tz.v1.GetAllVersionsAdminDashboardResponse.versions:type_name -> tz.v1.VersionAdminDashboard
+	27, // 11: tz.v1.VersionAdminDashboard.created_at:type_name -> google.protobuf.Timestamp
+	15, // 12: tz.v1.GetVersionStatisticsResponse.statistics:type_name -> tz.v1.VersionStatistics
+	22, // 13: tz.v1.GetDailyAnalyticsResponse.series:type_name -> tz.v1.DailyAnalyticsPoint
+	25, // 14: tz.v1.GetFeedbacksResponse.feedbacks:type_name -> tz.v1.FeedbackInstance
+	2,  // 15: tz.v1.GetVersionResponse.ErrorsMapEntry.value:type_name -> tz.v1.Error
+	0,  // 16: tz.v1.TzService.CheckTz:input_type -> tz.v1.CheckTzRequest
+	5,  // 17: tz.v1.TzService.GetVersionsMe:input_type -> tz.v1.GetVersionsMeRequest
+	10, // 18: tz.v1.TzService.GetAllVersionsAdminDashboard:input_type -> tz.v1.GetAllVersionsAdminDashboardRequest
+	13, // 19: tz.v1.TzService.GetVersionStatistics:input_type -> tz.v1.GetVersionStatisticsRequest
+	8,  // 20: tz.v1.TzService.GetVersion:input_type -> tz.v1.GetVersionRequest
+	16, // 21: tz.v1.TzService.NewFeedbackError:input_type -> tz.v1.NewFeedbackErrorRequest
+	18, // 22: tz.v1.TzService.GetVersionsDateRange:input_type -> tz.v1.GetVersionsDateRangeRequest
+	20, // 23: tz.v1.TzService.GetDailyAnalytics:input_type -> tz.v1.GetDailyAnalyticsRequest
+	23, // 24: tz.v1.TzService.GetFeedbacks:input_type -> tz.v1.GetFeedbacksRequest
+	1,  // 25: tz.v1.TzService.CheckTz:output_type -> tz.v1.CheckTzResponse
+	6,  // 26: tz.v1.TzService.GetVersionsMe:output_type -> tz.v1.GetVersionsMeResponse
+	11, // 27: tz.v1.TzService.GetAllVersionsAdminDashboard:output_type -> tz.v1.GetAllVersionsAdminDashboardResponse
+	14, // 28: tz.v1.TzService.GetVersionStatistics:output_type -> tz.v1.GetVersionStatisticsResponse
+	9,  // 29: tz.v1.TzService.GetVersion:output_type -> tz.v1.GetVersionResponse
+	17, // 30: tz.v1.TzService.NewFeedbackError:output_type -> tz.v1.NewFeedbackErrorResponse
+	19, // 31: tz.v1.TzService.GetVersionsDateRange:output_type -> tz.v1.GetVersionsDateRangeResponse
+	21, // 32: tz.v1.TzService.GetDailyAnalytics:output_type -> tz.v1.GetDailyAnalyticsResponse
+	24, // 33: tz.v1.TzService.GetFeedbacks:output_type -> tz.v1.GetFeedbacksResponse
+	25, // [25:34] is the sub-list for method output_type
+	16, // [16:25] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_tz_v1_tz_proto_init() }
@@ -2288,6 +2314,7 @@ func file_tz_v1_tz_proto_init() {
 	file_tz_v1_tz_proto_msgTypes[2].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[3].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[4].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[7].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[9].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[15].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[16].OneofWrappers = []any{}
@@ -2300,7 +2327,7 @@ func file_tz_v1_tz_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tz_v1_tz_proto_rawDesc), len(file_tz_v1_tz_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

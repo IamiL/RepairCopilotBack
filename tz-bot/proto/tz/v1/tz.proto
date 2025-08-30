@@ -9,7 +9,7 @@ import "google/protobuf/timestamp.proto";
 
 service TzService {
   rpc CheckTz(CheckTzRequest) returns (CheckTzResponse);
-  rpc GetTechnicalSpecificationVersions(GetTechnicalSpecificationVersionsRequest) returns (GetTechnicalSpecificationVersionsResponse);
+  rpc GetVersionsMe(GetVersionsMeRequest) returns (GetVersionsMeResponse);
   rpc GetAllVersionsAdminDashboard(GetAllVersionsAdminDashboardRequest) returns (GetAllVersionsAdminDashboardResponse);
   rpc GetVersionStatistics(GetVersionStatisticsRequest) returns (GetVersionStatisticsResponse);
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
@@ -91,21 +91,22 @@ message MissingInstance {
   optional string feedback_verification_user = 23;
 }
 
-message GetTechnicalSpecificationVersionsRequest {
+message GetVersionsMeRequest {
   string user_id = 1;
 }
 
-message GetTechnicalSpecificationVersionsResponse {
-  repeated TechnicalSpecificationVersion versions = 1;
+message GetVersionsMeResponse {
+  repeated VersionMe versions = 1;
 }
 
-message TechnicalSpecificationVersion {
+message VersionMe {
   string version_id = 1;
   string technical_specification_name = 2;
   int32 version_number = 3;
-  string created_at = 4;
+  google.protobuf.Timestamp created_at = 4;
   string original_file_link = 5;
-  string report_file_link = 6;
+  optional string report_file_link = 6;
+  string status = 7;
 }
 
 message GetVersionRequest {
@@ -125,8 +126,9 @@ message GetVersionResponse {
   optional int64 average_inspection_time_nanoseconds = 10;
   optional int64 original_file_size = 11;
   optional int32 numberOfErrors = 12;
-  string name = 13;
-  string status = 14;
+  map<string, Error> errorsMap = 13;
+  string name = 14;
+  string status = 15;
 }
 
 message GetAllVersionsAdminDashboardRequest {

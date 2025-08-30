@@ -13,12 +13,12 @@ import (
 )
 
 type UserTechnicalSpecificationVersion struct {
-	VersionId                  string `json:"version_id"`
-	TechnicalSpecificationName string `json:"technical_specification_name"`
-	VersionNumber              int32  `json:"version_number"`
-	CreatedAt                  string `json:"created_at"`
-	OriginalFileLink           string `json:"original_file_link"`
-	ReportFileLink             string `json:"report_file_link"`
+	VersionId                  string  `json:"version_id"`
+	TechnicalSpecificationName string  `json:"technical_specification_name"`
+	VersionNumber              int32   `json:"version_number"`
+	CreatedAt                  string  `json:"created_at"`
+	OriginalFileLink           string  `json:"original_file_link"`
+	ReportFileLink             *string `json:"report_file_link"`
 }
 
 type GetUserByIdResponse struct {
@@ -108,20 +108,20 @@ func GetUserByIdHandler(
 
 		// Получаем версии технических заданий пользователя
 		var versions []UserTechnicalSpecificationVersion
-		tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), userID)
+		tzVersions, err := tzBotClient.GetVersionsMe(r.Context(), userID)
 		if err != nil {
 			log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
 			// Не возвращаем ошибку, продолжаем с пустым массивом версий
 			versions = []UserTechnicalSpecificationVersion{}
 		} else {
 			// Конвертируем в response структуру
-			versions = make([]UserTechnicalSpecificationVersion, len(tzVersions.Versions))
-			for i, tzVersion := range tzVersions.Versions {
+			versions = make([]UserTechnicalSpecificationVersion, len(tzVersions))
+			for i, tzVersion := range tzVersions {
 				versions[i] = UserTechnicalSpecificationVersion{
 					VersionId:                  tzVersion.VersionId,
 					TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
 					VersionNumber:              tzVersion.VersionNumber,
-					CreatedAt:                  tzVersion.CreatedAt,
+					CreatedAt:                  tzVersion.CreatedAt.String(),
 					OriginalFileLink:           tzVersion.OriginalFileLink,
 					ReportFileLink:             tzVersion.ReportFileLink,
 				}

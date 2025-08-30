@@ -17,10 +17,11 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	UserID   string                          `json:"user_id"`
-	Login    string                          `json:"login"`
-	Level    int                             `json:"level"`
-	Versions []TechnicalSpecificationVersion `json:"versions"`
+	//UserID                                string                      `json:"user_id"`
+	//Login                                 string                      `json:"login"`
+	Level                            int                            `json:"level"`
+	Versions                         []*client.GetVersionMeResponse `json:"versions"`
+	*userserviceclient.LoginResponse `json:"userinfo"`
 }
 
 func LoginHandler(
@@ -55,26 +56,27 @@ func LoginHandler(
 			return
 		}
 
-		uid := uuid.MustParse(loginResp.UserID)
+		uid := uuid.MustParse(loginResp.UserId)
 
 		// Получаем версии технических заданий от tz-bot
-		var versions []TechnicalSpecificationVersion
-		tzVersions, err := tzBotClient.GetTechnicalSpecificationVersions(r.Context(), uid)
+		var tzVersions []*client.GetVersionMeResponse
+		tzVersions, err = tzBotClient.GetVersionsMe(r.Context(), uid)
 		if err != nil {
 			log.With(slog.String("op", op)).Error("failed to get technical specification versions", slog.String("error", err.Error()))
 			// Не возвращаем ошибку, продолжаем с пустым массивом версий
-		} else {
-			// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
-			versions = make([]TechnicalSpecificationVersion, len(tzVersions.Versions))
-			for i, tzVersion := range tzVersions.Versions {
-				versions[i] = TechnicalSpecificationVersion{
-					VersionId:                  tzVersion.VersionId,
-					TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
-					VersionNumber:              tzVersion.VersionNumber,
-					CreatedAt:                  tzVersion.CreatedAt,
-				}
-			}
 		}
+		//else {
+		//	// Конвертируем из client.TechnicalSpecificationVersion в handler.TechnicalSpecificationVersion
+		//	versions = make([]TechnicalSpecificationVersion, len(tzVersions.Versions))
+		//	for i, tzVersion := range tzVersions.Versions {
+		//		versions[i] = TechnicalSpecificationVersion{
+		//			VersionId:                  tzVersion.VersionId,
+		//			TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
+		//			VersionNumber:              tzVersion.VersionNumber,
+		//			CreatedAt:                  tzVersion.CreatedAt,
+		//		}
+		//	}
+		//}
 
 		// Создаем сессию
 		sessionId := uuid.New()
@@ -107,10 +109,9 @@ func LoginHandler(
 
 		// Формируем ответ
 		response := LoginResponse{
-			UserID:   loginResp.UserID,
-			Login:    req.Login,
-			Level:    level,
-			Versions: versions,
+			LoginResponse: loginResp,
+			Versions:      tzVersions,
+			Level:         level,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -130,8 +131,8 @@ func LoginHandler(
 		log.With(slog.String("op", op)).Info("user logged in successfully",
 			slog.String("login", req.Login),
 			slog.String("sessionID", sessionId.String()),
-			slog.String("userID", loginResp.UserID),
-			slog.Int("versions_count", len(versions)))
+			slog.String("userID", loginResp.UserId),
+			slog.Int("versions_count", len(tzVersions)))
 	}
 }
 

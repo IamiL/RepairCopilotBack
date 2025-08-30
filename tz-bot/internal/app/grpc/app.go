@@ -200,7 +200,7 @@ func (s *serverAPI) CheckTz(ctx context.Context, req *tzv1.CheckTzRequest) (*tzv
 //	return string(out)
 //}
 
-func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *tzv1.GetTechnicalSpecificationVersionsRequest) (*tzv1.GetTechnicalSpecificationVersionsResponse, error) {
+func (s *serverAPI) GetVersionsMe(ctx context.Context, req *tzv1.GetVersionsMeRequest) (*tzv1.GetVersionsMeResponse, error) {
 	const op = "grpc.tz.GetTechnicalSpecificationVersions"
 
 	log := s.log.With(
@@ -216,28 +216,29 @@ func (s *serverAPI) GetTechnicalSpecificationVersions(ctx context.Context, req *
 		return nil, status.Error(codes.InvalidArgument, "invalid user ID format")
 	}
 
-	versions, err := s.tzService.GetTechnicalSpecificationVersions(ctx, userID)
+	versions, err := s.tzService.GetVersionsMe(ctx, userID)
 	if err != nil {
 		log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
 		return nil, status.Error(codes.Internal, "failed to get technical specification versions")
 	}
 
 	// Конвертируем repository.VersionSummary в proto сообщения
-	grpcVersions := make([]*tzv1.TechnicalSpecificationVersion, len(versions))
+	grpcVersions := make([]*tzv1.VersionMe, len(versions))
 	for i, version := range versions {
-		grpcVersions[i] = &tzv1.TechnicalSpecificationVersion{
+		grpcVersions[i] = &tzv1.VersionMe{
 			VersionId:                  version.ID.String(),
 			TechnicalSpecificationName: version.TechnicalSpecificationName,
 			VersionNumber:              int32(version.VersionNumber),
-			CreatedAt:                  version.CreatedAt.Format(time.RFC3339),
-			OriginalFileLink:           version.OriginalFileID,
-			ReportFileLink:             version.ReportFileID,
+			CreatedAt:                  timestamppb.New(version.CreatedAt),
+			OriginalFileLink:           version.OriginalFileLink,
+			ReportFileLink:             version.ReportFileLink,
+			Status:                     version.Status,
 		}
 	}
 
 	log.Info("GetTechnicalSpecificationVersions request processed successfully", slog.Int("versions_count", len(versions)))
 
-	return &tzv1.GetTechnicalSpecificationVersionsResponse{
+	return &tzv1.GetVersionsMeResponse{
 		Versions: grpcVersions,
 	}, nil
 }
@@ -357,12 +358,15 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 
 	errorsResp := make([]*tzv1.Error, 0, len(*errorsTz))
 
+	errorsMap := make(map[string]*tzv1.Error)
+
 	for i := range *errorsTz {
 		var processRetrieval []string
 
 		if (*errorsTz)[i].ProcessRetrieval != nil {
 			processRetrieval = *(*errorsTz)[i].ProcessRetrieval
 		}
+
 		errorsResp = append(errorsResp, &tzv1.Error{
 			Id:                  (*errorsTz)[i].ID.String(),
 			GroupId:             (*errorsTz)[i].GroupID,
@@ -381,6 +385,24 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 			InvalidInstances:    convertInvalidInstances((*errorsTz)[i].InvalidInstances, nil),
 			MissingInstances:    convertMissingInstances((*errorsTz)[i].MissingInstances),
 		})
+
+		errorsMap[(*errorsTz)[i].ID.String()] = &tzv1.Error{
+			GroupId:             (*errorsTz)[i].GroupID,
+			ErrorCode:           (*errorsTz)[i].ErrorCode,
+			Name:                (*errorsTz)[i].Name,
+			Description:         (*errorsTz)[i].Description,
+			Detector:            (*errorsTz)[i].Detector,
+			PreliminaryNotes:    (*errorsTz)[i].PreliminaryNotes,
+			OverallCritique:     (*errorsTz)[i].OverallCritique,
+			Verdict:             (*errorsTz)[i].Verdict,
+			ProcessAnalysis:     (*errorsTz)[i].ProcessAnalysis,
+			ProcessCritique:     (*errorsTz)[i].ProcessCritique,
+			ProcessVerification: (*errorsTz)[i].ProcessVerification,
+			ProcessRetrieval:    processRetrieval,
+			OrderNumber:         int32((*errorsTz)[i].OrderNumber),
+			InvalidInstances:    convertInvalidInstances((*errorsTz)[i].InvalidInstances, nil),
+			MissingInstances:    convertMissingInstances((*errorsTz)[i].MissingInstances),
+		}
 	}
 
 	numberOfErrrorsInt32 := int32(numberOfErrors)
@@ -388,7 +410,7 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 	reportLink := "https://docs.timuroid.ru/reports/" + docId + ".docx"
 
 	resp := &tzv1.GetVersionResponse{
-		InvalidInstances:                 convertInvalidInstances(invalidInstances, errorsResp),
+		InvalidInstances:                 convertInvalidInstances(invalidInstances, nil),
 		Errors:                           errorsResp,
 		HtmlText:                         &htmlText,
 		Css:                              &css,
@@ -401,6 +423,7 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		OriginalFileSize:                 &originalFileSize,
 		NumberOfErrors:                   &numberOfErrrorsInt32,
 		Status:                           statusTz,
+		ErrorsMap:                        errorsMap,
 	}
 
 	return resp, nil

@@ -385,12 +385,23 @@ func (x *LoginRequest) GetPassword() string {
 
 // LoginResponse содержит результат аутентификации
 type LoginResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID аутентифицированного пользователя
-	IsAdmin1      bool                   `protobuf:"varint,2,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"`
-	IsAdmin2      bool                   `protobuf:"varint,3,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	UserId              string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // UUID аутентифицированного пользователя
+	FirstName           string                 `protobuf:"bytes,2,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"` // Имя пользователя
+	LastName            string                 `protobuf:"bytes,3,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`    // Фамилия пользователя
+	Email               string                 `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
+	Login               string                 `protobuf:"bytes,5,opt,name=login,proto3" json:"login,omitempty"`
+	IsAdmin1            bool                   `protobuf:"varint,6,opt,name=is_admin1,json=isAdmin1,proto3" json:"is_admin1,omitempty"` // Флаг администратора 1
+	IsAdmin2            bool                   `protobuf:"varint,7,opt,name=is_admin2,json=isAdmin2,proto3" json:"is_admin2,omitempty"` // Флаг администратора 2
+	RegisteredAt        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=registered_at,json=registeredAt,proto3" json:"registered_at,omitempty"`
+	LastVisitAt         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_visit_at,json=lastVisitAt,proto3" json:"last_visit_at,omitempty"`
+	InspectionsCount    uint32                 `protobuf:"varint,10,opt,name=inspections_count,json=inspectionsCount,proto3" json:"inspections_count,omitempty"`
+	ErrorFeedbackCount  uint32                 `protobuf:"varint,11,opt,name=error_feedback_count,json=errorFeedbackCount,proto3" json:"error_feedback_count,omitempty"`
+	InspectionsPerDay   uint32                 `protobuf:"varint,12,opt,name=inspections_per_day,json=inspectionsPerDay,proto3" json:"inspections_per_day,omitempty"`
+	InspectionsForToday uint32                 `protobuf:"varint,13,opt,name=Inspections_for_today,json=InspectionsForToday,proto3" json:"Inspections_for_today,omitempty"`
+	IsConfirmed         bool                   `protobuf:"varint,14,opt,name=is_confirmed,json=isConfirmed,proto3" json:"is_confirmed,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *LoginResponse) Reset() {
@@ -430,6 +441,34 @@ func (x *LoginResponse) GetUserId() string {
 	return ""
 }
 
+func (x *LoginResponse) GetFirstName() string {
+	if x != nil {
+		return x.FirstName
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetLastName() string {
+	if x != nil {
+		return x.LastName
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetLogin() string {
+	if x != nil {
+		return x.Login
+	}
+	return ""
+}
+
 func (x *LoginResponse) GetIsAdmin1() bool {
 	if x != nil {
 		return x.IsAdmin1
@@ -440,6 +479,55 @@ func (x *LoginResponse) GetIsAdmin1() bool {
 func (x *LoginResponse) GetIsAdmin2() bool {
 	if x != nil {
 		return x.IsAdmin2
+	}
+	return false
+}
+
+func (x *LoginResponse) GetRegisteredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RegisteredAt
+	}
+	return nil
+}
+
+func (x *LoginResponse) GetLastVisitAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastVisitAt
+	}
+	return nil
+}
+
+func (x *LoginResponse) GetInspectionsCount() uint32 {
+	if x != nil {
+		return x.InspectionsCount
+	}
+	return 0
+}
+
+func (x *LoginResponse) GetErrorFeedbackCount() uint32 {
+	if x != nil {
+		return x.ErrorFeedbackCount
+	}
+	return 0
+}
+
+func (x *LoginResponse) GetInspectionsPerDay() uint32 {
+	if x != nil {
+		return x.InspectionsPerDay
+	}
+	return 0
+}
+
+func (x *LoginResponse) GetInspectionsForToday() uint32 {
+	if x != nil {
+		return x.InspectionsForToday
+	}
+	return 0
+}
+
+func (x *LoginResponse) GetIsConfirmed() bool {
+	if x != nil {
+		return x.IsConfirmed
 	}
 	return false
 }
@@ -1317,11 +1405,24 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"b\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"\xb1\x04\n" +
 	"\rLoginResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
-	"\tis_admin1\x18\x02 \x01(\bR\bisAdmin1\x12\x1b\n" +
-	"\tis_admin2\x18\x03 \x01(\bR\bisAdmin2\".\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"first_name\x18\x02 \x01(\tR\tfirstName\x12\x1b\n" +
+	"\tlast_name\x18\x03 \x01(\tR\blastName\x12\x14\n" +
+	"\x05email\x18\x04 \x01(\tR\x05email\x12\x14\n" +
+	"\x05login\x18\x05 \x01(\tR\x05login\x12\x1b\n" +
+	"\tis_admin1\x18\x06 \x01(\bR\bisAdmin1\x12\x1b\n" +
+	"\tis_admin2\x18\a \x01(\bR\bisAdmin2\x12?\n" +
+	"\rregistered_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\fregisteredAt\x12>\n" +
+	"\rlast_visit_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\vlastVisitAt\x12+\n" +
+	"\x11inspections_count\x18\n" +
+	" \x01(\rR\x10inspectionsCount\x120\n" +
+	"\x14error_feedback_count\x18\v \x01(\rR\x12errorFeedbackCount\x12.\n" +
+	"\x13inspections_per_day\x18\f \x01(\rR\x11inspectionsPerDay\x122\n" +
+	"\x15Inspections_for_today\x18\r \x01(\rR\x13InspectionsForToday\x12!\n" +
+	"\fis_confirmed\x18\x0e \x01(\bR\visConfirmed\".\n" +
 	"\x13GetLoginByIdRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\",\n" +
 	"\x14GetLoginByIdResponse\x12\x14\n" +
@@ -1437,34 +1538,36 @@ var file_user_v1_user_proto_goTypes = []any{
 var file_user_v1_user_proto_depIdxs = []int32{
 	23, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
 	23, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
-	11, // 2: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
-	21, // 3: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
-	22, // 4: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
-	18, // 5: user.v1.GetFullNamesByIdRequest.IdsEntry.value:type_name -> user.v1.Empty
-	20, // 6: user.v1.GetFullNamesByIdResponse.UsersEntry.value:type_name -> user.v1.FullName
-	0,  // 7: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
-	2,  // 8: user.v1.UserService.RegisterUser:input_type -> user.v1.RegisterUserRequest
-	4,  // 9: user.v1.UserService.Login:input_type -> user.v1.LoginRequest
-	6,  // 10: user.v1.UserService.GetLoginById:input_type -> user.v1.GetLoginByIdRequest
-	8,  // 11: user.v1.UserService.GetUserByLogin:input_type -> user.v1.GetUserByLoginRequest
-	10, // 12: user.v1.UserService.GetAllUsers:input_type -> user.v1.GetAllUsersRequest
-	13, // 13: user.v1.UserService.GetUserDetailsById:input_type -> user.v1.GetUserDetailsByIdRequest
-	15, // 14: user.v1.UserService.UpdateInspectionsPerDay:input_type -> user.v1.UpdateInspectionsPerDayRequest
-	17, // 15: user.v1.UserService.GetFullNamesById:input_type -> user.v1.GetFullNamesByIdRequest
-	1,  // 16: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
-	3,  // 17: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	5,  // 18: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	7,  // 19: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
-	9,  // 20: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
-	12, // 21: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
-	14, // 22: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
-	16, // 23: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
-	19, // 24: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
-	16, // [16:25] is the sub-list for method output_type
-	7,  // [7:16] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	23, // 2: user.v1.LoginResponse.registered_at:type_name -> google.protobuf.Timestamp
+	23, // 3: user.v1.LoginResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	11, // 4: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
+	21, // 5: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
+	22, // 6: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
+	18, // 7: user.v1.GetFullNamesByIdRequest.IdsEntry.value:type_name -> user.v1.Empty
+	20, // 8: user.v1.GetFullNamesByIdResponse.UsersEntry.value:type_name -> user.v1.FullName
+	0,  // 9: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
+	2,  // 10: user.v1.UserService.RegisterUser:input_type -> user.v1.RegisterUserRequest
+	4,  // 11: user.v1.UserService.Login:input_type -> user.v1.LoginRequest
+	6,  // 12: user.v1.UserService.GetLoginById:input_type -> user.v1.GetLoginByIdRequest
+	8,  // 13: user.v1.UserService.GetUserByLogin:input_type -> user.v1.GetUserByLoginRequest
+	10, // 14: user.v1.UserService.GetAllUsers:input_type -> user.v1.GetAllUsersRequest
+	13, // 15: user.v1.UserService.GetUserDetailsById:input_type -> user.v1.GetUserDetailsByIdRequest
+	15, // 16: user.v1.UserService.UpdateInspectionsPerDay:input_type -> user.v1.UpdateInspectionsPerDayRequest
+	17, // 17: user.v1.UserService.GetFullNamesById:input_type -> user.v1.GetFullNamesByIdRequest
+	1,  // 18: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
+	3,  // 19: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	5,  // 20: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	7,  // 21: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	9,  // 22: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
+	12, // 23: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
+	14, // 24: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
+	16, // 25: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
+	19, // 26: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
+	18, // [18:27] is the sub-list for method output_type
+	9,  // [9:18] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_user_v1_user_proto_init() }

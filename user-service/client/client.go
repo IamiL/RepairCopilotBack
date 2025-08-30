@@ -74,11 +74,17 @@ func (c *UserClient) RegisterUser(ctx context.Context, email, firstName, lastNam
 }
 
 // LoginResponse содержит данные пользователя после аутентификации
+//
+//	type LoginResponse struct {
+//		UserID   string
+//		Login    string
+//		IsAdmin1 bool
+//		IsAdmin2 bool
+//	}
 type LoginResponse struct {
-	UserID   string
-	Login    string
-	IsAdmin1 bool
-	IsAdmin2 bool
+	*pb.LoginResponse
+	RegisteredAt time.Time `json:"created_at"`
+	LastVisitAt  time.Time `json:"last_visit_at"`
 }
 
 // Login выполняет аутентификацию пользователя
@@ -107,10 +113,9 @@ func (c *UserClient) Login(ctx context.Context, login, password string) (*LoginR
 	}
 
 	return &LoginResponse{
-		UserID:   resp.UserId,
-		Login:    login,
-		IsAdmin1: resp.IsAdmin1,
-		IsAdmin2: resp.IsAdmin2,
+		LoginResponse: resp,
+		RegisteredAt:  resp.RegisteredAt.AsTime(),
+		LastVisitAt:   resp.LastVisitAt.AsTime(),
 	}, nil
 }
 
@@ -154,7 +159,7 @@ func (c *UserClient) GetAllUsers(ctx context.Context) (*pb.GetAllUsersResponse, 
 }
 
 type GetUserInfoResponse struct {
-	pb.GetUserInfoResponse
+	*pb.GetUserInfoResponse
 	RegisteredAt time.Time `json:"created_at"`
 	LastVisitAt  time.Time `json:"last_visit_at"`
 }
@@ -182,7 +187,7 @@ func (c *UserClient) GetUserInfo(ctx context.Context, userID uuid.UUID) (*GetUse
 	}
 
 	return &GetUserInfoResponse{
-		GetUserInfoResponse: *resp,
+		GetUserInfoResponse: resp,
 		RegisteredAt:        resp.RegisteredAt.AsTime(),
 		LastVisitAt:         resp.LastVisitAt.AsTime(),
 	}, nil
