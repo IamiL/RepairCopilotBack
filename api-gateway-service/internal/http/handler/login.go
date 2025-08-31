@@ -123,11 +123,11 @@ func LoginHandler(
 		}
 
 		// Логируем действие входа в систему
-		err = actionLogRepo.CreateActionLog(r.Context(), "User login: "+req.Login, uid)
+
+		err = actionLogRepo.CreateActionLog(r.Context(), "Пользователь "+loginResp.FirstName+" "+loginResp.LastName+" аутентифицировался", uid, 1)
 		if err != nil {
 			log.With(slog.String("op", op)).Error("failed to create action log", slog.String("error", err.Error()))
 		}
-
 		log.With(slog.String("op", op)).Info("user logged in successfully",
 			slog.String("login", req.Login),
 			slog.String("sessionID", sessionId.String()),

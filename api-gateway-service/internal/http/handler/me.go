@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -99,7 +101,11 @@ func MeHandler(
 
 					// Асинхронно регистрируем посещение пользователя
 					go func() {
-						if err := userServiceClient.RegisterVisit(r.Context(), userID.String()); err != nil {
+						ctx, err := context.WithTimeout(context.Background(), time.Minute)
+						if err != nil {
+							log.Error("error in create context")
+						}
+						if err := userServiceClient.RegisterVisit(ctx, userID.String()); err != nil {
 							log.Error("failed to register user visit", slog.String("user_id", userID.String()), slog.String("error", err.Error()))
 						}
 					}()
@@ -110,7 +116,7 @@ func MeHandler(
 					}
 				}
 
-				if userInfo.IsConfirmed {
+				if userInfo != nil && userInfo.IsConfirmed {
 					tzVersions, err = tzBotClient.GetVersionsMe(r.Context(), userID)
 					if err != nil || tzVersions == nil {
 						log.Error("failed to get technical specification versions", slog.String("error", err.Error()))

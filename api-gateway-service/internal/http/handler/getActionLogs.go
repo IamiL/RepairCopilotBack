@@ -24,15 +24,23 @@ func GetActionLogsHandler(
 			return
 		}
 
-		session, err := sessionRepo.GetSession(sessionCookie.Value)
+		token := sessionCookie.Value
+		if token == "" {
+			log.Info("empty auth token")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Проверяем сессию в Redis
+		session, err := sessionRepo.GetSession(token)
 		if err != nil {
-			log.Warn("invalid session", sl.Err(err))
+			log.Info("failed to get session from Redis", slog.String("error", err.Error()))
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
 		if session == nil {
-			log.Warn("session not found")
+			log.Info("session not found")
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

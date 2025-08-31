@@ -98,7 +98,7 @@ func New(
 
 	router.HandleFunc(
 		"POST /api/feedback",
-		handler.NewFeedbackErrorHandler(log, tzBotClient, sessionRepo, actionLogRepo),
+		handler.NewFeedbackErrorHandler(log, tzBotClient, userServiceClient, sessionRepo, actionLogRepo),
 	)
 
 	router.HandleFunc(
@@ -118,7 +118,7 @@ func New(
 
 	router.HandleFunc(
 		"POST /api/admin/users/update-inspections-per-day",
-		handler.UpdateInspectionsPerDayHandler(log, userServiceClient, sessionRepo),
+		handler.UpdateInspectionsPerDayHandler(log, userServiceClient, sessionRepo, actionLogRepo),
 	)
 
 	routerWithCorsHandler := corsMiddleware(log, router)

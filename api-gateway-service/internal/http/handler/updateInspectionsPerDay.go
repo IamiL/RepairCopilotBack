@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	userserviceclient "repairCopilotBot/user-service/client"
+
+	"github.com/google/uuid"
 )
 
 type UpdateInspectionsPerDayRequest struct {
@@ -23,6 +25,7 @@ func UpdateInspectionsPerDayHandler(
 	log *slog.Logger,
 	userServiceClient *userserviceclient.UserClient,
 	sessionRepo *repository.SessionRepository,
+	actionLogRepo repository.ActionLogRepository,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.UpdateInspectionsPerDayHandler"
@@ -101,6 +104,18 @@ func UpdateInspectionsPerDayHandler(
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Error("failed to encode response", slog.String("error", err.Error()))
 			return
+		}
+
+		// Логируем событие отправки документа
+		userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), uuid.MustParse(session.UserID))
+		if userInfoErr == nil {
+			reqUserInfo, reqUserInfoErr := userServiceClient.GetUserInfo(r.Context(), uuid.MustParse(session.UserID))
+			if reqUserInfoErr == nil {
+				actionText := "Администратор " + userInfo.FirstName + " " + userInfo.LastName + " ограничил количество ежедневных проверок для пользователя " + reqUserInfo.FirstName + " " + reqUserInfo.LastName + " - " + string(req.InspectionsPerDay) + " проверок в день"
+				if err := actionLogRepo.CreateActionLog(r.Context(), actionText, uuid.MustParse(session.UserID), 5); err != nil {
+					log.Error("failed to create action log for TZ submission", slog.String("error", err.Error()))
+				}
+			}
 		}
 
 		log.Info("update inspections per day request completed successfully",

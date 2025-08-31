@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/tz-bot/client"
+	userserviceclient "repairCopilotBot/user-service/client"
 
 	"github.com/google/uuid"
 )
@@ -25,6 +26,7 @@ type NewFeedbackErrorResponse struct {
 func NewFeedbackErrorHandler(
 	log *slog.Logger,
 	tzBotClient *client.Client,
+	userServiceClient *userserviceclient.UserClient,
 	sessionRepo *repository.SessionRepository,
 	actionLogRepo repository.ActionLogRepository,
 ) http.HandlerFunc {
@@ -109,12 +111,16 @@ func NewFeedbackErrorHandler(
 			return
 		}
 
-		// Логирование действия
-		if actionLogRepo != nil {
-			err = actionLogRepo.CreateActionLog(r.Context(), "create_feedback", userID)
-			if err != nil {
-				log.Error("failed to log action", slog.String("error", err.Error()))
-				// Не прерываем выполнение, просто логируем ошибку
+		userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), userID)
+		if userInfoErr == nil {
+			// Логирование действия
+			if actionLogRepo != nil {
+				actionText := "Пользователь " + userInfo.FirstName + " " + userInfo.LastName + " оставил обратную связь"
+				err = actionLogRepo.CreateActionLog(r.Context(), actionText, userID, 2)
+				if err != nil {
+					log.Error("failed to log action", slog.String("error", err.Error()))
+					// Не прерываем выполнение, просто логируем ошибку
+				}
 			}
 		}
 

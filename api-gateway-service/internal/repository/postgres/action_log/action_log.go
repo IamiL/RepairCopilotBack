@@ -23,13 +23,15 @@ func (s *Storage) CreateActionLog(
 	ctx context.Context,
 	action string,
 	userID uuid.UUID,
+	actionType int,
 ) error {
 	_, err := s.db.Exec(
 		ctx,
-		"INSERT INTO action_logs(action, user_id, created_at) VALUES($1, $2, $3)",
+		"INSERT INTO action_logs(action, user_id, created_at, type) VALUES($1, $2, $3, $4)",
 		action,
 		userID,
 		time.Now(),
+		actionType,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create action log: %w", err)
@@ -39,7 +41,7 @@ func (s *Storage) CreateActionLog(
 }
 
 func (s *Storage) GetAllActionLogs(ctx context.Context) ([]repository.ActionLog, error) {
-	query := `SELECT id, action, user_id, created_at FROM action_logs ORDER BY created_at DESC`
+	query := `SELECT id, action, user_id, created_at, type FROM action_logs ORDER BY created_at DESC`
 
 	rows, err := s.db.Query(ctx, query)
 	if err != nil {
@@ -49,10 +51,14 @@ func (s *Storage) GetAllActionLogs(ctx context.Context) ([]repository.ActionLog,
 
 	var logs []repository.ActionLog
 	for rows.Next() {
+		var actionType *int
 		var log repository.ActionLog
-		err := rows.Scan(&log.ID, &log.Action, &log.UserID, &log.CreateAt)
+		err := rows.Scan(&log.ID, &log.Action, &log.UserID, &log.CreateAt, &actionType)
 		if err != nil {
 			return nil, fmt.Errorf("scan error: %w", err)
+		}
+		if actionType != nil {
+			log.ActionType = *actionType
 		}
 		logs = append(logs, log)
 	}

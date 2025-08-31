@@ -159,8 +159,8 @@ func NewTzHandler(
 		// Логируем событие отправки документа
 		userInfo, userInfoErr := userServiceClient.GetUserInfo(r.Context(), uid)
 		if userInfoErr == nil {
-			actionText := "Пользователь " + userInfo.Login + " отправил документ " + filename + " на проверку"
-			if err := actionLogRepo.CreateActionLog(r.Context(), actionText, uid); err != nil {
+			actionText := "Пользователь " + userInfo.FirstName + " " + userInfo.LastName + " отправил документ " + filename + " на проверку"
+			if err := actionLogRepo.CreateActionLog(r.Context(), actionText, uid, 3); err != nil {
 				log.Error("failed to create action log for TZ submission", slog.String("error", err.Error()))
 			}
 		}

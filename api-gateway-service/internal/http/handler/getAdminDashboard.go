@@ -49,10 +49,11 @@ type AdminDashboardVersionStatistics struct {
 }
 
 type AdminDashboardActionLog struct {
-	ID       int       `json:"id"`
-	Action   string    `json:"action"`
-	UserID   uuid.UUID `json:"user_id"`
-	CreateAt time.Time `json:"created_at"`
+	ID         int       `json:"id"`
+	Action     string    `json:"action"`
+	UserID     uuid.UUID `json:"user_id"`
+	CreateAt   time.Time `json:"created_at"`
+	ActionType int       `json:"action_type"`
 }
 
 type AdminDashboardResponse struct {
@@ -300,10 +301,11 @@ func GetAdminDashboardHandler(
 		dashboardActionLogs := make([]AdminDashboardActionLog, len(actionLogs))
 		for i, log := range actionLogs {
 			dashboardActionLogs[i] = AdminDashboardActionLog{
-				ID:       log.ID,
-				Action:   log.Action,
-				UserID:   log.UserID,
-				CreateAt: log.CreateAt,
+				ID:         log.ID,
+				Action:     log.Action,
+				UserID:     log.UserID,
+				CreateAt:   log.CreateAt,
+				ActionType: log.ActionType,
 			}
 		}
 

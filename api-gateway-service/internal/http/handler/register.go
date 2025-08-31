@@ -129,6 +129,16 @@ func RegisterHandler(
 			return
 		}
 
+		// Логирование действия
+		if actionLogRepo != nil {
+			actionText := "Пользователь " + req.FirstName + " " + req.LastName + " зарегистрировался"
+			err = actionLogRepo.CreateActionLog(r.Context(), actionText, userID, 4)
+			if err != nil {
+				log.Error("failed to log action", slog.String("error", err.Error()))
+				// Не прерываем выполнение, просто логируем ошибку
+			}
+		}
+
 		log.Info("register request processed successfully",
 			slog.String("login", req.Login),
 			slog.String("user_id", userID.String()),
