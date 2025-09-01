@@ -3,6 +3,7 @@ package tzservice
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"regexp"
@@ -132,18 +133,19 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	oldVersion := false
 
+	var paragraphs *string
+
+	htmlWithPlaceholder := ""
+
 	html, _, err := tz.wordConverterClient2.Convert(file, filename)
+	resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
+	paragraphs = &resultExtractParagraphs.Paragraphs
+	htmlWithPlaceholder = resultExtractParagraphs.HTMLWithPlaceholder
+	if paragraphs == nil || *paragraphs == "" {
+		err = errors.New("failed to extract paragraphs")
+	}
 	if err != nil {
 		log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
-	}
-
-	resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
-
-	paragraphs := &resultExtractParagraphs.Paragraphs
-
-	htmlWithPlaceholder := resultExtractParagraphs.HTMLWithPlaceholder
-
-	if *paragraphs == "" {
 		log.Info("пробуем старый word_parser")
 		oldVersion = true
 		paragraphs, _, err = tz.wordConverterClient.Convert(file, filename)
@@ -340,6 +342,48 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		tz.updateVersionWithError(ctx, versionID, "error")
 		return
 	}
+
+	if errors != nil && len(errors) > 0 {
+		errorData := make([]modelrepo.ErrorData, 0, len(errors))
+		for _, err := range errors {
+			instancesJSON, jsonErr := json.Marshal(err.Instances)
+			if jsonErr != nil {
+				log.Error("ошибка сериализации instances: ", sl.Err(jsonErr))
+				continue
+			}
+
+			errorData = append(errorData, modelrepo.ErrorData{
+				ID:                  err.ID,
+				GroupID:             &err.GroupID,
+				ErrorCode:           &err.ErrorCode,
+				OrderNumber:         &err.OrderNumber,
+				Name:                &err.Name,
+				Description:         &err.Description,
+				Detector:            &err.Detector,
+				PreliminaryNotes:    err.PreliminaryNotes,
+				OverallCritique:     err.OverallCritique,
+				Verdict:             &err.Verdict,
+				ProcessAnalysis:     err.ProcessAnalysis,
+				ProcessCritique:     err.ProcessCritique,
+				ProcessVerification: err.ProcessVerification,
+				ProcessRetrieval:    err.ProcessRetrieval,
+				Instances:           instancesJSON,
+			})
+		}
+
+		errorsReq := &modelrepo.CreateErrorsRequest{
+			VersionID: versionID,
+			Errors:    errorData,
+		}
+
+		err = tz.repo.CreateErrors(ctx, errorsReq)
+		if err != nil {
+			log.Error("ошибка сохранения errors: ", sl.Err(err))
+		} else {
+			log.Info("errors saved", slog.Int("count", len(errorData)))
+		}
+	}
+
 	mappingsFromMarkdownServiceJSON := make([]byte, 1)
 	mappingsFromMarkdownServiceJSON, mappingsFromMarkdownServiceJSONErr := json.Marshal(markdownResponse.Mappings)
 	if mappingsFromMarkdownServiceJSONErr != nil {
@@ -384,47 +428,6 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	if err != nil {
 		log.Error("ошибка обновления версии: ", sl.Err(err))
 		return
-	}
-
-	if errors != nil && len(errors) > 0 {
-		errorData := make([]modelrepo.ErrorData, 0, len(errors))
-		for _, err := range errors {
-			instancesJSON, jsonErr := json.Marshal(err.Instances)
-			if jsonErr != nil {
-				log.Error("ошибка сериализации instances: ", sl.Err(jsonErr))
-				continue
-			}
-
-			errorData = append(errorData, modelrepo.ErrorData{
-				ID:                  err.ID,
-				GroupID:             &err.GroupID,
-				ErrorCode:           &err.ErrorCode,
-				OrderNumber:         &err.OrderNumber,
-				Name:                &err.Name,
-				Description:         &err.Description,
-				Detector:            &err.Detector,
-				PreliminaryNotes:    err.PreliminaryNotes,
-				OverallCritique:     err.OverallCritique,
-				Verdict:             &err.Verdict,
-				ProcessAnalysis:     err.ProcessAnalysis,
-				ProcessCritique:     err.ProcessCritique,
-				ProcessVerification: err.ProcessVerification,
-				ProcessRetrieval:    err.ProcessRetrieval,
-				Instances:           instancesJSON,
-			})
-		}
-
-		errorsReq := &modelrepo.CreateErrorsRequest{
-			VersionID: versionID,
-			Errors:    errorData,
-		}
-
-		err = tz.repo.CreateErrors(ctx, errorsReq)
-		if err != nil {
-			log.Error("ошибка сохранения errors: ", sl.Err(err))
-		} else {
-			log.Info("errors saved", slog.Int("count", len(errorData)))
-		}
 	}
 
 	log.Info("async processing completed successfully")
