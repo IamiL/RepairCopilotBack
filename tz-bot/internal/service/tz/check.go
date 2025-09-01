@@ -152,10 +152,13 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
 		log.Info("пробуем старый word_parser")
 		oldVersion = true
-		paragraphs, _, err = tz.wordConverterClient.Convert(file, filename)
-		if err != nil {
+		paragraphsFromWordConverterClient, _, wordConverterClientErr := tz.wordConverterClient.Convert(file, filename)
+		if wordConverterClientErr != nil {
 			log.Error("ошибка при обращении к wordParserClient: ", sl.Err(err))
+			return
 		}
+
+		paragraphs = paragraphsFromWordConverterClient
 	}
 
 	log.Info("конвертация word файла в htmlText успешна")
