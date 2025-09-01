@@ -138,9 +138,13 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	htmlWithPlaceholder := ""
 
 	html, _, err := tz.wordConverterClient2.Convert(file, filename)
-	resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
-	paragraphs = &resultExtractParagraphs.Paragraphs
-	htmlWithPlaceholder = resultExtractParagraphs.HTMLWithPlaceholder
+	if err != nil {
+		log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
+	} else {
+		resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
+		paragraphs = &resultExtractParagraphs.Paragraphs
+		htmlWithPlaceholder = resultExtractParagraphs.HTMLWithPlaceholder
+	}
 	if paragraphs == nil || *paragraphs == "" {
 		err = errors.New("failed to extract paragraphs")
 	}
