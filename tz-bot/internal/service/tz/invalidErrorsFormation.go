@@ -117,6 +117,8 @@ func MarcdownCleaning(markdown string) string {
 		cleanStr = cleanStr[3:]
 	}
 
+	cleanStr = TrimPipesAndSpaces(cleanStr)
+
 	cleanStr = RemoveMDBold(cleanStr)
 
 	return cleanStr
@@ -155,6 +157,11 @@ func TrimBracketPrefix(s string) (string, bool) {
 	}
 
 	return s, false
+}
+
+// TrimPipesAndSpaces удаляет вертикальные палки и пробелы с начала и конца строки
+func TrimPipesAndSpaces(s string) string {
+	return strings.Trim(s, "| ")
 }
 
 func SplitLinesNoEmpty(s string) []string {
