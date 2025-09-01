@@ -130,6 +130,7 @@ type InvalidInstanceRepository interface {
 	GetInvalidInstancesByErrorID(ctx context.Context, errorID uuid.UUID) (*[]OutInvalidError, error)
 	// UpdateInvalidInstanceFeedback updates feedback for invalid instance
 	UpdateInvalidInstanceFeedback(ctx context.Context, instanceID uuid.UUID, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error
+	UpdateInvalidInstanceVerificationFeedback(ctx context.Context, instanceID uuid.UUID, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error
 }
 
 type MissingInstanceRepository interface {
@@ -138,6 +139,7 @@ type MissingInstanceRepository interface {
 	GetMissingInstancesByErrorID(ctx context.Context, errorID uuid.UUID) (*[]OutMissingError, error)
 	// UpdateMissingInstanceFeedback updates feedback for missing instance
 	UpdateMissingInstanceFeedback(ctx context.Context, instanceID uuid.UUID, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error
+	UpdateMissingInstanceVerificationFeedback(ctx context.Context, instanceID uuid.UUID, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error
 }
 
 // ErrorFeedbackRepository defines the interface for error feedback operations

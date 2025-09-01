@@ -554,10 +554,18 @@ func (s *serverAPI) NewFeedbackError(ctx context.Context, req *tzv1.NewFeedbackE
 		return nil, status.Error(codes.InvalidArgument, "instance_type must be 'invalid' or 'missing'")
 	}
 
-	err = s.tzService.NewFeedbackError(ctx, instanceID, req.InstanceType, req.FeedbackMark, req.FeedbackComment, userID)
-	if err != nil {
-		log.Error("failed to create feedback", slog.String("error", err.Error()))
-		return nil, status.Error(codes.Internal, "failed to create feedback: "+err.Error())
+	if req.IsVerification {
+		err = s.tzService.NewVerificationFeedbackError(ctx, instanceID, req.InstanceType, req.FeedbackMark, req.FeedbackComment, userID)
+		if err != nil {
+			log.Error("failed to create feedback", slog.String("error", err.Error()))
+			return nil, status.Error(codes.Internal, "failed to create feedback: "+err.Error())
+		}
+	} else {
+		err = s.tzService.NewFeedbackError(ctx, instanceID, req.InstanceType, req.FeedbackMark, req.FeedbackComment, userID)
+		if err != nil {
+			log.Error("failed to create feedback", slog.String("error", err.Error()))
+			return nil, status.Error(codes.Internal, "failed to create feedback: "+err.Error())
+		}
 	}
 
 	log.Info("NewFeedbackError request processed successfully")

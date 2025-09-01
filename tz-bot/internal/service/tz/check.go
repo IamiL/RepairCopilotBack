@@ -130,6 +130,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	//	return
 	//}
 
+	oldVersion := false
+
 	html, _, err := tz.wordConverterClient2.Convert(file, filename)
 	if err != nil {
 		log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
@@ -137,13 +139,22 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
 
-	paragraphs := resultExtractParagraphs.Paragraphs
+	paragraphs := &resultExtractParagraphs.Paragraphs
 
 	htmlWithPlaceholder := resultExtractParagraphs.HTMLWithPlaceholder
 
+	if *paragraphs == "" {
+		log.Info("пробуем старый word_parser")
+		oldVersion = true
+		paragraphs, _, err = tz.wordConverterClient.Convert(file, filename)
+		if err != nil {
+			log.Error("ошибка при обращении к wordParserClient: ", sl.Err(err))
+		}
+	}
+
 	log.Info("конвертация word файла в htmlText успешна")
 
-	markdownResponse, err := tz.markdownClient.Convert(paragraphs)
+	markdownResponse, err := tz.markdownClient.Convert(*paragraphs)
 	if err != nil {
 		log.Error("ошибка конвертации HTML в markdown: ", sl.Err(err))
 		tz.updateVersionWithError(ctx, versionID, "error")
@@ -271,7 +282,13 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	outInvalidErrors, outMissingErrors, htmlParagrapsWithWrappedErrors := HandleErrors(&groupReports, &markdownResponse.Mappings)
 
-	outHtml := word_parser2.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
+	var outHtml string
+
+	if oldVersion {
+		outHtml = htmlParagrapsWithWrappedErrors
+	} else {
+		outHtml = word_parser2.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
+	}
 
 	for i := range *outInvalidErrors {
 		(*outInvalidErrors)[i].OrderNumber = i
@@ -355,7 +372,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		Status:                          "completed",
 		HtmlFromWordParser:              html,
 		HtmlWithPlacrholder:             htmlWithPlaceholder,
-		HtmlParagraphs:                  paragraphs,
+		HtmlParagraphs:                  *paragraphs,
 		MarkdownFromMarkdownService:     markdownResponse.Markdown,
 		HtmlWithIdsFromMarkdownService:  markdownResponse.HtmlWithIds,
 		MappingsFromMarkdownService:     mappingsFromMarkdownServiceJSON,

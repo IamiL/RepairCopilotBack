@@ -301,7 +301,7 @@ func (c *Client) GetVersionStatistics(ctx context.Context) (*VersionStatistics, 
 	}, nil
 }
 
-func (c *Client) NewFeedbackError(ctx context.Context, instanceID uuid.UUID, instanceType string, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error {
+func (c *Client) NewFeedbackError(ctx context.Context, instanceID uuid.UUID, instanceType string, feedbackMark *bool, feedbackComment *string, userID uuid.UUID, isVerification bool) error {
 	const op = "tz_client.NewFeedbackError"
 
 	_, err := c.api.NewFeedbackError(ctx, &tzv1.NewFeedbackErrorRequest{
@@ -310,6 +310,7 @@ func (c *Client) NewFeedbackError(ctx context.Context, instanceID uuid.UUID, ins
 		FeedbackMark:    feedbackMark,
 		FeedbackComment: feedbackComment,
 		UserId:          userID.String(),
+		IsVerification:  isVerification,
 	})
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)

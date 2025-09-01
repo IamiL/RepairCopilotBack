@@ -1413,6 +1413,7 @@ type NewFeedbackErrorRequest struct {
 	FeedbackMark    *bool                  `protobuf:"varint,3,opt,name=feedback_mark,json=feedbackMark,proto3,oneof" json:"feedback_mark,omitempty"`
 	FeedbackComment *string                `protobuf:"bytes,4,opt,name=feedback_comment,json=feedbackComment,proto3,oneof" json:"feedback_comment,omitempty"`
 	UserId          string                 `protobuf:"bytes,5,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	IsVerification  bool                   `protobuf:"varint,6,opt,name=is_verification,json=isVerification,proto3" json:"is_verification,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1480,6 +1481,13 @@ func (x *NewFeedbackErrorRequest) GetUserId() string {
 		return x.UserId
 	}
 	return ""
+}
+
+func (x *NewFeedbackErrorRequest) GetIsVerification() bool {
+	if x != nil {
+		return x.IsVerification
+	}
+	return false
 }
 
 type NewFeedbackErrorResponse struct {
@@ -2167,14 +2175,15 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"#average_inspection_time_nanoseconds\x18\x04 \x01(\x03H\x02R averageInspectionTimeNanoseconds\x88\x01\x01B\x0f\n" +
 	"\r_total_tokensB\r\n" +
 	"\v_total_rubsB&\n" +
-	"$_average_inspection_time_nanoseconds\"\xf9\x01\n" +
+	"$_average_inspection_time_nanoseconds\"\xa2\x02\n" +
 	"\x17NewFeedbackErrorRequest\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\tR\n" +
 	"instanceId\x12#\n" +
 	"\rinstance_type\x18\x02 \x01(\tR\finstanceType\x12(\n" +
 	"\rfeedback_mark\x18\x03 \x01(\bH\x00R\ffeedbackMark\x88\x01\x01\x12.\n" +
 	"\x10feedback_comment\x18\x04 \x01(\tH\x01R\x0ffeedbackComment\x88\x01\x01\x12\x17\n" +
-	"\auser_id\x18\x05 \x01(\tR\x06userIdB\x10\n" +
+	"\auser_id\x18\x05 \x01(\tR\x06userId\x12'\n" +
+	"\x0fis_verification\x18\x06 \x01(\bR\x0eisVerificationB\x10\n" +
 	"\x0e_feedback_markB\x13\n" +
 	"\x11_feedback_comment\"\x1a\n" +
 	"\x18NewFeedbackErrorResponse\"\x1d\n" +

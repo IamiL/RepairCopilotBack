@@ -176,6 +176,7 @@ message NewFeedbackErrorRequest {
   optional bool feedback_mark = 3;
   optional string feedback_comment = 4;
   string user_id = 5;
+  bool is_verification = 6;
 }
 
 message NewFeedbackErrorResponse {

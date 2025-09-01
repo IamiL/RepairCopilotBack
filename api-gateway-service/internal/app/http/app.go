@@ -102,6 +102,11 @@ func New(
 	)
 
 	router.HandleFunc(
+		"POST /api/feedback/verification",
+		handler.NewFeedbackVerificationErrorHandler(log, tzBotClient, userServiceClient, sessionRepo, actionLogRepo),
+	)
+
+	router.HandleFunc(
 		"GET /api/analytics/billing/limits",
 		handler.GetBillingLimits(log, tzBotClient),
 	)

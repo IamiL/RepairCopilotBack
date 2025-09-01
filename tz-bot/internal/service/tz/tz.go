@@ -604,3 +604,47 @@ func (tz *Tz) NewFeedbackError(ctx context.Context, instanceID uuid.UUID, instan
 	log.Info("feedback created successfully")
 	return nil
 }
+
+func (tz *Tz) NewVerificationFeedbackError(ctx context.Context, instanceID uuid.UUID, instanceType string, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error {
+	const op = "Tz.NewFeedbackError"
+
+	log := tz.log.With(
+		slog.String("op", op),
+		slog.String("instance_id", instanceID.String()),
+		slog.String("instance_type", instanceType),
+		slog.String("user_id", userID.String()),
+	)
+
+	log.Info("creating new feedback")
+
+	if feedbackMark == nil {
+		log.Error("feedbackMark not exists")
+		return fmt.Errorf("failed to update instance feedback: feedbackMark not exists")
+	}
+
+	if *feedbackMark == false && (feedbackComment == nil || *feedbackComment == "") {
+		log.Error("feedbackComment not exists for bad feedback")
+		return fmt.Errorf("failed to update instance feedback: feedbackComment not exists for bad feedback")
+	}
+
+	switch instanceType {
+	case "invalid":
+		err := tz.repo.UpdateInvalidInstanceVerificationFeedback(ctx, instanceID, feedbackMark, feedbackComment, userID)
+		if err != nil {
+			log.Error("failed to update invalid instance feedback", slog.String("error", err.Error()))
+			return fmt.Errorf("failed to update invalid instance feedback: %w", err)
+		}
+	case "missing":
+		err := tz.repo.UpdateMissingInstanceVerificationFeedback(ctx, instanceID, feedbackMark, feedbackComment, userID)
+		if err != nil {
+			log.Error("failed to update missing instance feedback", slog.String("error", err.Error()))
+			return fmt.Errorf("failed to update missing instance feedback: %w", err)
+		}
+	default:
+		log.Error("invalid instance type", slog.String("instance_type", instanceType))
+		return fmt.Errorf("invalid instance type: %s", instanceType)
+	}
+
+	log.Info("feedback created successfully")
+	return nil
+}

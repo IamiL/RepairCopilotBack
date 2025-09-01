@@ -104,7 +104,7 @@ func NewFeedbackErrorHandler(
 		}
 
 		// Вызов gRPC метода
-		err = tzBotClient.NewFeedbackError(r.Context(), instanceID, req.InstanceType, req.FeedbackMark, req.FeedbackComment, userID)
+		err = tzBotClient.NewFeedbackError(r.Context(), instanceID, req.InstanceType, req.FeedbackMark, req.FeedbackComment, userID, false)
 		if err != nil {
 			log.Error("failed to create feedback", slog.String("error", err.Error()))
 			http.Error(w, "failed to create feedback", http.StatusInternalServerError)
