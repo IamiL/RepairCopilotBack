@@ -121,6 +121,8 @@ func MarcdownCleaning(markdown string) string {
 
 	cleanStr = RemoveMDBold(cleanStr)
 
+	cleanStr = TrimEllipsis(cleanStr)
+
 	return cleanStr
 }
 
@@ -162,6 +164,21 @@ func TrimBracketPrefix(s string) (string, bool) {
 // TrimPipesAndSpaces удаляет вертикальные палки и пробелы с начала и конца строки
 func TrimPipesAndSpaces(s string) string {
 	return strings.Trim(s, "| ")
+}
+
+// TrimEllipsis удаляет троеточия с начала и конца строки
+func TrimEllipsis(s string) string {
+	// Убираем троеточия в начале
+	for strings.HasPrefix(s, "...") {
+		s = s[3:]
+	}
+
+	// Убираем троеточия в конце
+	for strings.HasSuffix(s, "...") {
+		s = s[:len(s)-3]
+	}
+
+	return s
 }
 
 func SplitLinesNoEmpty(s string) []string {
