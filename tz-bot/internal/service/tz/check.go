@@ -119,8 +119,8 @@ type Error struct {
 	ProcessVerification *string                   `json:"process_verification"`
 	ProcessRetrieval    *[]string                 `json:"process_retrieval"`
 	Instances           *[]tz_llm_client.Instance `json:"instances"`
-	InvalidInstances    *[]OutInvalidError        `json:"invalid_instances"`
-	MissingInstances    *[]OutMissingError        `json:"missing_instances"`
+	InvalidInstances    *[]OutInvalidError        `json:"invalid_instances,omitempty"`
+	MissingInstances    *[]OutMissingError        `json:"missing_instances,omitempty"`
 }
 
 func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, _ string, isDocFormat bool, tzName string) {
