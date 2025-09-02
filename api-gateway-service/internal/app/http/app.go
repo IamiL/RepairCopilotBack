@@ -52,6 +52,9 @@ func New(
 		handler.RegisterHandler(log, userServiceClient, sessionRepo, actionLogRepo),
 	)
 
+	router.HandleFunc("POST /api/confirm",
+		handler.ConfirmEmail(log, userServiceClient, sessionRepo))
+
 	router.HandleFunc(
 		"GET /api/logout",
 		handler.LogoutHandler(log))

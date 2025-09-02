@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	UserService_GetUserInfo_FullMethodName             = "/user.v1.UserService/GetUserInfo"
 	UserService_RegisterUser_FullMethodName            = "/user.v1.UserService/RegisterUser"
+	UserService_ConfirmEmail_FullMethodName            = "/user.v1.UserService/ConfirmEmail"
 	UserService_Login_FullMethodName                   = "/user.v1.UserService/Login"
 	UserService_GetLoginById_FullMethodName            = "/user.v1.UserService/GetLoginById"
 	UserService_GetUserByLogin_FullMethodName          = "/user.v1.UserService/GetUserByLogin"
@@ -41,6 +42,7 @@ type UserServiceClient interface {
 	GetUserInfo(ctx context.Context, in *GetUserInfoRequest, opts ...grpc.CallOption) (*GetUserInfoResponse, error)
 	// RegisterUser регистрирует нового пользователя
 	RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error)
+	ConfirmEmail(ctx context.Context, in *ConfirmEmailRequest, opts ...grpc.CallOption) (*ConfirmEmailResponse, error)
 	// Login выполняет аутентификацию пользователя
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	// GetLoginById получает логин пользователя по ID
@@ -80,6 +82,16 @@ func (c *userServiceClient) RegisterUser(ctx context.Context, in *RegisterUserRe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RegisterUserResponse)
 	err := c.cc.Invoke(ctx, UserService_RegisterUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ConfirmEmail(ctx context.Context, in *ConfirmEmailRequest, opts ...grpc.CallOption) (*ConfirmEmailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfirmEmailResponse)
+	err := c.cc.Invoke(ctx, UserService_ConfirmEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -176,6 +188,7 @@ type UserServiceServer interface {
 	GetUserInfo(context.Context, *GetUserInfoRequest) (*GetUserInfoResponse, error)
 	// RegisterUser регистрирует нового пользователя
 	RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error)
+	ConfirmEmail(context.Context, *ConfirmEmailRequest) (*ConfirmEmailResponse, error)
 	// Login выполняет аутентификацию пользователя
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	// GetLoginById получает логин пользователя по ID
@@ -206,6 +219,9 @@ func (UnimplementedUserServiceServer) GetUserInfo(context.Context, *GetUserInfoR
 }
 func (UnimplementedUserServiceServer) RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterUser not implemented")
+}
+func (UnimplementedUserServiceServer) ConfirmEmail(context.Context, *ConfirmEmailRequest) (*ConfirmEmailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfirmEmail not implemented")
 }
 func (UnimplementedUserServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
@@ -284,6 +300,24 @@ func _UserService_RegisterUser_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).RegisterUser(ctx, req.(*RegisterUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ConfirmEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ConfirmEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ConfirmEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ConfirmEmail(ctx, req.(*ConfirmEmailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -446,6 +480,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RegisterUser",
 			Handler:    _UserService_RegisterUser_Handler,
+		},
+		{
+			MethodName: "ConfirmEmail",
+			Handler:    _UserService_ConfirmEmail_Handler,
 		},
 		{
 			MethodName: "Login",

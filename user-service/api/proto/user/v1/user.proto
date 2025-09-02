@@ -14,6 +14,8 @@ service UserService {
   // RegisterUser регистрирует нового пользователя
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
 
+  rpc ConfirmEmail(ConfirmEmailRequest) returns (ConfirmEmailResponse);
+
   // Login выполняет аутентификацию пользователя
   rpc Login(LoginRequest) returns (LoginResponse);
 
@@ -198,4 +200,12 @@ message RegisterVisitRequest {
 
 // RegisterVisitResponse ответ на регистрацию посещения (пустой)
 message RegisterVisitResponse {
+}
+
+message ConfirmEmailRequest {
+  string user_id = 1;
+string code = 2;
+}
+
+message ConfirmEmailResponse {
 }

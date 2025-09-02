@@ -269,11 +269,11 @@ func (s *Storage) GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID
 	return uid, nil
 }
 
-func (s *Storage) GetUserAuthDataByLogin(ctx context.Context, login string) (*userservice.UserAuthData, error) {
-	query := `SELECT id, pass_hash, is_admin1, is_admin2 FROM users WHERE login = $1`
+func (s *Storage) GetUserAuthDataByLogin(ctx context.Context, login string) (*models.User, error) {
+	query := `SELECT id, email, first_name, last_name, is_admin1, is_admin2, pass_hash, is_confirmed FROM users WHERE login = $1`
 
-	var authData userservice.UserAuthData
-	err := s.db.QueryRow(ctx, query, login).Scan(&authData.ID, &authData.PassHash, &authData.IsAdmin1, &authData.IsAdmin2)
+	var authData models.User
+	err := s.db.QueryRow(ctx, query, login).Scan(&authData.ID, &authData.Email, &authData.FirstName, &authData.LastName, &authData.IsAdmin1, &authData.IsAdmin2, &authData.PassHash, &authData.IsConfirmed)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repo.ErrUserNotFound
@@ -347,6 +347,30 @@ func (s *Storage) UpdateLastVisit(ctx context.Context, userID string) error {
 
 	if result.RowsAffected() == 0 {
 		return repo.ErrUserNotFound
+	}
+
+	return nil
+}
+
+func (s *Storage) GetConfirmationCodeByUserId(ctx context.Context, userID uuid.UUID) (string, error) {
+	query := `SELECT confirmation_code FROM users WHERE id = $1`
+	var confirmationCode string
+	err := s.db.QueryRow(ctx, query, userID).Scan(&confirmationCode)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", repo.ErrUserNotFound
+		}
+		return "", fmt.Errorf("database error: %w", err)
+	}
+
+	return confirmationCode, nil
+}
+
+func (s *Storage) UpdateConfirmStatusByUserId(ctx context.Context, userID uuid.UUID, status bool) error {
+	query := `UPDATE users SET is_confirmed = $1 WHERE id = $2`
+	_, err := s.db.Exec(ctx, query, status, userID)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
 	}
 
 	return nil

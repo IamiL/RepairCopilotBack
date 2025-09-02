@@ -295,3 +295,25 @@ func (c *UserClient) RegisterVisit(ctx context.Context, userID string) error {
 
 	return nil
 }
+
+func (c *UserClient) ConfirmEmail(ctx context.Context, userID uuid.UUID, code string) error {
+	req := &pb.ConfirmEmailRequest{
+		UserId: userID.String(),
+		Code:   code,
+	}
+
+	_, err := c.client.ConfirmEmail(ctx, req)
+	if err != nil {
+		fmt.Println("всё не ок ")
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return fmt.Errorf("invalid code: %s", st.Message())
+			default:
+				return fmt.Errorf("failed to confirm email: %s", st.Message())
+			}
+		}
+	}
+	fmt.Println("всё ок ")
+	return nil
+}

@@ -117,7 +117,7 @@ func (s *serverAPI) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginR
 	}
 
 	// Вызов вашего существующего метода
-	userID, isAdmin1, isAdmin2, err := s.userService.Login(ctx, req.Login, req.Password)
+	user, err := s.userService.Login(ctx, req.Login, req.Password)
 	if err != nil {
 		// Обработка ошибок аутентификации
 		if errors.Is(err, service.ErrInvalidCredentials) {
@@ -129,9 +129,13 @@ func (s *serverAPI) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginR
 	}
 
 	return &pb.LoginResponse{
-		UserId:   userID.String(),
-		IsAdmin1: isAdmin1,
-		IsAdmin2: isAdmin2,
+		UserId:      user.ID.String(),
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		IsAdmin1:    user.IsAdmin1,
+		IsAdmin2:    user.IsAdmin2,
+		IsConfirmed: user.IsConfirmed,
 	}, nil
 }
 
@@ -311,6 +315,16 @@ func (s *serverAPI) RegisterVisit(ctx context.Context, req *pb.RegisterVisitRequ
 	}
 
 	return &pb.RegisterVisitResponse{}, nil
+}
+
+func (s *serverAPI) ConfirmEmail(ctx context.Context, req *pb.ConfirmEmailRequest) (*pb.ConfirmEmailResponse, error) {
+	err := s.userService.ConfirmEmail(ctx, req.UserId, req.Code)
+	if err != nil {
+		s.log.Error("failed to confirm email", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to confirm email")
+	}
+
+	return &pb.ConfirmEmailResponse{}, nil
 }
 
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {

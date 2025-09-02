@@ -125,23 +125,54 @@ func (c *WordConverterClient) Convert(fileData []byte, filename string) (string,
 
 const paragraphPlaceholder = "{{PARAGRAPHS_PLACEHOLDER}}"
 
-// extractParagraphs extracts paragraphs from HTML and replaces them with a placeholder
-func ExtractParagraphs(html string) ParagraphExtractionResult {
-	// Regular expression to find the article content with paragraphs (with possible attributes)
-	articleRegex := regexp.MustCompile(`<article[^>]*>(.*?)</article>`)
-	matches := articleRegex.FindStringSubmatch(html)
+//// extractParagraphs extracts paragraphs from HTML and replaces them with a placeholder
+//func ExtractParagraphs(html string) ParagraphExtractionResult {
+//	// Regular expression to find the article content with paragraphs (with possible attributes)
+//	articleRegex := regexp.MustCompile(`<article[^>]*>(.*?)</article>`)
+//	matches := articleRegex.FindStringSubmatch(html)
+//
+//	if len(matches) < 2 {
+//		return ParagraphExtractionResult{
+//			HTMLWithPlaceholder: html,
+//			Paragraphs:          "",
+//		}
+//	}
+//
+//	paragraphs := matches[1]
+//	htmlWithPlaceholder := articleRegex.ReplaceAllString(html, "<article>"+paragraphPlaceholder+"</article>")
+//
+//	fmt.Println("возвращаем из extractParagraphs: paragraphs = ", paragraphs)
+//
+//	return ParagraphExtractionResult{
+//		HTMLWithPlaceholder: htmlWithPlaceholder,
+//		Paragraphs:          paragraphs,
+//	}
+//}
 
-	if len(matches) < 2 {
+func ExtractParagraphs(html string) ParagraphExtractionResult {
+	// регулярка ищет article с содержимым
+	articleRegex := regexp.MustCompile(`<article[^>]*>(.*?)</article>`)
+	matches := articleRegex.FindStringSubmatchIndex(html)
+
+	if len(matches) < 4 {
 		return ParagraphExtractionResult{
 			HTMLWithPlaceholder: html,
 			Paragraphs:          "",
 		}
 	}
 
-	paragraphs := matches[1]
-	htmlWithPlaceholder := articleRegex.ReplaceAllString(html, "<article>"+paragraphPlaceholder+"</article>")
+	// Индексы: matches[0]..matches[1] — всё <article>...</article>
+	// matches[2]..matches[3] — содержимое (первая группа)
+	fullMatchStart, fullMatchEnd := matches[0], matches[1]
+	contentStart, contentEnd := matches[2], matches[3]
 
-	fmt.Println("возвращаем из extractParagraphs: paragraphs = ", paragraphs)
+	paragraphs := html[contentStart:contentEnd]
+
+	// Формируем строку с заменой только первой статьи
+	htmlWithPlaceholder :=
+		html[:fullMatchStart] +
+			"<article>" + paragraphPlaceholder + "</article>" +
+			html[fullMatchEnd:]
 
 	return ParagraphExtractionResult{
 		HTMLWithPlaceholder: htmlWithPlaceholder,

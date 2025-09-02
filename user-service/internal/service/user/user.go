@@ -58,10 +58,12 @@ type UserProvider interface {
 	//GetUserInfo(ctx context.Context, userID string) (UserDetailedInfo, error)
 	GetUserDetailsById(ctx context.Context, userID string) (*UserFullDetails, error)
 	GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID, error)
-	GetUserAuthDataByLogin(ctx context.Context, login string) (*UserAuthData, error)
+	GetUserAuthDataByLogin(ctx context.Context, login string) (*models.User, error)
 	UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay int) (int64, error)
 	GetFullNamesById(ctx context.Context, ids []string) (map[string]FullName, error)
 	UpdateLastVisit(ctx context.Context, userID string) error
+	GetConfirmationCodeByUserId(ctx context.Context, userID uuid.UUID) (string, error)
+	UpdateConfirmStatusByUserId(ctx context.Context, userID uuid.UUID, status bool) error
 }
 
 func New(
@@ -156,7 +158,7 @@ type UserAuthData struct {
 	IsAdmin2 bool
 }
 
-func (u *User) Login(ctx context.Context, login string, password string) (uuid.UUID, bool, bool, error) {
+func (u *User) Login(ctx context.Context, login string, password string) (*models.User, error) {
 	const op = "User.Login"
 
 	log := u.log.With(
@@ -171,23 +173,23 @@ func (u *User) Login(ctx context.Context, login string, password string) (uuid.U
 		if errors.Is(err, repository.ErrUserNotFound) {
 			u.log.Warn("user not found", sl.Err(err))
 
-			return uuid.Nil, false, false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+			return nil, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
 
 		u.log.Error("failed to get user", sl.Err(err))
 
-		return uuid.Nil, false, false, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(authData.PassHash, []byte(password)); err != nil {
 		u.log.Info("invalid credentials", sl.Err(err))
 
-		return uuid.Nil, false, false, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		return nil, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 
 	log.Info("user logged in successfully")
 
-	return authData.ID, authData.IsAdmin1, authData.IsAdmin2, nil
+	return authData, nil
 }
 
 func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
@@ -432,6 +434,42 @@ func (u *User) RegisterVisit(ctx context.Context, userID string) error {
 	}
 
 	log.Info("user visit registered successfully")
+
+	return nil
+}
+
+func (u *User) ConfirmEmail(ctx context.Context, userID string, codeReq string) error {
+	const op = "User.ConfirmEmail"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+	)
+
+	log.Info("confirm email")
+
+	code, err := u.usrProvider.GetConfirmationCodeByUserId(ctx, uuid.MustParse(userID))
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+		}
+		u.log.Error("failed to get user confirmation code", sl.Err(err))
+	}
+
+	if codeReq != code {
+		u.log.Warn("user confirmation code mismatch")
+		return errors.New("confirmation code mismatch")
+	}
+
+	err = u.usrProvider.UpdateConfirmStatusByUserId(ctx, uuid.MustParse(userID), true)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+		}
+		u.log.Error("failed to update user confirmation", sl.Err(err))
+	}
+
+	log.Info("user confirmation code retrieved successfully")
 
 	return nil
 }

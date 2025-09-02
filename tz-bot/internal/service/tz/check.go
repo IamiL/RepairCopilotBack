@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
@@ -30,11 +31,24 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 
 	log.Info("checking tz - creating initial records")
 
+	var tz_name string
+
+	isDocFormat, err := IsDocFormat(filename)
+	if err != nil {
+		return uuid.Nil, "", time.Time{}, fmt.Errorf("ошибка сохранения файла в S3: %w", err)
+	}
+
+	if isDocFormat {
+		tz_name = RemoveDocExtension(filename)
+	} else {
+		tz_name = RemoveDocxExtension(filename)
+	}
+
 	// Создаем техническую спецификацию
 	newTzID := uuid.New()
 	ts, err := tz.repo.CreateTechnicalSpecification(ctx, &modelrepo.CreateTechnicalSpecificationRequest{
 		ID:        newTzID,
-		Name:      RemoveDocxExtension(filename),
+		Name:      tz_name,
 		UserID:    userID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -44,14 +58,14 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	}
 	log.Info("technical specification created", slog.String("ts_id", ts.ID.String()))
 
+	originalFileName := tz_name + GetCurrentDateTimeString()
 	// Сохраняем оригинальный файл в S3
-	originalFileID := uuid.New().String()
-	err = tz.s3.SaveDocument(ctx, originalFileID, file, "docs")
+	err = tz.s3.SaveDocument(ctx, originalFileName, file, "docs")
 	if err != nil {
 		log.Error("ошибка сохранения оригинального файла в S3: ", sl.Err(err))
 		return uuid.Nil, "", time.Time{}, fmt.Errorf("ошибка сохранения файла в S3: %w", err)
 	}
-	log.Info("оригинальный файл успешно сохранён в S3", slog.String("file_id", originalFileID))
+	log.Info("оригинальный файл успешно сохранён в S3", slog.String("file_id", originalFileName))
 
 	// Создаем версию с минимальными данными и статусом "in_progress"
 	newVersionID := uuid.New()
@@ -61,7 +75,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		VersionNumber:            1,
 		CreatedAt:                time.Now(),
 		UpdatedAt:                time.Now(),
-		OriginalFileID:           originalFileID,
+		OriginalFileID:           originalFileName,
 		OutHTML:                  "",
 		CSS:                      "",
 		CheckedFileID:            "",
@@ -79,7 +93,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	log.Info("version created with status 'in_progress'", slog.String("version_id", newVersionID.String()))
 
 	// Запускаем асинхронную обработку
-	go tz.ProcessTzAsync(file, filename, newVersionID, originalFileID)
+	go tz.ProcessTzAsync(file, filename, newVersionID, originalFileName, isDocFormat, tz_name)
 
 	log.Info("async processing started")
 	return newVersionID, RemoveDocxExtension(filename), time.Now(), nil
@@ -109,12 +123,13 @@ type Error struct {
 	MissingInstances    *[]OutMissingError        `json:"missing_instances"`
 }
 
-func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, _ string) {
+func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, _ string, isDocFormat bool, tzName string) {
 	const op = "Tz.ProcessTzAsync"
 
 	log := tz.log.With(
 		slog.String("op", op),
 		slog.String("versionID", versionID.String()),
+		slog.String("tzName", tzName),
 	)
 
 	log.Info("starting async processing")
@@ -130,6 +145,16 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	//	tz.updateVersionWithError(ctx, versionID, "error")
 	//	return
 	//}
+
+	if isDocFormat {
+		docToDocxConverterClient := doctodocxconverterclient.NewClient("localhost", 8070)
+		newFile, err := docToDocxConverterClient.Convert(file, filename)
+		if err != nil {
+			log.Error("ошибка при конвертации doc в docx: ", sl.Err(err))
+		}
+
+		file = newFile
+	}
 
 	oldVersion := false
 
@@ -322,18 +347,19 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		errors[i].MissingInstances = &missingInstances
 	}
 
-	docxReportID := ""
 	client := NewClient("http://localhost:8050", 30*time.Second)
+
+	var reportFilename string
+
 	response, err := client.GenerateDocument(ctx, ErrorsArray{Errors: errors})
 	if err != nil {
 		log.Error("ошибка генерации docx-отчёта: ", sl.Err(err))
 	} else {
-		docxReportID = uuid.New().String()
-		err = tz.s3.SaveDocument(ctx, docxReportID, response.Data, "reports")
+		reportFilename = "отчёт_" + tzName + "_" + GetCurrentDateTimeString()
+		err = tz.s3.SaveDocument(ctx, reportFilename, response.Data, "reports")
 		if err != nil {
 			log.Error("ошибка сохранения docx отчёта в s3: ", sl.Err(err))
 		}
-
 	}
 
 	err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
@@ -415,7 +441,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		UpdatedAt:                       time.Now(),
 		OutHTML:                         outHtml,
 		CSS:                             "",
-		CheckedFileID:                   docxReportID,
+		CheckedFileID:                   reportFilename,
 		AllRubs:                         allRubs,
 		AllTokens:                       allTokens,
 		InspectionTime:                  inspectionTime,
@@ -464,6 +490,15 @@ func RemoveDocxExtension(filename string) string {
 	// Проверяем, заканчивается ли строка на ".docx" (регистронезависимо)
 	if strings.HasSuffix(strings.ToLower(filename), ".docx") {
 		return filename[:len(filename)-5]
+	}
+	return filename
+}
+
+// RemoveDocxExtension удаляет расширение ".doc" из конца строки (регистронезависимо)
+func RemoveDocExtension(filename string) string {
+	// Проверяем, заканчивается ли строка на ".docx" (регистронезависимо)
+	if strings.HasSuffix(strings.ToLower(filename), ".doc") {
+		return filename[:len(filename)-4]
 	}
 	return filename
 }
@@ -521,4 +556,27 @@ func SortErrorsByCode(errors []Error) {
 		// Если оба кода не соответствуют формату, сортируем лексикографически
 		return codeI < codeJ
 	})
+}
+
+func IsDocFormat(filename string) (bool, error) {
+	lower := strings.ToLower(filename)
+	if strings.HasSuffix(lower, ".doc") && !strings.HasSuffix(lower, ".docx") {
+		return true, nil
+	}
+	if strings.HasSuffix(lower, ".docx") {
+		return false, nil
+	}
+	return false, fmt.Errorf("file must have .doc or .docx extension")
+}
+
+func GetCurrentDateTimeString() string {
+	now := time.Now()
+	return fmt.Sprintf("%d.%d.%d.%02d.%02d.%02d.%02d",
+		now.Day(),
+		int(now.Month()),
+		now.Year(),
+		now.Hour(),
+		now.Minute(),
+		now.Second(),
+		now.Nanosecond()/1000000)
 }
