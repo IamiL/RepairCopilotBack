@@ -38,6 +38,8 @@ service UserService {
 
   // RegisterVisit регистрирует посещение пользователя
   rpc RegisterVisit(RegisterVisitRequest) returns (RegisterVisitResponse);
+
+  rpc IncrementInspectionsForTodayByUserId(IncrementInspectionsForTodayByUserIdRequest) returns (IncrementInspectionsForTodayByUserIdResponse);
 }
 
 // GetUserInfoRequest запрос для получения информации о пользователе по ID
@@ -204,8 +206,15 @@ message RegisterVisitResponse {
 
 message ConfirmEmailRequest {
   string user_id = 1;
-string code = 2;
+  string code = 2;
 }
 
 message ConfirmEmailResponse {
+}
+
+message IncrementInspectionsForTodayByUserIdRequest {
+  string userId = 1;
+}
+
+message IncrementInspectionsForTodayByUserIdResponse {
 }

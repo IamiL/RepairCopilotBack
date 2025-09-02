@@ -47,10 +47,14 @@ func NewClient(baseURL string, timeout time.Duration) *DocxGeneratorClient {
 func (c *DocxGeneratorClient) GenerateDocument(ctx context.Context, errorsArray ErrorsArray) (*GenerateResponse, error) {
 	for _, v := range errorsArray.Errors {
 		if v.MissingInstances != nil && len(*v.MissingInstances) > 0 {
+			if v.InvalidInstances == nil {
+				invInsts := make([]OutInvalidError, 0)
+				v.InvalidInstances = &invInsts
+			}
 			for j := range *v.MissingInstances {
 				*v.InvalidInstances = append(*v.InvalidInstances, OutInvalidError{
 					SuggestedFix: (*v.MissingInstances)[j].SuggestedFix,
-					Quote:        "",
+					Quote:        "...",
 				})
 			}
 
