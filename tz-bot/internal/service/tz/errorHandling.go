@@ -43,7 +43,7 @@ type OutMissingError struct {
 	HtmlIDStr                   string
 	ErrorID                     uuid.UUID
 	Rationale                   string
-	SuggestedFix                string
+	SuggestedFix                string `json:"suggested_fix"`
 	FeedbackExists              bool
 	FeedbackMark                *bool
 	FeedbackComment             *string

@@ -196,10 +196,10 @@ func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
 	// Конфигурация SMTP для Gmail
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
-	auth := smtp.PlainAuth("", "iamil50113@gmail.com", "qlaq qsoe emex agog", smtpHost)
+	auth := smtp.PlainAuth("", "ivan2011avatar@gmail.com", "tsep nuqs bmvy dcbr", smtpHost)
 
 	// Адрес отправителя
-	from := "iamil50113@gmail.com"
+	from := "ivan2011avatar@gmail.com"
 
 	// Тело письма
 	subject := "Код подтверждения регистрации"

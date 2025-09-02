@@ -347,6 +347,41 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		errors[i].MissingInstances = &missingInstances
 	}
 
+	err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
+	if err != nil {
+		log.Error("ошибка сохранения invalid instances: ", sl.Err(err))
+		tz.updateVersionWithError(ctx, versionID, "error")
+		return
+	}
+
+	err = tz.repo.SaveMissingInstances(ctx, outMissingErrors)
+	if err != nil {
+		log.Error("ошибка сохранения missing instances: ", sl.Err(err))
+		tz.updateVersionWithError(ctx, versionID, "error")
+		return
+	}
+
+	invalidInstances2 := make([]OutInvalidError, 0)
+	for i := range errors {
+		invalidInstancesFromDb, err := tz.repo.GetInvalidInstancesByErrorID(ctx, errors[i].ID)
+		if err != nil {
+			log.Error("failed to get version errors: ", sl.Err(err))
+		} else {
+			for j := range *invalidInstancesFromDb {
+				(*invalidInstancesFromDb)[j].HtmlIDStr = strconv.Itoa(int((*invalidInstancesFromDb)[j].HtmlID))
+			}
+			invalidInstances2 = append(invalidInstances2, *invalidInstancesFromDb...)
+			errors[i].InvalidInstances = invalidInstancesFromDb
+		}
+
+		missingInstances, err := tz.repo.GetMissingInstancesByErrorID(ctx, errors[i].ID)
+		if err != nil {
+			log.Error("failed to get version missing instances: ", sl.Err(err))
+		} else {
+			errors[i].MissingInstances = missingInstances
+		}
+	}
+
 	client := NewClient("http://localhost:8050", 30*time.Second)
 
 	var reportFilename string
@@ -360,20 +395,6 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		if err != nil {
 			log.Error("ошибка сохранения docx отчёта в s3: ", sl.Err(err))
 		}
-	}
-
-	err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
-	if err != nil {
-		log.Error("ошибка сохранения invalid instances: ", sl.Err(err))
-		tz.updateVersionWithError(ctx, versionID, "error")
-		return
-	}
-
-	err = tz.repo.SaveMissingInstances(ctx, outMissingErrors)
-	if err != nil {
-		log.Error("ошибка сохранения missing instances: ", sl.Err(err))
-		tz.updateVersionWithError(ctx, versionID, "error")
-		return
 	}
 
 	if errors != nil && len(errors) > 0 {

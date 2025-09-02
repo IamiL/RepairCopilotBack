@@ -45,27 +45,27 @@ func NewClient(baseURL string, timeout time.Duration) *DocxGeneratorClient {
 }
 
 func (c *DocxGeneratorClient) GenerateDocument(ctx context.Context, errorsArray ErrorsArray) (*GenerateResponse, error) {
-	for _, v := range errorsArray.Errors {
-		if v.MissingInstances != nil && len(*v.MissingInstances) > 0 {
-			if v.InvalidInstances == nil {
-				invInsts := make([]OutInvalidError, 0)
-				v.InvalidInstances = &invInsts
-			}
-			for j := range *v.MissingInstances {
-				*v.InvalidInstances = append(*v.InvalidInstances, OutInvalidError{
-					SuggestedFix: (*v.MissingInstances)[j].SuggestedFix,
-					Quote:        "...",
-				})
-			}
-
-		}
-	}
+	//for _, v := range errorsArray.Errors {
+	//	if v.MissingInstances != nil && len(*v.MissingInstances) > 0 {
+	//		if v.InvalidInstances == nil {
+	//			invInsts := make([]OutInvalidError, 0)
+	//			v.InvalidInstances = &invInsts
+	//		}
+	//		for j := range *v.MissingInstances {
+	//			*v.InvalidInstances = append(*v.InvalidInstances, OutInvalidError{
+	//				SuggestedFix: (*v.MissingInstances)[j].SuggestedFix,
+	//				Quote:        "...",
+	//			})
+	//		}
+	//
+	//	}
+	//}
 	// Сериализуем ErrorsArray в JSON
 	jsonData, err := json.Marshal(errorsArray)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal errors array: %w", err)
 	}
-
+	fmt.Println(string(jsonData))
 	// Создаем HTTP запрос
 	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/generate-report", bytes.NewBuffer(jsonData))
 	if err != nil {
