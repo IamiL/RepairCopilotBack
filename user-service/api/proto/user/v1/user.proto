@@ -40,6 +40,9 @@ service UserService {
   rpc RegisterVisit(RegisterVisitRequest) returns (RegisterVisitResponse);
 
   rpc IncrementInspectionsForTodayByUserId(IncrementInspectionsForTodayByUserIdRequest) returns (IncrementInspectionsForTodayByUserIdResponse);
+
+  // Декремент счетчика проверок за сегодня (если проверка отменяется)
+  rpc DecrementInspectionsForTodayByUserId(DecrementInspectionsForTodayByUserIdRequest) returns (DecrementInspectionsForTodayByUserIdResponse);
 }
 
 // GetUserInfoRequest запрос для получения информации о пользователе по ID
@@ -217,4 +220,11 @@ message IncrementInspectionsForTodayByUserIdRequest {
 }
 
 message IncrementInspectionsForTodayByUserIdResponse {
+}
+
+message DecrementInspectionsForTodayByUserIdRequest {
+  string userId = 1;
+}
+
+message DecrementInspectionsForTodayByUserIdResponse {
 }

@@ -317,3 +317,59 @@ func (c *UserClient) ConfirmEmail(ctx context.Context, userID uuid.UUID, code st
 	fmt.Println("всё ок ")
 	return nil
 }
+
+// IncrementInspectionsForToday увеличивает счетчик проверок за сегодня для пользователя
+func (c *UserClient) IncrementInspectionsForToday(ctx context.Context, userID string) error {
+	req := &pb.IncrementInspectionsForTodayByUserIdRequest{
+		UserId: userID,
+	}
+
+	_, err := c.client.IncrementInspectionsForTodayByUserId(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return fmt.Errorf("invalid user_id: %s", st.Message())
+			case codes.ResourceExhausted:
+				return fmt.Errorf("daily inspection limit exceeded")
+			case codes.NotFound:
+				return fmt.Errorf("user not found")
+			case codes.Internal:
+				return fmt.Errorf("internal server error")
+			default:
+				return fmt.Errorf("failed to increment inspections for today: %s", st.Message())
+			}
+		}
+		return err
+	}
+
+	return nil
+}
+
+// DecrementInspectionsForToday уменьшает счетчик проверок за сегодня для пользователя
+func (c *UserClient) DecrementInspectionsForToday(ctx context.Context, userID string) error {
+	req := &pb.DecrementInspectionsForTodayByUserIdRequest{
+		UserId: userID,
+	}
+
+	_, err := c.client.DecrementInspectionsForTodayByUserId(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return fmt.Errorf("invalid user_id: %s", st.Message())
+			case codes.NotFound:
+				return fmt.Errorf("user not found")
+			case codes.Internal:
+				return fmt.Errorf("internal server error")
+			default:
+				return fmt.Errorf("failed to decrement inspections for today: %s", st.Message())
+			}
+		}
+		return err
+	}
+
+	return nil
+}

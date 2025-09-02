@@ -64,6 +64,8 @@ type UserProvider interface {
 	UpdateLastVisit(ctx context.Context, userID string) error
 	GetConfirmationCodeByUserId(ctx context.Context, userID uuid.UUID) (string, error)
 	UpdateConfirmStatusByUserId(ctx context.Context, userID uuid.UUID, status bool) error
+	IncrementInspectionsForToday(ctx context.Context, userID string) error
+	DecrementInspectionsForToday(ctx context.Context, userID string) error
 }
 
 func New(
@@ -471,5 +473,70 @@ func (u *User) ConfirmEmail(ctx context.Context, userID string, codeReq string) 
 
 	log.Info("user confirmation code retrieved successfully")
 
+	return nil
+}
+
+var (
+	ErrInspectionLimitExceeded = errors.New("daily inspection limit exceeded")
+)
+
+func (u *User) IncrementInspectionsForToday(ctx context.Context, userID string) error {
+	const op = "User.IncrementInspectionsForToday"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+	)
+
+	log.Info("incrementing inspections for today")
+
+	user, err := u.usrProvider.User(ctx, uuid.MustParse(userID))
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+			return fmt.Errorf("%s: user not found", op)
+		}
+		u.log.Error("failed to get user info", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if user.InspectionsForToday >= user.InspectionsPerDay {
+		u.log.Warn("daily inspection limit exceeded", 
+			slog.Int("current", user.InspectionsForToday), 
+			slog.Int("limit", user.InspectionsPerDay))
+		return fmt.Errorf("%s: %w", op, ErrInspectionLimitExceeded)
+	}
+
+	err = u.usrProvider.IncrementInspectionsForToday(ctx, userID)
+	if err != nil {
+		log.Error("failed to increment inspections for today", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("inspections for today incremented successfully")
+	return nil
+}
+
+func (u *User) DecrementInspectionsForToday(ctx context.Context, userID string) error {
+	const op = "User.DecrementInspectionsForToday"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+	)
+
+	log.Info("decrementing inspections for today")
+
+	err := u.usrProvider.DecrementInspectionsForToday(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+			return fmt.Errorf("%s: user not found", op)
+		}
+		log.Error("failed to decrement inspections for today", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("inspections for today decremented successfully")
 	return nil
 }

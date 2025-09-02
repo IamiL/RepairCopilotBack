@@ -3,6 +3,7 @@ package app
 import (
 	"log/slog"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
+	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
@@ -71,7 +72,15 @@ func New(
 
 	s3Client := s3minio.New(s3Conn)
 
-	tzService := tzservice.New(log, wordParserClient, wordParserClient2, markdownClient, llmClient, prompBuilderClient, tgClient, s3Client, postgres)
+	// Создаем клиент для user-service (пока с фиксированным адресом, позже можно вынести в конфиг)
+	userServiceClient, err := user_service_client.NewClient("localhost:50052")
+	if err != nil {
+		log.Error("failed to create user-service client", "error", err)
+		// Если не удается подключиться к user-service, продолжаем без него
+		userServiceClient = nil
+	}
+
+	tzService := tzservice.New(log, wordParserClient, wordParserClient2, markdownClient, llmClient, prompBuilderClient, tgClient, userServiceClient, s3Client, postgres)
 
 	grpcApp := grpcapp.New(log, tzService, grpcConfig)
 

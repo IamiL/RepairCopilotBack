@@ -44,6 +44,17 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		tz_name = RemoveDocxExtension(filename)
 	}
 
+	// Инкрементируем счетчик проверок для пользователя (проверяем лимит)
+	if tz.userServiceClient != nil {
+		err = tz.userServiceClient.IncrementInspectionsForToday(ctx, userID.String())
+		if err != nil {
+			log.Error("failed to increment inspections for today", sl.Err(err))
+			return uuid.Nil, "", time.Time{}, fmt.Errorf("inspection limit exceeded or user service error: %w", err)
+		} else {
+			log.Info("inspections counter incremented successfully")
+		}
+	}
+
 	// Создаем техническую спецификацию
 	newTzID := uuid.New()
 	ts, err := tz.repo.CreateTechnicalSpecification(ctx, &modelrepo.CreateTechnicalSpecificationRequest{
@@ -54,6 +65,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		UpdatedAt: time.Now(),
 	})
 	if err != nil {
+		tz.decrementInspectionsForUser(ctx, userID, log)
 		return uuid.Nil, "", time.Time{}, fmt.Errorf("failed to create technical specification: %w", err)
 	}
 	log.Info("technical specification created", slog.String("ts_id", ts.ID.String()))
@@ -63,6 +75,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	err = tz.s3.SaveDocument(ctx, originalFileName, file, "docs")
 	if err != nil {
 		log.Error("ошибка сохранения оригинального файла в S3: ", sl.Err(err))
+		tz.decrementInspectionsForUser(ctx, userID, log)
 		return uuid.Nil, "", time.Time{}, fmt.Errorf("ошибка сохранения файла в S3: %w", err)
 	}
 	log.Info("оригинальный файл успешно сохранён в S3", slog.String("file_id", originalFileName))
@@ -88,12 +101,13 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 	}
 	err = tz.repo.CreateVersion(ctx, versionReq)
 	if err != nil {
+		tz.decrementInspectionsForUser(ctx, userID, log)
 		return uuid.Nil, "", time.Time{}, fmt.Errorf("failed to create version: %w", err)
 	}
 	log.Info("version created with status 'in_progress'", slog.String("version_id", newVersionID.String()))
 
 	// Запускаем асинхронную обработку
-	go tz.ProcessTzAsync(file, filename, newVersionID, originalFileName, isDocFormat, tz_name)
+	go tz.ProcessTzAsync(file, filename, newVersionID, originalFileName, isDocFormat, tz_name, userID)
 
 	log.Info("async processing started")
 	return newVersionID, RemoveDocxExtension(filename), time.Now(), nil
@@ -123,13 +137,14 @@ type Error struct {
 	MissingInstances    *[]OutMissingError        `json:"missing_instances,omitempty"`
 }
 
-func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, _ string, isDocFormat bool, tzName string) {
+func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, _ string, isDocFormat bool, tzName string, userID uuid.UUID) {
 	const op = "Tz.ProcessTzAsync"
 
 	log := tz.log.With(
 		slog.String("op", op),
 		slog.String("versionID", versionID.String()),
 		slog.String("tzName", tzName),
+		slog.String("userID", userID.String()),
 	)
 
 	log.Info("starting async processing")
@@ -179,7 +194,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		oldVersion = true
 		paragraphsFromWordConverterClient, _, wordConverterClientErr := tz.wordConverterClient.Convert(file, filename)
 		if wordConverterClientErr != nil {
-			log.Error("ошибка при обращении к wordParserClient: ", sl.Err(err))
+			tz.handleProcessingError(ctx, versionID, userID, "ошибка при обращении к wordParserClient: "+wordConverterClientErr.Error(), log)
 			return
 		}
 
@@ -190,8 +205,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	markdownResponse, err := tz.markdownClient.Convert(*paragraphs)
 	if err != nil {
-		log.Error("ошибка конвертации HTML в markdown: ", sl.Err(err))
-		tz.updateVersionWithError(ctx, versionID, "error")
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка конвертации HTML в markdown: "+err.Error(), log)
 		return
 	}
 
@@ -200,14 +214,12 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	promts, schema, errorsDescrptions, err := tz.promtBuilderClient.GeneratePromts(markdownResponse.Markdown, tz.ggID)
 	if err != nil {
-		log.Error("ошибка генерации промтов: ", sl.Err(err))
-		tz.updateVersionWithError(ctx, versionID, "error")
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка генерации промтов: "+err.Error(), log)
 		return
 	}
 
 	if schema == nil {
-		log.Error("схема пустая")
-		tz.updateVersionWithError(ctx, versionID, "error")
+		tz.handleProcessingError(ctx, versionID, userID, "схема пустая", log)
 		return
 	}
 
@@ -349,15 +361,13 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
 	if err != nil {
-		log.Error("ошибка сохранения invalid instances: ", sl.Err(err))
-		tz.updateVersionWithError(ctx, versionID, "error")
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения invalid instances: "+err.Error(), log)
 		return
 	}
 
 	err = tz.repo.SaveMissingInstances(ctx, outMissingErrors)
 	if err != nil {
-		log.Error("ошибка сохранения missing instances: ", sl.Err(err))
-		tz.updateVersionWithError(ctx, versionID, "error")
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения missing instances: "+err.Error(), log)
 		return
 	}
 
@@ -480,7 +490,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	}
 	err = tz.repo.UpdateVersion(ctx, updateReq)
 	if err != nil {
-		log.Error("ошибка обновления версии: ", sl.Err(err))
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка обновления версии: "+err.Error(), log)
 		return
 	}
 
@@ -503,6 +513,38 @@ func (tz *Tz) updateVersionWithError(ctx context.Context, versionID uuid.UUID, s
 	err := tz.repo.UpdateVersion(ctx, updateReq)
 	if err != nil {
 		tz.log.Error("failed to update version with error status", slog.String("versionID", versionID.String()), slog.Any("error", err))
+	}
+}
+
+// handleProcessingError обрабатывает ошибку в асинхронной обработке:
+// 1. Обновляет статус версии на "error" 
+// 2. Декрементирует счетчик проверок пользователя
+func (tz *Tz) handleProcessingError(ctx context.Context, versionID uuid.UUID, userID uuid.UUID, errorMsg string, log *slog.Logger) {
+	log.Error(errorMsg)
+	
+	// Обновляем статус версии на "error"
+	tz.updateVersionWithError(ctx, versionID, "error")
+	
+	// Декрементируем счетчик проверок пользователя
+	if tz.userServiceClient != nil {
+		err := tz.userServiceClient.DecrementInspectionsForToday(ctx, userID.String())
+		if err != nil {
+			log.Error("failed to decrement inspections for today", sl.Err(err))
+		} else {
+			log.Info("inspections counter decremented due to processing error")
+		}
+	}
+}
+
+// decrementInspectionsForUser декрементирует счетчик проверок пользователя
+func (tz *Tz) decrementInspectionsForUser(ctx context.Context, userID uuid.UUID, log *slog.Logger) {
+	if tz.userServiceClient != nil {
+		err := tz.userServiceClient.DecrementInspectionsForToday(ctx, userID.String())
+		if err != nil {
+			log.Error("failed to decrement inspections for today", sl.Err(err))
+		} else {
+			log.Info("inspections counter decremented due to early error")
+		}
 	}
 }
 

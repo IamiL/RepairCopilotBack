@@ -1541,6 +1541,166 @@ func (*ConfirmEmailResponse) Descriptor() ([]byte, []int) {
 	return file_user_v1_user_proto_rawDescGZIP(), []int{24}
 }
 
+type IncrementInspectionsForTodayByUserIdRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IncrementInspectionsForTodayByUserIdRequest) Reset() {
+	*x = IncrementInspectionsForTodayByUserIdRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IncrementInspectionsForTodayByUserIdRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IncrementInspectionsForTodayByUserIdRequest) ProtoMessage() {}
+
+func (x *IncrementInspectionsForTodayByUserIdRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IncrementInspectionsForTodayByUserIdRequest.ProtoReflect.Descriptor instead.
+func (*IncrementInspectionsForTodayByUserIdRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *IncrementInspectionsForTodayByUserIdRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type IncrementInspectionsForTodayByUserIdResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IncrementInspectionsForTodayByUserIdResponse) Reset() {
+	*x = IncrementInspectionsForTodayByUserIdResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IncrementInspectionsForTodayByUserIdResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IncrementInspectionsForTodayByUserIdResponse) ProtoMessage() {}
+
+func (x *IncrementInspectionsForTodayByUserIdResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IncrementInspectionsForTodayByUserIdResponse.ProtoReflect.Descriptor instead.
+func (*IncrementInspectionsForTodayByUserIdResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{26}
+}
+
+type DecrementInspectionsForTodayByUserIdRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DecrementInspectionsForTodayByUserIdRequest) Reset() {
+	*x = DecrementInspectionsForTodayByUserIdRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DecrementInspectionsForTodayByUserIdRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DecrementInspectionsForTodayByUserIdRequest) ProtoMessage() {}
+
+func (x *DecrementInspectionsForTodayByUserIdRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DecrementInspectionsForTodayByUserIdRequest.ProtoReflect.Descriptor instead.
+func (*DecrementInspectionsForTodayByUserIdRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *DecrementInspectionsForTodayByUserIdRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type DecrementInspectionsForTodayByUserIdResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DecrementInspectionsForTodayByUserIdResponse) Reset() {
+	*x = DecrementInspectionsForTodayByUserIdResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DecrementInspectionsForTodayByUserIdResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DecrementInspectionsForTodayByUserIdResponse) ProtoMessage() {}
+
+func (x *DecrementInspectionsForTodayByUserIdResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DecrementInspectionsForTodayByUserIdResponse.ProtoReflect.Descriptor instead.
+func (*DecrementInspectionsForTodayByUserIdResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{28}
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
@@ -1661,7 +1821,13 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x13ConfirmEmailRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\tR\x04code\"\x16\n" +
-	"\x14ConfirmEmailResponse2\x89\a\n" +
+	"\x14ConfirmEmailResponse\"E\n" +
+	"+IncrementInspectionsForTodayByUserIdRequest\x12\x16\n" +
+	"\x06userId\x18\x01 \x01(\tR\x06userId\".\n" +
+	",IncrementInspectionsForTodayByUserIdResponse\"E\n" +
+	"+DecrementInspectionsForTodayByUserIdRequest\x12\x16\n" +
+	"\x06userId\x18\x01 \x01(\tR\x06userId\".\n" +
+	",DecrementInspectionsForTodayByUserIdResponse2\xb5\t\n" +
 	"\vUserService\x12H\n" +
 	"\vGetUserInfo\x12\x1b.user.v1.GetUserInfoRequest\x1a\x1c.user.v1.GetUserInfoResponse\x12K\n" +
 	"\fRegisterUser\x12\x1c.user.v1.RegisterUserRequest\x1a\x1d.user.v1.RegisterUserResponse\x12K\n" +
@@ -1673,7 +1839,9 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x12GetUserDetailsById\x12\".user.v1.GetUserDetailsByIdRequest\x1a#.user.v1.GetUserDetailsByIdResponse\x12l\n" +
 	"\x17UpdateInspectionsPerDay\x12'.user.v1.UpdateInspectionsPerDayRequest\x1a(.user.v1.UpdateInspectionsPerDayResponse\x12W\n" +
 	"\x10GetFullNamesById\x12 .user.v1.GetFullNamesByIdRequest\x1a!.user.v1.GetFullNamesByIdResponse\x12N\n" +
-	"\rRegisterVisit\x12\x1d.user.v1.RegisterVisitRequest\x1a\x1e.user.v1.RegisterVisitResponseB\tZ\auser/v1b\x06proto3"
+	"\rRegisterVisit\x12\x1d.user.v1.RegisterVisitRequest\x1a\x1e.user.v1.RegisterVisitResponse\x12\x93\x01\n" +
+	"$IncrementInspectionsForTodayByUserId\x124.user.v1.IncrementInspectionsForTodayByUserIdRequest\x1a5.user.v1.IncrementInspectionsForTodayByUserIdResponse\x12\x93\x01\n" +
+	"$DecrementInspectionsForTodayByUserId\x124.user.v1.DecrementInspectionsForTodayByUserIdRequest\x1a5.user.v1.DecrementInspectionsForTodayByUserIdResponseB\tZ\auser/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
@@ -1687,45 +1855,49 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_user_v1_user_proto_rawDescData
 }
 
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_user_v1_user_proto_goTypes = []any{
-	(*GetUserInfoRequest)(nil),              // 0: user.v1.GetUserInfoRequest
-	(*GetUserInfoResponse)(nil),             // 1: user.v1.GetUserInfoResponse
-	(*RegisterUserRequest)(nil),             // 2: user.v1.RegisterUserRequest
-	(*RegisterUserResponse)(nil),            // 3: user.v1.RegisterUserResponse
-	(*LoginRequest)(nil),                    // 4: user.v1.LoginRequest
-	(*LoginResponse)(nil),                   // 5: user.v1.LoginResponse
-	(*GetLoginByIdRequest)(nil),             // 6: user.v1.GetLoginByIdRequest
-	(*GetLoginByIdResponse)(nil),            // 7: user.v1.GetLoginByIdResponse
-	(*GetUserByLoginRequest)(nil),           // 8: user.v1.GetUserByLoginRequest
-	(*GetUserByLoginResponse)(nil),          // 9: user.v1.GetUserByLoginResponse
-	(*GetAllUsersRequest)(nil),              // 10: user.v1.GetAllUsersRequest
-	(*UserInfo)(nil),                        // 11: user.v1.UserInfo
-	(*GetAllUsersResponse)(nil),             // 12: user.v1.GetAllUsersResponse
-	(*GetUserDetailsByIdRequest)(nil),       // 13: user.v1.GetUserDetailsByIdRequest
-	(*GetUserDetailsByIdResponse)(nil),      // 14: user.v1.GetUserDetailsByIdResponse
-	(*UpdateInspectionsPerDayRequest)(nil),  // 15: user.v1.UpdateInspectionsPerDayRequest
-	(*UpdateInspectionsPerDayResponse)(nil), // 16: user.v1.UpdateInspectionsPerDayResponse
-	(*GetFullNamesByIdRequest)(nil),         // 17: user.v1.GetFullNamesByIdRequest
-	(*Empty)(nil),                           // 18: user.v1.Empty
-	(*GetFullNamesByIdResponse)(nil),        // 19: user.v1.GetFullNamesByIdResponse
-	(*FullName)(nil),                        // 20: user.v1.FullName
-	(*RegisterVisitRequest)(nil),            // 21: user.v1.RegisterVisitRequest
-	(*RegisterVisitResponse)(nil),           // 22: user.v1.RegisterVisitResponse
-	(*ConfirmEmailRequest)(nil),             // 23: user.v1.ConfirmEmailRequest
-	(*ConfirmEmailResponse)(nil),            // 24: user.v1.ConfirmEmailResponse
-	nil,                                     // 25: user.v1.GetFullNamesByIdRequest.IdsEntry
-	nil,                                     // 26: user.v1.GetFullNamesByIdResponse.UsersEntry
-	(*timestamppb.Timestamp)(nil),           // 27: google.protobuf.Timestamp
+	(*GetUserInfoRequest)(nil),                           // 0: user.v1.GetUserInfoRequest
+	(*GetUserInfoResponse)(nil),                          // 1: user.v1.GetUserInfoResponse
+	(*RegisterUserRequest)(nil),                          // 2: user.v1.RegisterUserRequest
+	(*RegisterUserResponse)(nil),                         // 3: user.v1.RegisterUserResponse
+	(*LoginRequest)(nil),                                 // 4: user.v1.LoginRequest
+	(*LoginResponse)(nil),                                // 5: user.v1.LoginResponse
+	(*GetLoginByIdRequest)(nil),                          // 6: user.v1.GetLoginByIdRequest
+	(*GetLoginByIdResponse)(nil),                         // 7: user.v1.GetLoginByIdResponse
+	(*GetUserByLoginRequest)(nil),                        // 8: user.v1.GetUserByLoginRequest
+	(*GetUserByLoginResponse)(nil),                       // 9: user.v1.GetUserByLoginResponse
+	(*GetAllUsersRequest)(nil),                           // 10: user.v1.GetAllUsersRequest
+	(*UserInfo)(nil),                                     // 11: user.v1.UserInfo
+	(*GetAllUsersResponse)(nil),                          // 12: user.v1.GetAllUsersResponse
+	(*GetUserDetailsByIdRequest)(nil),                    // 13: user.v1.GetUserDetailsByIdRequest
+	(*GetUserDetailsByIdResponse)(nil),                   // 14: user.v1.GetUserDetailsByIdResponse
+	(*UpdateInspectionsPerDayRequest)(nil),               // 15: user.v1.UpdateInspectionsPerDayRequest
+	(*UpdateInspectionsPerDayResponse)(nil),              // 16: user.v1.UpdateInspectionsPerDayResponse
+	(*GetFullNamesByIdRequest)(nil),                      // 17: user.v1.GetFullNamesByIdRequest
+	(*Empty)(nil),                                        // 18: user.v1.Empty
+	(*GetFullNamesByIdResponse)(nil),                     // 19: user.v1.GetFullNamesByIdResponse
+	(*FullName)(nil),                                     // 20: user.v1.FullName
+	(*RegisterVisitRequest)(nil),                         // 21: user.v1.RegisterVisitRequest
+	(*RegisterVisitResponse)(nil),                        // 22: user.v1.RegisterVisitResponse
+	(*ConfirmEmailRequest)(nil),                          // 23: user.v1.ConfirmEmailRequest
+	(*ConfirmEmailResponse)(nil),                         // 24: user.v1.ConfirmEmailResponse
+	(*IncrementInspectionsForTodayByUserIdRequest)(nil),  // 25: user.v1.IncrementInspectionsForTodayByUserIdRequest
+	(*IncrementInspectionsForTodayByUserIdResponse)(nil), // 26: user.v1.IncrementInspectionsForTodayByUserIdResponse
+	(*DecrementInspectionsForTodayByUserIdRequest)(nil),  // 27: user.v1.DecrementInspectionsForTodayByUserIdRequest
+	(*DecrementInspectionsForTodayByUserIdResponse)(nil), // 28: user.v1.DecrementInspectionsForTodayByUserIdResponse
+	nil,                           // 29: user.v1.GetFullNamesByIdRequest.IdsEntry
+	nil,                           // 30: user.v1.GetFullNamesByIdResponse.UsersEntry
+	(*timestamppb.Timestamp)(nil), // 31: google.protobuf.Timestamp
 }
 var file_user_v1_user_proto_depIdxs = []int32{
-	27, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
-	27, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
-	27, // 2: user.v1.LoginResponse.registered_at:type_name -> google.protobuf.Timestamp
-	27, // 3: user.v1.LoginResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	31, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
+	31, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	31, // 2: user.v1.LoginResponse.registered_at:type_name -> google.protobuf.Timestamp
+	31, // 3: user.v1.LoginResponse.last_visit_at:type_name -> google.protobuf.Timestamp
 	11, // 4: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
-	25, // 5: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
-	26, // 6: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
+	29, // 5: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
+	30, // 6: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
 	18, // 7: user.v1.GetFullNamesByIdRequest.IdsEntry.value:type_name -> user.v1.Empty
 	20, // 8: user.v1.GetFullNamesByIdResponse.UsersEntry.value:type_name -> user.v1.FullName
 	0,  // 9: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
@@ -1739,19 +1911,23 @@ var file_user_v1_user_proto_depIdxs = []int32{
 	15, // 17: user.v1.UserService.UpdateInspectionsPerDay:input_type -> user.v1.UpdateInspectionsPerDayRequest
 	17, // 18: user.v1.UserService.GetFullNamesById:input_type -> user.v1.GetFullNamesByIdRequest
 	21, // 19: user.v1.UserService.RegisterVisit:input_type -> user.v1.RegisterVisitRequest
-	1,  // 20: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
-	3,  // 21: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	24, // 22: user.v1.UserService.ConfirmEmail:output_type -> user.v1.ConfirmEmailResponse
-	5,  // 23: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	7,  // 24: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
-	9,  // 25: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
-	12, // 26: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
-	14, // 27: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
-	16, // 28: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
-	19, // 29: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
-	22, // 30: user.v1.UserService.RegisterVisit:output_type -> user.v1.RegisterVisitResponse
-	20, // [20:31] is the sub-list for method output_type
-	9,  // [9:20] is the sub-list for method input_type
+	25, // 20: user.v1.UserService.IncrementInspectionsForTodayByUserId:input_type -> user.v1.IncrementInspectionsForTodayByUserIdRequest
+	27, // 21: user.v1.UserService.DecrementInspectionsForTodayByUserId:input_type -> user.v1.DecrementInspectionsForTodayByUserIdRequest
+	1,  // 22: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
+	3,  // 23: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	24, // 24: user.v1.UserService.ConfirmEmail:output_type -> user.v1.ConfirmEmailResponse
+	5,  // 25: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	7,  // 26: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	9,  // 27: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
+	12, // 28: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
+	14, // 29: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
+	16, // 30: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
+	19, // 31: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
+	22, // 32: user.v1.UserService.RegisterVisit:output_type -> user.v1.RegisterVisitResponse
+	26, // 33: user.v1.UserService.IncrementInspectionsForTodayByUserId:output_type -> user.v1.IncrementInspectionsForTodayByUserIdResponse
+	28, // 34: user.v1.UserService.DecrementInspectionsForTodayByUserId:output_type -> user.v1.DecrementInspectionsForTodayByUserIdResponse
+	22, // [22:35] is the sub-list for method output_type
+	9,  // [9:22] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -1768,7 +1944,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

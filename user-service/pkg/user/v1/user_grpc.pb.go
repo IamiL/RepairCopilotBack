@@ -19,17 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetUserInfo_FullMethodName             = "/user.v1.UserService/GetUserInfo"
-	UserService_RegisterUser_FullMethodName            = "/user.v1.UserService/RegisterUser"
-	UserService_ConfirmEmail_FullMethodName            = "/user.v1.UserService/ConfirmEmail"
-	UserService_Login_FullMethodName                   = "/user.v1.UserService/Login"
-	UserService_GetLoginById_FullMethodName            = "/user.v1.UserService/GetLoginById"
-	UserService_GetUserByLogin_FullMethodName          = "/user.v1.UserService/GetUserByLogin"
-	UserService_GetAllUsers_FullMethodName             = "/user.v1.UserService/GetAllUsers"
-	UserService_GetUserDetailsById_FullMethodName      = "/user.v1.UserService/GetUserDetailsById"
-	UserService_UpdateInspectionsPerDay_FullMethodName = "/user.v1.UserService/UpdateInspectionsPerDay"
-	UserService_GetFullNamesById_FullMethodName        = "/user.v1.UserService/GetFullNamesById"
-	UserService_RegisterVisit_FullMethodName           = "/user.v1.UserService/RegisterVisit"
+	UserService_GetUserInfo_FullMethodName                          = "/user.v1.UserService/GetUserInfo"
+	UserService_RegisterUser_FullMethodName                         = "/user.v1.UserService/RegisterUser"
+	UserService_ConfirmEmail_FullMethodName                         = "/user.v1.UserService/ConfirmEmail"
+	UserService_Login_FullMethodName                                = "/user.v1.UserService/Login"
+	UserService_GetLoginById_FullMethodName                         = "/user.v1.UserService/GetLoginById"
+	UserService_GetUserByLogin_FullMethodName                       = "/user.v1.UserService/GetUserByLogin"
+	UserService_GetAllUsers_FullMethodName                          = "/user.v1.UserService/GetAllUsers"
+	UserService_GetUserDetailsById_FullMethodName                   = "/user.v1.UserService/GetUserDetailsById"
+	UserService_UpdateInspectionsPerDay_FullMethodName              = "/user.v1.UserService/UpdateInspectionsPerDay"
+	UserService_GetFullNamesById_FullMethodName                     = "/user.v1.UserService/GetFullNamesById"
+	UserService_RegisterVisit_FullMethodName                        = "/user.v1.UserService/RegisterVisit"
+	UserService_IncrementInspectionsForTodayByUserId_FullMethodName = "/user.v1.UserService/IncrementInspectionsForTodayByUserId"
+	UserService_DecrementInspectionsForTodayByUserId_FullMethodName = "/user.v1.UserService/DecrementInspectionsForTodayByUserId"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -58,6 +60,9 @@ type UserServiceClient interface {
 	GetFullNamesById(ctx context.Context, in *GetFullNamesByIdRequest, opts ...grpc.CallOption) (*GetFullNamesByIdResponse, error)
 	// RegisterVisit регистрирует посещение пользователя
 	RegisterVisit(ctx context.Context, in *RegisterVisitRequest, opts ...grpc.CallOption) (*RegisterVisitResponse, error)
+	IncrementInspectionsForTodayByUserId(ctx context.Context, in *IncrementInspectionsForTodayByUserIdRequest, opts ...grpc.CallOption) (*IncrementInspectionsForTodayByUserIdResponse, error)
+	// Декремент счетчика проверок за сегодня (если проверка отменяется)
+	DecrementInspectionsForTodayByUserId(ctx context.Context, in *DecrementInspectionsForTodayByUserIdRequest, opts ...grpc.CallOption) (*DecrementInspectionsForTodayByUserIdResponse, error)
 }
 
 type userServiceClient struct {
@@ -178,6 +183,26 @@ func (c *userServiceClient) RegisterVisit(ctx context.Context, in *RegisterVisit
 	return out, nil
 }
 
+func (c *userServiceClient) IncrementInspectionsForTodayByUserId(ctx context.Context, in *IncrementInspectionsForTodayByUserIdRequest, opts ...grpc.CallOption) (*IncrementInspectionsForTodayByUserIdResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IncrementInspectionsForTodayByUserIdResponse)
+	err := c.cc.Invoke(ctx, UserService_IncrementInspectionsForTodayByUserId_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) DecrementInspectionsForTodayByUserId(ctx context.Context, in *DecrementInspectionsForTodayByUserIdRequest, opts ...grpc.CallOption) (*DecrementInspectionsForTodayByUserIdResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DecrementInspectionsForTodayByUserIdResponse)
+	err := c.cc.Invoke(ctx, UserService_DecrementInspectionsForTodayByUserId_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -204,6 +229,9 @@ type UserServiceServer interface {
 	GetFullNamesById(context.Context, *GetFullNamesByIdRequest) (*GetFullNamesByIdResponse, error)
 	// RegisterVisit регистрирует посещение пользователя
 	RegisterVisit(context.Context, *RegisterVisitRequest) (*RegisterVisitResponse, error)
+	IncrementInspectionsForTodayByUserId(context.Context, *IncrementInspectionsForTodayByUserIdRequest) (*IncrementInspectionsForTodayByUserIdResponse, error)
+	// Декремент счетчика проверок за сегодня (если проверка отменяется)
+	DecrementInspectionsForTodayByUserId(context.Context, *DecrementInspectionsForTodayByUserIdRequest) (*DecrementInspectionsForTodayByUserIdResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -246,6 +274,12 @@ func (UnimplementedUserServiceServer) GetFullNamesById(context.Context, *GetFull
 }
 func (UnimplementedUserServiceServer) RegisterVisit(context.Context, *RegisterVisitRequest) (*RegisterVisitResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterVisit not implemented")
+}
+func (UnimplementedUserServiceServer) IncrementInspectionsForTodayByUserId(context.Context, *IncrementInspectionsForTodayByUserIdRequest) (*IncrementInspectionsForTodayByUserIdResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncrementInspectionsForTodayByUserId not implemented")
+}
+func (UnimplementedUserServiceServer) DecrementInspectionsForTodayByUserId(context.Context, *DecrementInspectionsForTodayByUserIdRequest) (*DecrementInspectionsForTodayByUserIdResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecrementInspectionsForTodayByUserId not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -466,6 +500,42 @@ func _UserService_RegisterVisit_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_IncrementInspectionsForTodayByUserId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncrementInspectionsForTodayByUserIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).IncrementInspectionsForTodayByUserId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_IncrementInspectionsForTodayByUserId_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).IncrementInspectionsForTodayByUserId(ctx, req.(*IncrementInspectionsForTodayByUserIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_DecrementInspectionsForTodayByUserId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecrementInspectionsForTodayByUserIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).DecrementInspectionsForTodayByUserId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_DecrementInspectionsForTodayByUserId_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).DecrementInspectionsForTodayByUserId(ctx, req.(*DecrementInspectionsForTodayByUserIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -516,6 +586,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RegisterVisit",
 			Handler:    _UserService_RegisterVisit_Handler,
+		},
+		{
+			MethodName: "IncrementInspectionsForTodayByUserId",
+			Handler:    _UserService_IncrementInspectionsForTodayByUserId_Handler,
+		},
+		{
+			MethodName: "DecrementInspectionsForTodayByUserId",
+			Handler:    _UserService_DecrementInspectionsForTodayByUserId_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

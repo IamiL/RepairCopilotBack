@@ -327,6 +327,37 @@ func (s *serverAPI) ConfirmEmail(ctx context.Context, req *pb.ConfirmEmailReques
 	return &pb.ConfirmEmailResponse{}, nil
 }
 
+func (s *serverAPI) IncrementInspectionsForTodayByUserId(ctx context.Context, req *pb.IncrementInspectionsForTodayByUserIdRequest) (*pb.IncrementInspectionsForTodayByUserIdResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	err := s.userService.IncrementInspectionsForToday(ctx, req.UserId)
+	if err != nil {
+		if errors.Is(err, service.ErrInspectionLimitExceeded) {
+			return nil, status.Error(codes.ResourceExhausted, "daily inspection limit exceeded")
+		}
+		s.log.Error("failed to increment inspections for today", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to increment inspections for today")
+	}
+
+	return &pb.IncrementInspectionsForTodayByUserIdResponse{}, nil
+}
+
+func (s *serverAPI) DecrementInspectionsForTodayByUserId(ctx context.Context, req *pb.DecrementInspectionsForTodayByUserIdRequest) (*pb.DecrementInspectionsForTodayByUserIdResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	err := s.userService.DecrementInspectionsForToday(ctx, req.UserId)
+	if err != nil {
+		s.log.Error("failed to decrement inspections for today", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to decrement inspections for today")
+	}
+
+	return &pb.DecrementInspectionsForTodayByUserIdResponse{}, nil
+}
+
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {
 //	s.log.Error("GetLoginById not implemented")
 //}

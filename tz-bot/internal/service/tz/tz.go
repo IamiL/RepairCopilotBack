@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
+	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
 	"sort"
@@ -30,6 +31,7 @@ type Tz struct {
 	llmClient            *tz_llm_client.Client
 	promtBuilderClient   *promt_builder.Client
 	tgClient             *tg_client.Client
+	userServiceClient    *user_service_client.Client
 	s3                   *s3minio.MinioRepository
 	repo                 Repository
 	ggID                 int
@@ -91,6 +93,7 @@ func New(
 	llmClient *tz_llm_client.Client,
 	promtBuilder *promt_builder.Client,
 	tgClient *tg_client.Client,
+	userServiceClient *user_service_client.Client,
 	s3 *s3minio.MinioRepository,
 	repo Repository,
 ) *Tz {
@@ -102,6 +105,7 @@ func New(
 		llmClient:            llmClient,
 		promtBuilderClient:   promtBuilder,
 		tgClient:             tgClient,
+		userServiceClient:    userServiceClient,
 		s3:                   s3,
 		repo:                 repo,
 		ggID:                 1,

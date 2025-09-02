@@ -375,3 +375,33 @@ func (s *Storage) UpdateConfirmStatusByUserId(ctx context.Context, userID uuid.U
 
 	return nil
 }
+
+func (s *Storage) IncrementInspectionsForToday(ctx context.Context, userID string) error {
+	query := `UPDATE users SET inspections_for_today = inspections_for_today + 1 WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrUserNotFound
+	}
+
+	return nil
+}
+
+func (s *Storage) DecrementInspectionsForToday(ctx context.Context, userID string) error {
+	query := `UPDATE users SET inspections_for_today = CASE WHEN inspections_for_today > 0 THEN inspections_for_today - 1 ELSE 0 END WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrUserNotFound
+	}
+
+	return nil
+}
