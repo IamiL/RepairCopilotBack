@@ -73,7 +73,7 @@ func New(
 	s3Client := s3minio.New(s3Conn)
 
 	// Создаем клиент для user-service (пока с фиксированным адресом, позже можно вынести в конфиг)
-	userServiceClient, err := user_service_client.NewClient("localhost:50052")
+	userServiceClient, err := user_service_client.NewClient("localhost:8001")
 	if err != nil {
 		log.Error("failed to create user-service client", "error", err)
 		// Если не удается подключиться к user-service, продолжаем без него
