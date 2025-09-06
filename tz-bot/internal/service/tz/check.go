@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"regexp"
 	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
+	//docxToDocx2007clientclient "repairCopilotBot/tz-bot/internal/pkg/docxToDocx2007client"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
@@ -42,6 +43,23 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		tz_name = RemoveDocExtension(filename)
 	} else {
 		tz_name = RemoveDocxExtension(filename)
+		//DocxToDocx2007ConverterClient, err := docxToDocx2007clientclient.New("localhost", 8000)
+		//if err != nil || DocxToDocx2007ConverterClient == nil {
+		//	if err != nil {
+		//		log.Error("error initializing docx to docx 2007 converter client", sl.Err(err))
+		//	}
+		//	if DocxToDocx2007ConverterClient == nil {
+		//		log.Error("error initializing docx to docx 2007 converter client")
+		//	}
+		//} else {
+		//	newFile, err := DocxToDocx2007ConverterClient.Convert(ctx, file, filename)
+		//	if err != nil {
+		//		log.Error("error in convert docx to docx 2007 converter client", sl.Err(err))
+		//	} else {
+		//		file = newFile
+		//	}
+		//
+		//}
 	}
 
 	// Инкрементируем счетчик проверок для пользователя (проверяем лимит)
@@ -517,14 +535,14 @@ func (tz *Tz) updateVersionWithError(ctx context.Context, versionID uuid.UUID, s
 }
 
 // handleProcessingError обрабатывает ошибку в асинхронной обработке:
-// 1. Обновляет статус версии на "error" 
+// 1. Обновляет статус версии на "error"
 // 2. Декрементирует счетчик проверок пользователя
 func (tz *Tz) handleProcessingError(ctx context.Context, versionID uuid.UUID, userID uuid.UUID, errorMsg string, log *slog.Logger) {
 	log.Error(errorMsg)
-	
+
 	// Обновляем статус версии на "error"
 	tz.updateVersionWithError(ctx, versionID, "error")
-	
+
 	// Декрементируем счетчик проверок пользователя
 	if tz.userServiceClient != nil {
 		err := tz.userServiceClient.DecrementInspectionsForToday(ctx, userID.String())

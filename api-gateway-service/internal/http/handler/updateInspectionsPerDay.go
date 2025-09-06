@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	userserviceclient "repairCopilotBot/user-service/client"
+	"strconv"
 
 	"github.com/google/uuid"
 )
@@ -111,7 +112,7 @@ func UpdateInspectionsPerDayHandler(
 		if userInfoErr == nil {
 			reqUserInfo, reqUserInfoErr := userServiceClient.GetUserInfo(r.Context(), uuid.MustParse(session.UserID))
 			if reqUserInfoErr == nil {
-				actionText := "Администратор " + userInfo.FirstName + " " + userInfo.LastName + " ограничил количество ежедневных проверок для пользователя " + reqUserInfo.FirstName + " " + reqUserInfo.LastName + " - " + string(req.InspectionsPerDay) + " проверок в день"
+				actionText := "Администратор " + userInfo.FirstName + " " + userInfo.LastName + " ограничил количество ежедневных проверок для пользователя " + reqUserInfo.FirstName + " " + reqUserInfo.LastName + " - " + strconv.Itoa(int(req.InspectionsPerDay)) + " проверок в день"
 				if err := actionLogRepo.CreateActionLog(r.Context(), actionText, uuid.MustParse(session.UserID), 5); err != nil {
 					log.Error("failed to create action log for TZ submission", slog.String("error", err.Error()))
 				}
