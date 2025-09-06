@@ -266,10 +266,15 @@ type VersionAdminDashboard struct {
 	}
 }
 
-func (c *Client) GetAllVersionsAdminDashboard(ctx context.Context) ([]*VersionAdminDashboard, error) {
+func (c *Client) GetAllVersionsAdminDashboard(ctx context.Context, userID uuid.UUID) ([]*VersionAdminDashboard, error) {
 	const op = "tz_client.GetAllVersions"
+	var userIDStrReq *string
 
-	resp, err := c.api.GetAllVersionsAdminDashboard(ctx, &tzv1.GetAllVersionsAdminDashboardRequest{})
+	if userID != uuid.Nil {
+		userIDStr := userID.String()
+		userIDStrReq = &userIDStr
+	}
+	resp, err := c.api.GetAllVersionsAdminDashboard(ctx, &tzv1.GetAllVersionsAdminDashboardRequest{UserId: userIDStrReq})
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

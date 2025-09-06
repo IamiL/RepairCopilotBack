@@ -358,6 +358,25 @@ func (s *serverAPI) DecrementInspectionsForTodayByUserId(ctx context.Context, re
 	return &pb.DecrementInspectionsForTodayByUserIdResponse{}, nil
 }
 
+func (s *serverAPI) CheckInspectionLimit(ctx context.Context, req *pb.CheckInspectionLimitRequest) (*pb.CheckInspectionLimitResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	inspectionsLeft, err := s.userService.CheckInspectionLimit(ctx, req.UserId)
+	if err != nil {
+		if errors.Is(err, service.ErrInspectionLimitExceeded) {
+			return nil, status.Error(codes.ResourceExhausted, "лимит исчерпан")
+		}
+		s.log.Error("failed to check inspection limit", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to check inspection limit")
+	}
+
+	return &pb.CheckInspectionLimitResponse{
+		InspectionsLeft: uint32(inspectionsLeft),
+	}, nil
+}
+
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {
 //	s.log.Error("GetLoginById not implemented")
 //}

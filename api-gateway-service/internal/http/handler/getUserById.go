@@ -34,7 +34,7 @@ type GetUserByIdResponse struct {
 	//ErrorFeedbackCount  int                                 `json:"errorFeedbackCount"`
 	//InspectionsPerDay   int                                 `json:"inspectionsPerDay"`
 	//InspectionsForToday int                                 `json:"inspectionsForToday"`
-	Versions  []UserTechnicalSpecificationVersion     `json:"versions"`
+	Versions  []*client.VersionAdminDashboard         `json:"versions"`
 	Feedbacks *[]*client.GetFeedbacksFeedbackResponse `json:"feedbacks"`
 }
 
@@ -105,29 +105,35 @@ func GetUserByIdHandler(
 			return
 		}
 
-		// Получаем версии технических заданий пользователя
-		var versions []UserTechnicalSpecificationVersion
-		tzVersions, err := tzBotClient.GetVersionsMe(r.Context(), userID)
+		versionsList, err := tzBotClient.GetAllVersionsAdminDashboard(r.Context(), userID)
 		if err != nil {
-			log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
-			// Не возвращаем ошибку, продолжаем с пустым массивом версий
-			versions = []UserTechnicalSpecificationVersion{}
-		} else {
-			// Конвертируем в response структуру
-			versions = make([]UserTechnicalSpecificationVersion, len(tzVersions))
-			for i, tzVersion := range tzVersions {
-				versions[i] = UserTechnicalSpecificationVersion{
-					VersionId:                  tzVersion.VersionId,
-					TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
-					VersionNumber:              tzVersion.VersionNumber,
-					CreatedAt:                  tzVersion.CreatedAt.String(),
-					OriginalFileLink:           tzVersion.OriginalFileLink,
-					ReportFileLink:             tzVersion.ReportFileLink,
-				}
-			}
+			log.Error("failed to get versions", slog.String("error", err.Error()))
+			return
 		}
 
-		log.Info("user versions fetched", slog.Int("versions_count", len(versions)))
+		// Получаем версии технических заданий пользователя
+		//var versions []UserTechnicalSpecificationVersion
+		//tzVersions, err := tzBotClient.GetVersionsMe(r.Context(), userID)
+		//if err != nil {
+		//	log.Error("failed to get technical specification versions", slog.String("error", err.Error()))
+		//	// Не возвращаем ошибку, продолжаем с пустым массивом версий
+		//	versions = []UserTechnicalSpecificationVersion{}
+		//} else {
+		//	// Конвертируем в response структуру
+		//	versions = make([]UserTechnicalSpecificationVersion, len(tzVersions))
+		//	for i, tzVersion := range tzVersions {
+		//		versions[i] = UserTechnicalSpecificationVersion{
+		//			VersionId:                  tzVersion.VersionId,
+		//			TechnicalSpecificationName: tzVersion.TechnicalSpecificationName,
+		//			VersionNumber:              tzVersion.VersionNumber,
+		//			CreatedAt:                  tzVersion.CreatedAt.String(),
+		//			OriginalFileLink:           tzVersion.OriginalFileLink,
+		//			ReportFileLink:             tzVersion.ReportFileLink,
+		//		}
+		//	}
+		//}
+
+		log.Info("user versions fetched", slog.Int("versions_count", len(versionsList)))
 
 		feedbacks, err := tzBotClient.GetFeedbacks(r.Context(), userID)
 		if err != nil {
@@ -138,7 +144,7 @@ func GetUserByIdHandler(
 
 		// Конвертируем в response структуру с правильными JSON тегами
 		response := GetUserByIdResponse{userInfo,
-			versions, feedbacks}
+			versionsList, feedbacks}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -151,6 +157,6 @@ func GetUserByIdHandler(
 		log.Info("get user by id request completed successfully",
 			slog.String("user_id", userIDStr),
 			slog.String("login", userInfo.Login),
-			slog.Int("versions_count", len(versions)))
+			slog.Int("versions_count", len(versionsList)))
 	}
 }

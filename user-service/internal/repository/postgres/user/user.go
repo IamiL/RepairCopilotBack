@@ -405,3 +405,48 @@ func (s *Storage) DecrementInspectionsForToday(ctx context.Context, userID strin
 
 	return nil
 }
+
+func (s *Storage) GetInspectionsLeftForToday(ctx context.Context, userID string) (int, error) {
+	query := `SELECT inspections_left_for_today FROM users WHERE id = $1`
+
+	var inspectionsLeft int
+	err := s.db.QueryRow(ctx, query, userID).Scan(&inspectionsLeft)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, repo.ErrUserNotFound
+		}
+		return 0, fmt.Errorf("database error: %w", err)
+	}
+
+	return inspectionsLeft, nil
+}
+
+func (s *Storage) DecrementInspectionsLeftForToday(ctx context.Context, userID string) error {
+	query := `UPDATE users SET inspections_left_for_today = CASE WHEN inspections_left_for_today > 0 THEN inspections_left_for_today - 1 ELSE 0 END WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrUserNotFound
+	}
+
+	return nil
+}
+
+func (s *Storage) IncrementInspectionsLeftForToday(ctx context.Context, userID string) error {
+	query := `UPDATE users SET inspections_left_for_today = inspections_left_for_today + 1 WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrUserNotFound
+	}
+
+	return nil
+}

@@ -132,7 +132,7 @@ message GetVersionResponse {
 }
 
 message GetAllVersionsAdminDashboardRequest {
-  // No parameters needed - returns all versions
+  optional string user_id = 1;
 }
 
 message GetAllVersionsAdminDashboardResponse {

@@ -32,6 +32,7 @@ const (
 	UserService_RegisterVisit_FullMethodName                        = "/user.v1.UserService/RegisterVisit"
 	UserService_IncrementInspectionsForTodayByUserId_FullMethodName = "/user.v1.UserService/IncrementInspectionsForTodayByUserId"
 	UserService_DecrementInspectionsForTodayByUserId_FullMethodName = "/user.v1.UserService/DecrementInspectionsForTodayByUserId"
+	UserService_CheckInspectionLimit_FullMethodName                 = "/user.v1.UserService/CheckInspectionLimit"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -63,6 +64,8 @@ type UserServiceClient interface {
 	IncrementInspectionsForTodayByUserId(ctx context.Context, in *IncrementInspectionsForTodayByUserIdRequest, opts ...grpc.CallOption) (*IncrementInspectionsForTodayByUserIdResponse, error)
 	// Декремент счетчика проверок за сегодня (если проверка отменяется)
 	DecrementInspectionsForTodayByUserId(ctx context.Context, in *DecrementInspectionsForTodayByUserIdRequest, opts ...grpc.CallOption) (*DecrementInspectionsForTodayByUserIdResponse, error)
+	// Проверка лимита проверок на сегодня
+	CheckInspectionLimit(ctx context.Context, in *CheckInspectionLimitRequest, opts ...grpc.CallOption) (*CheckInspectionLimitResponse, error)
 }
 
 type userServiceClient struct {
@@ -203,6 +206,16 @@ func (c *userServiceClient) DecrementInspectionsForTodayByUserId(ctx context.Con
 	return out, nil
 }
 
+func (c *userServiceClient) CheckInspectionLimit(ctx context.Context, in *CheckInspectionLimitRequest, opts ...grpc.CallOption) (*CheckInspectionLimitResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckInspectionLimitResponse)
+	err := c.cc.Invoke(ctx, UserService_CheckInspectionLimit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -232,6 +245,8 @@ type UserServiceServer interface {
 	IncrementInspectionsForTodayByUserId(context.Context, *IncrementInspectionsForTodayByUserIdRequest) (*IncrementInspectionsForTodayByUserIdResponse, error)
 	// Декремент счетчика проверок за сегодня (если проверка отменяется)
 	DecrementInspectionsForTodayByUserId(context.Context, *DecrementInspectionsForTodayByUserIdRequest) (*DecrementInspectionsForTodayByUserIdResponse, error)
+	// Проверка лимита проверок на сегодня
+	CheckInspectionLimit(context.Context, *CheckInspectionLimitRequest) (*CheckInspectionLimitResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -280,6 +295,9 @@ func (UnimplementedUserServiceServer) IncrementInspectionsForTodayByUserId(conte
 }
 func (UnimplementedUserServiceServer) DecrementInspectionsForTodayByUserId(context.Context, *DecrementInspectionsForTodayByUserIdRequest) (*DecrementInspectionsForTodayByUserIdResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DecrementInspectionsForTodayByUserId not implemented")
+}
+func (UnimplementedUserServiceServer) CheckInspectionLimit(context.Context, *CheckInspectionLimitRequest) (*CheckInspectionLimitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckInspectionLimit not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -536,6 +554,24 @@ func _UserService_DecrementInspectionsForTodayByUserId_Handler(srv interface{}, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_CheckInspectionLimit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckInspectionLimitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckInspectionLimit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CheckInspectionLimit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckInspectionLimit(ctx, req.(*CheckInspectionLimitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -594,6 +630,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DecrementInspectionsForTodayByUserId",
 			Handler:    _UserService_DecrementInspectionsForTodayByUserId_Handler,
+		},
+		{
+			MethodName: "CheckInspectionLimit",
+			Handler:    _UserService_CheckInspectionLimit_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

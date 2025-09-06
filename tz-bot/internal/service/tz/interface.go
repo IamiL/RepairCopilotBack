@@ -65,7 +65,7 @@ type VersionRepository interface {
 	GetVersionsMeByUserID(ctx context.Context, userID uuid.UUID) ([]*VersionMe, error)
 
 	// GetAllVersions retrieves all versions with complete data and error counts
-	GetAllVersionsAdminDashboard(ctx context.Context) ([]*VersionAdminDashboard, error)
+	GetAllVersionsAdminDashboard(context.Context, uuid.UUID) ([]*VersionAdminDashboard, error)
 
 	// GetVersionStatistics retrieves aggregated statistics for all versions
 	GetVersionStatistics(ctx context.Context) (*modelrepo.VersionStatistics, error)

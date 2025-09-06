@@ -66,6 +66,9 @@ type UserProvider interface {
 	UpdateConfirmStatusByUserId(ctx context.Context, userID uuid.UUID, status bool) error
 	IncrementInspectionsForToday(ctx context.Context, userID string) error
 	DecrementInspectionsForToday(ctx context.Context, userID string) error
+	GetInspectionsLeftForToday(ctx context.Context, userID string) (int, error)
+	IncrementInspectionsLeftForToday(ctx context.Context, userID string) error
+	DecrementInspectionsLeftForToday(ctx context.Context, userID string) error
 }
 
 func New(
@@ -490,26 +493,47 @@ func (u *User) IncrementInspectionsForToday(ctx context.Context, userID string) 
 
 	log.Info("incrementing inspections for today")
 
-	user, err := u.usrProvider.User(ctx, uuid.MustParse(userID))
+	inspectionsLeft, err := u.usrProvider.GetInspectionsLeftForToday(ctx, userID)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			u.log.Warn("user not found", sl.Err(err))
 			return fmt.Errorf("%s: user not found", op)
 		}
-		u.log.Error("failed to get user info", sl.Err(err))
+		u.log.Error("failed to get inspections left for today", sl.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	if user.InspectionsForToday >= user.InspectionsPerDay {
-		u.log.Warn("daily inspection limit exceeded", 
-			slog.Int("current", user.InspectionsForToday), 
-			slog.Int("limit", user.InspectionsPerDay))
+	if inspectionsLeft == 0 {
+		u.log.Warn("daily inspection limit exceeded")
 		return fmt.Errorf("%s: %w", op, ErrInspectionLimitExceeded)
 	}
+
+	//user, err := u.usrProvider.User(ctx, uuid.MustParse(userID))
+	//if err != nil {
+	//	if errors.Is(err, repository.ErrUserNotFound) {
+	//		u.log.Warn("user not found", sl.Err(err))
+	//		return fmt.Errorf("%s: user not found", op)
+	//	}
+	//	u.log.Error("failed to get user info", sl.Err(err))
+	//	return fmt.Errorf("%s: %w", op, err)
+	//}
+
+	//if user.InspectionsForToday >= user.InspectionsPerDay {
+	//	u.log.Warn("daily inspection limit exceeded",
+	//		slog.Int("current", user.InspectionsForToday),
+	//		slog.Int("limit", user.InspectionsPerDay))
+	//	return fmt.Errorf("%s: %w", op, ErrInspectionLimitExceeded)
+	//}
 
 	err = u.usrProvider.IncrementInspectionsForToday(ctx, userID)
 	if err != nil {
 		log.Error("failed to increment inspections for today", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = u.usrProvider.DecrementInspectionsLeftForToday(ctx, userID)
+	if err != nil {
+		log.Error("failed to decrement inspections left for today", sl.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -537,6 +561,40 @@ func (u *User) DecrementInspectionsForToday(ctx context.Context, userID string) 
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	err = u.usrProvider.IncrementInspectionsLeftForToday(ctx, userID)
+	if err != nil {
+		log.Error("failed to increment inspections left for today", sl.Err(err))
+	}
+
 	log.Info("inspections for today decremented successfully")
 	return nil
+}
+
+func (u *User) CheckInspectionLimit(ctx context.Context, userID string) (int, error) {
+	const op = "User.CheckInspectionLimit"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+	)
+
+	log.Info("checking inspection limit")
+
+	inspectionsLeft, err := u.usrProvider.GetInspectionsLeftForToday(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+			return 0, fmt.Errorf("%s: user not found", op)
+		}
+		u.log.Error("failed to get inspections left for today", sl.Err(err))
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if inspectionsLeft <= 0 {
+		u.log.Warn("inspection limit exhausted", slog.Int("inspectionsLeft", inspectionsLeft))
+		return 0, fmt.Errorf("%s: %w", op, ErrInspectionLimitExceeded)
+	}
+
+	log.Info("inspection limit checked successfully", slog.Int("inspectionsLeft", inspectionsLeft))
+	return inspectionsLeft, nil
 }

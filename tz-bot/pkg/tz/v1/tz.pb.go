@@ -1040,6 +1040,7 @@ func (x *GetVersionResponse) GetStatus() string {
 
 type GetAllVersionsAdminDashboardRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        *string                `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1072,6 +1073,13 @@ func (x *GetAllVersionsAdminDashboardRequest) ProtoReflect() protoreflect.Messag
 // Deprecated: Use GetAllVersionsAdminDashboardRequest.ProtoReflect.Descriptor instead.
 func (*GetAllVersionsAdminDashboardRequest) Descriptor() ([]byte, []int) {
 	return file_tz_v1_tz_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetAllVersionsAdminDashboardRequest) GetUserId() string {
+	if x != nil && x.UserId != nil {
+		return *x.UserId
+	}
+	return ""
 }
 
 type GetAllVersionsAdminDashboardResponse struct {
@@ -2140,8 +2148,11 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\r_total_tokensB&\n" +
 	"$_average_inspection_time_nanosecondsB\x15\n" +
 	"\x13_original_file_sizeB\x11\n" +
-	"\x0f_numberOfErrors\"%\n" +
-	"#GetAllVersionsAdminDashboardRequest\"`\n" +
+	"\x0f_numberOfErrors\"O\n" +
+	"#GetAllVersionsAdminDashboardRequest\x12\x1c\n" +
+	"\auser_id\x18\x01 \x01(\tH\x00R\x06userId\x88\x01\x01B\n" +
+	"\n" +
+	"\b_user_id\"`\n" +
 	"$GetAllVersionsAdminDashboardResponse\x128\n" +
 	"\bversions\x18\x01 \x03(\v2\x1c.tz.v1.VersionAdminDashboardR\bversions\"\xae\x04\n" +
 	"\x15VersionAdminDashboard\x12\x1d\n" +
@@ -2335,6 +2346,7 @@ func file_tz_v1_tz_proto_init() {
 	file_tz_v1_tz_proto_msgTypes[4].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[7].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[9].OneofWrappers = []any{}
+	file_tz_v1_tz_proto_msgTypes[10].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[15].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[16].OneofWrappers = []any{}
 	file_tz_v1_tz_proto_msgTypes[20].OneofWrappers = []any{}

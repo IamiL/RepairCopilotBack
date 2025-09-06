@@ -9,6 +9,8 @@ import (
 	"repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 /*
@@ -110,7 +112,7 @@ func GetInspectionsHandler(
 		defer cancel()
 
 		// Вызываем gRPC метод GetAllVersionsAdminDashboard
-		inspections, err := tzBotClient.GetAllVersionsAdminDashboard(ctx)
+		inspections, err := tzBotClient.GetAllVersionsAdminDashboard(ctx, uuid.Nil)
 		if err != nil {
 			log.Error("failed to get inspections", slog.String("error", err.Error()))
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

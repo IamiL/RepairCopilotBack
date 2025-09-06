@@ -151,7 +151,7 @@ func GetAdminDashboardHandler(
 			defer wg.Done()
 			log.Info("fetching versions from tz-bot")
 
-			versionsList, err := tzBotClient.GetAllVersionsAdminDashboard(ctx)
+			versionsList, err := tzBotClient.GetAllVersionsAdminDashboard(ctx, uuid.Nil)
 			if err != nil {
 				log.Error("failed to get versions", slog.String("error", err.Error()))
 				addError(err)

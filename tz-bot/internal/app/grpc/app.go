@@ -243,7 +243,7 @@ func (s *serverAPI) GetVersionsMe(ctx context.Context, req *tzv1.GetVersionsMeRe
 	}, nil
 }
 
-func (s *serverAPI) GetAllVersionsAdminDashboard(ctx context.Context, _ *tzv1.GetAllVersionsAdminDashboardRequest) (*tzv1.GetAllVersionsAdminDashboardResponse, error) {
+func (s *serverAPI) GetAllVersionsAdminDashboard(ctx context.Context, req *tzv1.GetAllVersionsAdminDashboardRequest) (*tzv1.GetAllVersionsAdminDashboardResponse, error) {
 	const op = "grpc.tz.GetAllVersions"
 
 	log := s.log.With(
@@ -252,7 +252,13 @@ func (s *serverAPI) GetAllVersionsAdminDashboard(ctx context.Context, _ *tzv1.Ge
 
 	log.Info("processing GetAllVersions request")
 
-	versions, err := s.tzService.GetAllVersionsAdminDashboard(ctx)
+	var userID uuid.UUID
+
+	if req.UserId != nil {
+		userID = uuid.MustParse(*req.UserId)
+	}
+
+	versions, err := s.tzService.GetAllVersionsAdminDashboard(ctx, userID)
 	if err != nil {
 		log.Error("failed to get all versions", slog.String("error", err.Error()))
 		return nil, status.Error(codes.Internal, "failed to get all versions for admin dashboard")

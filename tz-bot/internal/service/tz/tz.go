@@ -340,7 +340,7 @@ type VersionAdminDashboard struct {
 	ReportFileLink             string
 }
 
-func (tz *Tz) GetAllVersionsAdminDashboard(ctx context.Context) ([]*VersionAdminDashboard, error) {
+func (tz *Tz) GetAllVersionsAdminDashboard(ctx context.Context, userID uuid.UUID) ([]*VersionAdminDashboard, error) {
 	const op = "Tz.GetAllVersions"
 
 	log := tz.log.With(
@@ -349,7 +349,7 @@ func (tz *Tz) GetAllVersionsAdminDashboard(ctx context.Context) ([]*VersionAdmin
 
 	log.Info("getting all versions with error counts")
 
-	versions, err := tz.repo.GetAllVersionsAdminDashboard(ctx)
+	versions, err := tz.repo.GetAllVersionsAdminDashboard(ctx, userID)
 	if err != nil {
 		log.Error("failed to get all versions: ", sl.Err(err))
 		return nil, fmt.Errorf("failed to get all versions: %w", err)

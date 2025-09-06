@@ -129,6 +129,11 @@ func New(
 		handler.UpdateInspectionsPerDayHandler(log, userServiceClient, sessionRepo, actionLogRepo),
 	)
 
+	router.HandleFunc(
+		"GET /api/users/inspection-limit",
+		handler.CheckInspectionLimitHandler(log, sessionRepo, userServiceClient),
+	)
+
 	routerWithCorsHandler := corsMiddleware(log, router)
 
 	srv := &http.Server{

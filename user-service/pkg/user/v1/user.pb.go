@@ -1701,6 +1701,94 @@ func (*DecrementInspectionsForTodayByUserIdResponse) Descriptor() ([]byte, []int
 	return file_user_v1_user_proto_rawDescGZIP(), []int{28}
 }
 
+type CheckInspectionLimitRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID пользователя
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckInspectionLimitRequest) Reset() {
+	*x = CheckInspectionLimitRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckInspectionLimitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckInspectionLimitRequest) ProtoMessage() {}
+
+func (x *CheckInspectionLimitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckInspectionLimitRequest.ProtoReflect.Descriptor instead.
+func (*CheckInspectionLimitRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *CheckInspectionLimitRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type CheckInspectionLimitResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	InspectionsLeft uint32                 `protobuf:"varint,1,opt,name=inspections_left,json=inspectionsLeft,proto3" json:"inspections_left,omitempty"` // Количество оставшихся проверок на сегодня
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CheckInspectionLimitResponse) Reset() {
+	*x = CheckInspectionLimitResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckInspectionLimitResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckInspectionLimitResponse) ProtoMessage() {}
+
+func (x *CheckInspectionLimitResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckInspectionLimitResponse.ProtoReflect.Descriptor instead.
+func (*CheckInspectionLimitResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *CheckInspectionLimitResponse) GetInspectionsLeft() uint32 {
+	if x != nil {
+		return x.InspectionsLeft
+	}
+	return 0
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
@@ -1827,7 +1915,12 @@ const file_user_v1_user_proto_rawDesc = "" +
 	",IncrementInspectionsForTodayByUserIdResponse\"E\n" +
 	"+DecrementInspectionsForTodayByUserIdRequest\x12\x16\n" +
 	"\x06userId\x18\x01 \x01(\tR\x06userId\".\n" +
-	",DecrementInspectionsForTodayByUserIdResponse2\xb5\t\n" +
+	",DecrementInspectionsForTodayByUserIdResponse\"6\n" +
+	"\x1bCheckInspectionLimitRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"I\n" +
+	"\x1cCheckInspectionLimitResponse\x12)\n" +
+	"\x10inspections_left\x18\x01 \x01(\rR\x0finspectionsLeft2\x9a\n" +
+	"\n" +
 	"\vUserService\x12H\n" +
 	"\vGetUserInfo\x12\x1b.user.v1.GetUserInfoRequest\x1a\x1c.user.v1.GetUserInfoResponse\x12K\n" +
 	"\fRegisterUser\x12\x1c.user.v1.RegisterUserRequest\x1a\x1d.user.v1.RegisterUserResponse\x12K\n" +
@@ -1841,7 +1934,8 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\x10GetFullNamesById\x12 .user.v1.GetFullNamesByIdRequest\x1a!.user.v1.GetFullNamesByIdResponse\x12N\n" +
 	"\rRegisterVisit\x12\x1d.user.v1.RegisterVisitRequest\x1a\x1e.user.v1.RegisterVisitResponse\x12\x93\x01\n" +
 	"$IncrementInspectionsForTodayByUserId\x124.user.v1.IncrementInspectionsForTodayByUserIdRequest\x1a5.user.v1.IncrementInspectionsForTodayByUserIdResponse\x12\x93\x01\n" +
-	"$DecrementInspectionsForTodayByUserId\x124.user.v1.DecrementInspectionsForTodayByUserIdRequest\x1a5.user.v1.DecrementInspectionsForTodayByUserIdResponseB\tZ\auser/v1b\x06proto3"
+	"$DecrementInspectionsForTodayByUserId\x124.user.v1.DecrementInspectionsForTodayByUserIdRequest\x1a5.user.v1.DecrementInspectionsForTodayByUserIdResponse\x12c\n" +
+	"\x14CheckInspectionLimit\x12$.user.v1.CheckInspectionLimitRequest\x1a%.user.v1.CheckInspectionLimitResponseB\tZ\auser/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
@@ -1855,7 +1949,7 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_user_v1_user_proto_rawDescData
 }
 
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_user_v1_user_proto_goTypes = []any{
 	(*GetUserInfoRequest)(nil),                           // 0: user.v1.GetUserInfoRequest
 	(*GetUserInfoResponse)(nil),                          // 1: user.v1.GetUserInfoResponse
@@ -1886,18 +1980,20 @@ var file_user_v1_user_proto_goTypes = []any{
 	(*IncrementInspectionsForTodayByUserIdResponse)(nil), // 26: user.v1.IncrementInspectionsForTodayByUserIdResponse
 	(*DecrementInspectionsForTodayByUserIdRequest)(nil),  // 27: user.v1.DecrementInspectionsForTodayByUserIdRequest
 	(*DecrementInspectionsForTodayByUserIdResponse)(nil), // 28: user.v1.DecrementInspectionsForTodayByUserIdResponse
-	nil,                           // 29: user.v1.GetFullNamesByIdRequest.IdsEntry
-	nil,                           // 30: user.v1.GetFullNamesByIdResponse.UsersEntry
-	(*timestamppb.Timestamp)(nil), // 31: google.protobuf.Timestamp
+	(*CheckInspectionLimitRequest)(nil),                  // 29: user.v1.CheckInspectionLimitRequest
+	(*CheckInspectionLimitResponse)(nil),                 // 30: user.v1.CheckInspectionLimitResponse
+	nil,                                                  // 31: user.v1.GetFullNamesByIdRequest.IdsEntry
+	nil,                                                  // 32: user.v1.GetFullNamesByIdResponse.UsersEntry
+	(*timestamppb.Timestamp)(nil),                        // 33: google.protobuf.Timestamp
 }
 var file_user_v1_user_proto_depIdxs = []int32{
-	31, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
-	31, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
-	31, // 2: user.v1.LoginResponse.registered_at:type_name -> google.protobuf.Timestamp
-	31, // 3: user.v1.LoginResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	33, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
+	33, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	33, // 2: user.v1.LoginResponse.registered_at:type_name -> google.protobuf.Timestamp
+	33, // 3: user.v1.LoginResponse.last_visit_at:type_name -> google.protobuf.Timestamp
 	11, // 4: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
-	29, // 5: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
-	30, // 6: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
+	31, // 5: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
+	32, // 6: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
 	18, // 7: user.v1.GetFullNamesByIdRequest.IdsEntry.value:type_name -> user.v1.Empty
 	20, // 8: user.v1.GetFullNamesByIdResponse.UsersEntry.value:type_name -> user.v1.FullName
 	0,  // 9: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
@@ -1913,21 +2009,23 @@ var file_user_v1_user_proto_depIdxs = []int32{
 	21, // 19: user.v1.UserService.RegisterVisit:input_type -> user.v1.RegisterVisitRequest
 	25, // 20: user.v1.UserService.IncrementInspectionsForTodayByUserId:input_type -> user.v1.IncrementInspectionsForTodayByUserIdRequest
 	27, // 21: user.v1.UserService.DecrementInspectionsForTodayByUserId:input_type -> user.v1.DecrementInspectionsForTodayByUserIdRequest
-	1,  // 22: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
-	3,  // 23: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	24, // 24: user.v1.UserService.ConfirmEmail:output_type -> user.v1.ConfirmEmailResponse
-	5,  // 25: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	7,  // 26: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
-	9,  // 27: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
-	12, // 28: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
-	14, // 29: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
-	16, // 30: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
-	19, // 31: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
-	22, // 32: user.v1.UserService.RegisterVisit:output_type -> user.v1.RegisterVisitResponse
-	26, // 33: user.v1.UserService.IncrementInspectionsForTodayByUserId:output_type -> user.v1.IncrementInspectionsForTodayByUserIdResponse
-	28, // 34: user.v1.UserService.DecrementInspectionsForTodayByUserId:output_type -> user.v1.DecrementInspectionsForTodayByUserIdResponse
-	22, // [22:35] is the sub-list for method output_type
-	9,  // [9:22] is the sub-list for method input_type
+	29, // 22: user.v1.UserService.CheckInspectionLimit:input_type -> user.v1.CheckInspectionLimitRequest
+	1,  // 23: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
+	3,  // 24: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	24, // 25: user.v1.UserService.ConfirmEmail:output_type -> user.v1.ConfirmEmailResponse
+	5,  // 26: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	7,  // 27: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	9,  // 28: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
+	12, // 29: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
+	14, // 30: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
+	16, // 31: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
+	19, // 32: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
+	22, // 33: user.v1.UserService.RegisterVisit:output_type -> user.v1.RegisterVisitResponse
+	26, // 34: user.v1.UserService.IncrementInspectionsForTodayByUserId:output_type -> user.v1.IncrementInspectionsForTodayByUserIdResponse
+	28, // 35: user.v1.UserService.DecrementInspectionsForTodayByUserId:output_type -> user.v1.DecrementInspectionsForTodayByUserIdResponse
+	30, // 36: user.v1.UserService.CheckInspectionLimit:output_type -> user.v1.CheckInspectionLimitResponse
+	23, // [23:37] is the sub-list for method output_type
+	9,  // [9:23] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -1944,7 +2042,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

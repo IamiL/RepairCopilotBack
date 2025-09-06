@@ -288,8 +288,30 @@ func (s *Storage) GetVersionsMeByUserID(ctx context.Context, userID uuid.UUID) (
 	return versions, nil
 }
 
-func (s *Storage) GetAllVersionsAdminDashboard(ctx context.Context) ([]*tzservice.VersionAdminDashboard, error) {
-	query := `
+func (s *Storage) GetAllVersionsAdminDashboard(ctx context.Context, userID uuid.UUID) ([]*tzservice.VersionAdminDashboard, error) {
+	var query string
+	if userID != uuid.Nil {
+		query = `
+		SELECT 
+			v.id, 
+			ts.name,
+			ts.user_id,
+			v.version_number, 
+			v.all_tokens,
+			v.all_rubs,
+			v.number_of_errors,
+			v.inspection_time,
+			v.original_file_size,
+			v.created_at,
+			v.original_file_id,
+			v.checked_file_id
+		FROM versions v
+		JOIN technical_specifications ts ON v.technical_specification_id = ts.id
+		WHERE ts.user_id = $1
+		ORDER BY v.created_at DESC
+	`
+	} else {
+		query = `
 		SELECT 
 			v.id, 
 			ts.name,
@@ -307,11 +329,24 @@ func (s *Storage) GetAllVersionsAdminDashboard(ctx context.Context) ([]*tzservic
 		JOIN technical_specifications ts ON v.technical_specification_id = ts.id
 		ORDER BY v.created_at DESC
 	`
-
-	rows, err := s.db.Query(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get all versions: %w", err)
 	}
+
+	var rows pgx.Rows
+
+	if userID != uuid.Nil {
+		rowsResp, err := s.db.Query(ctx, query, userID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get all versions: %w", err)
+		}
+		rows = rowsResp
+	} else {
+		rowsResp, err := s.db.Query(ctx, query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get all versions: %w", err)
+		}
+		rows = rowsResp
+	}
+
 	defer rows.Close()
 
 	var versions []*tzservice.VersionAdminDashboard

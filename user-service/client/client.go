@@ -373,3 +373,41 @@ func (c *UserClient) DecrementInspectionsForToday(ctx context.Context, userID st
 
 	return nil
 }
+
+// CheckInspectionLimitError специальная ошибка для исчерпанного лимита
+type CheckInspectionLimitError struct {
+	Message string
+}
+
+func (e CheckInspectionLimitError) Error() string {
+	return e.Message
+}
+
+// CheckInspectionLimit проверяет лимит проверок для пользователя на сегодня
+func (c *UserClient) CheckInspectionLimit(ctx context.Context, userID string) (uint32, error) {
+	req := &pb.CheckInspectionLimitRequest{
+		UserId: userID,
+	}
+
+	resp, err := c.client.CheckInspectionLimit(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return 0, fmt.Errorf("invalid user_id: %s", st.Message())
+			case codes.ResourceExhausted:
+				return 0, CheckInspectionLimitError{Message: st.Message()}
+			case codes.NotFound:
+				return 0, fmt.Errorf("user not found")
+			case codes.Internal:
+				return 0, fmt.Errorf("internal server error")
+			default:
+				return 0, fmt.Errorf("failed to check inspection limit: %s", st.Message())
+			}
+		}
+		return 0, err
+	}
+
+	return resp.InspectionsLeft, nil
+}

@@ -43,6 +43,9 @@ service UserService {
 
   // Декремент счетчика проверок за сегодня (если проверка отменяется)
   rpc DecrementInspectionsForTodayByUserId(DecrementInspectionsForTodayByUserIdRequest) returns (DecrementInspectionsForTodayByUserIdResponse);
+
+  // Проверка лимита проверок на сегодня
+  rpc CheckInspectionLimit(CheckInspectionLimitRequest) returns (CheckInspectionLimitResponse);
 }
 
 // GetUserInfoRequest запрос для получения информации о пользователе по ID
@@ -227,4 +230,12 @@ message DecrementInspectionsForTodayByUserIdRequest {
 }
 
 message DecrementInspectionsForTodayByUserIdResponse {
+}
+
+message CheckInspectionLimitRequest {
+  string user_id = 1;  // UUID пользователя
+}
+
+message CheckInspectionLimitResponse {
+  uint32 inspections_left = 1;  // Количество оставшихся проверок на сегодня
 }
