@@ -110,7 +110,7 @@ func RegisterHandler(
 			HttpOnly: true,
 			Secure:   false, // В продакшене должно быть true для HTTPS
 			SameSite: http.SameSiteLaxMode,
-			MaxAge:   int((time.Hour * 24 * 30).Seconds()), // 30 дней
+			MaxAge:   int((time.Hour * 24 * 100).Seconds()), // 30 дней
 		}
 		http.SetCookie(w, cookie)
 
