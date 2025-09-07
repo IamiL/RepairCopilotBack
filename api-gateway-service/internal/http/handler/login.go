@@ -92,7 +92,7 @@ func LoginHandler(
 			Name:     "auth_token",
 			Value:    sessionId.String(),
 			Path:     "/",
-			MaxAge:   24 * 60 * 60, // 24 hours
+			MaxAge:   24 * 60 * 60 * 100, // 24 hours
 			HttpOnly: true,
 			Secure:   false, // set to true in production with HTTPS
 			SameSite: http.SameSiteLaxMode,
