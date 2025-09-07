@@ -8,10 +8,11 @@ import (
 	"log/slog"
 	"regexp"
 	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
+	"repairCopilotBot/tz-bot/internal/pkg/word-parser2/paragraphs"
+
 	//docxToDocx2007clientclient "repairCopilotBot/tz-bot/internal/pkg/docxToDocx2007client"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
-	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
 	"sort"
 	"strconv"
@@ -195,13 +196,16 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	htmlWithPlaceholder := ""
 
-	html, _, err := tz.wordConverterClient2.Convert(file, filename)
+	html, err := tz.wordConverterClient2.Convert(file, filename)
 	if err != nil {
 		log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
 	} else {
-		resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
-		paragraphs = &resultExtractParagraphs.Paragraphs
-		htmlWithPlaceholder = resultExtractParagraphs.HTMLWithPlaceholder
+		respHtmlWithPlaceholdersStr, respParagraphsStr := paragraphsproc.ExtractParagraphs(html)
+		paragraphs = &respParagraphsStr
+		htmlWithPlaceholder = respHtmlWithPlaceholdersStr
+		//resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
+		//paragraphs = &resultExtractParagraphs.Paragraphs
+		//htmlWithPlaceholder = resultExtractParagraphs.HTMLWithPlaceholder
 	}
 	if paragraphs == nil || *paragraphs == "" {
 		err = errors.New("failed to extract paragraphs")
@@ -351,7 +355,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	if oldVersion {
 		outHtml = htmlParagrapsWithWrappedErrors
 	} else {
-		outHtml = word_parser2.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
+		//outHtml = word_parser2.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
+		outHtml = paragraphsproc.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
 	}
 
 	for i := range *outInvalidErrors {
