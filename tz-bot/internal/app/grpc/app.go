@@ -516,13 +516,30 @@ func convertMissingInstances(missingInstances *[]tzservice.OutMissingError) []*t
 
 		for i := range *missingInstances {
 
+			var feedbackUser string
+			var feedbackVerificationUser string
+			if (*missingInstances)[i].FeedbackExists {
+				feedbackUser = (*missingInstances)[i].FeedbackUser.String()
+			}
+			if (*missingInstances)[i].FeedbackVerificationExists {
+				feedbackVerificationUser = (*missingInstances)[i].FeedbackVerificationUser.String()
+			}
+
 			respMissingInstances = append(respMissingInstances,
 				&tzv1.MissingInstance{
-					Id:           (*missingInstances)[i].ID.String(),
-					HtmlId:       (*missingInstances)[i].HtmlID,
-					ErrorId:      (*missingInstances)[i].ErrorID.String(),
-					SuggestedFix: (*missingInstances)[i].SuggestedFix,
-					Rationale:    (*missingInstances)[i].Rationale,
+					Id:                          (*missingInstances)[i].ID.String(),
+					HtmlId:                      (*missingInstances)[i].HtmlID,
+					ErrorId:                     (*missingInstances)[i].ErrorID.String(),
+					SuggestedFix:                (*missingInstances)[i].SuggestedFix,
+					Rationale:                   (*missingInstances)[i].Rationale,
+					FeedbackExists:              (*missingInstances)[i].FeedbackExists,
+					FeedbackMark:                (*missingInstances)[i].FeedbackMark,
+					FeedbackComment:             (*missingInstances)[i].FeedbackComment,
+					FeedbackUser:                &feedbackUser,
+					FeedbackVerificationExists:  (*missingInstances)[i].FeedbackVerificationExists,
+					FeedbackVerificationMark:    (*missingInstances)[i].FeedbackVerificationMark,
+					FeedbackVerificationComment: (*missingInstances)[i].FeedbackVerificationComment,
+					FeedbackVerificationUser:    &feedbackVerificationUser,
 				})
 		}
 

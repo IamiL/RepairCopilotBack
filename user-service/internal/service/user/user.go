@@ -388,6 +388,10 @@ func (u *User) UpdateInspectionsPerDay(ctx context.Context, userID string, inspe
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
+	//if userID != "" {
+	//	inspectionsLeftForToday
+	//}
+
 	log.Info("inspections_per_day updated successfully", slog.Int64("rowsAffected", rowsAffected))
 
 	return rowsAffected, nil
