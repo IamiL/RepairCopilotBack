@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
 	"strconv"
 	"time"
 
@@ -44,7 +45,7 @@ func New(log *slog.Logger, config *config.TelegramBotConfig, tzService *tzservic
 
 	b, err := bot.New(config.Token, opts...)
 	if err != nil {
-		log.Error("failed to create telegram bot", "error", err)
+		log.Error("failed to create telegram bot", "error", sl.Err(err))
 		cancel()
 		return nil, fmt.Errorf("failed to create bot: %w", err)
 	}
