@@ -36,3 +36,7 @@ s3minio:
 tg_client:
   token: 7550143505:AAFsjHU8x90K8KbTAIPhpMZzF0HUGIGEX3g
   chat_id: -1002549996890
+  use_webhooks: false
+  webhook_host: ""
+  webhook_port: 8443
+  webhook_path: "/webhook"
