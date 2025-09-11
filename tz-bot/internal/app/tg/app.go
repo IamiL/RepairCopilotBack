@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-telegram/bot"
-	"github.com/go-telegram/bot/models"
 	"repairCopilotBot/tz-bot/internal/config"
 	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
+
+	"github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
 )
 
 type App struct {
@@ -36,13 +37,14 @@ func New(log *slog.Logger, config *config.TelegramBotConfig, tzService *tzservic
 
 	opts := []bot.Option{
 		bot.WithDefaultHandler(func(ctx context.Context, b *bot.Bot, update *models.Update) {
-			log.Debug("Получено неизвестное сообщение", 
+			log.Debug("Получено неизвестное сообщение",
 				slog.Any("update", update))
 		}),
 	}
 
 	b, err := bot.New(config.Token, opts...)
 	if err != nil {
+		log.Error("failed to create telegram bot", "error", err)
 		cancel()
 		return nil, fmt.Errorf("failed to create bot: %w", err)
 	}
@@ -94,7 +96,7 @@ func (a *App) Stop() error {
 }
 
 func (a *App) startWebhook() error {
-	a.log.Info("Запуск webhook режима", 
+	a.log.Info("Запуск webhook режима",
 		slog.String("host", a.config.WebhookHost),
 		slog.Int("port", a.config.WebhookPort),
 		slog.String("path", a.config.WebhookPath))
@@ -113,13 +115,13 @@ func (a *App) startWebhook() error {
 func (a *App) registerHandlers() {
 	// Обработчик команды /start
 	a.bot.RegisterHandler(bot.HandlerTypeMessageText, "/start", bot.MatchTypeCommand, a.handleStart)
-	
+
 	// Обработчик команды /status
 	a.bot.RegisterHandler(bot.HandlerTypeMessageText, "/status", bot.MatchTypeCommand, a.handleStatus)
-	
+
 	// Обработчик callback кнопок
 	a.bot.RegisterHandler(bot.HandlerTypeCallbackQueryData, "", bot.MatchTypePrefix, a.handleCallbackQuery)
-	
+
 	// Обработчик текстовых сообщений (для ввода ggID)
 	a.bot.RegisterHandler(bot.HandlerTypeMessageText, "", bot.MatchTypeContains, a.handleTextMessage)
 }
@@ -201,10 +203,10 @@ func (a *App) handleStatus(ctx context.Context, b *bot.Bot, update *models.Updat
 
 func (a *App) handleCallbackQuery(ctx context.Context, b *bot.Bot, update *models.Update) {
 	callback := update.CallbackQuery
-	
-	// Получаем chat ID из callback query  
+
+	// Получаем chat ID из callback query
 	var chatID int64
-	
+
 	// Проверяем есть ли у callback.Message поле Message (доступное сообщение)
 	if callback.Message.Message != nil {
 		chatID = callback.Message.Message.Chat.ID
@@ -278,7 +280,7 @@ func (a *App) handleTextMessage(ctx context.Context, b *bot.Bot, update *models.
 	}
 
 	// Логируем изменение
-	a.log.Info("ggID изменен через Telegram бот", 
+	a.log.Info("ggID изменен через Telegram бот",
 		slog.Int("new_ggid", actualGGID),
 		slog.Int64("chat_id", update.Message.Chat.ID))
 }
@@ -389,7 +391,7 @@ func (a *App) handleToggleCache(ctx context.Context, b *bot.Bot, chatID int64) {
 	}
 
 	// Логируем изменение
-	a.log.Info("Статус кэша LLM изменен через Telegram бот", 
+	a.log.Info("Статус кэша LLM изменен через Telegram бот",
 		slog.Bool("new_cache_status", newCache),
 		slog.Int64("chat_id", chatID))
 }
