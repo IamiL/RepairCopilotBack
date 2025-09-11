@@ -62,9 +62,11 @@ func New(log *slog.Logger, tzService *tzservice.Tz, config *Config) *App {
 }
 
 func (a *App) MustRun() {
-	if err := a.Run(); err != nil {
-		panic(err)
-	}
+	go func() {
+		if err := a.Run(); err != nil {
+			panic(err)
+		}
+	}()
 }
 
 func (a *App) Run() error {

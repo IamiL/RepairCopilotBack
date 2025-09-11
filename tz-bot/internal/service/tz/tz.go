@@ -119,7 +119,7 @@ func New(
 		s3:                       s3,
 		repo:                     repo,
 		ggID:                     1,
-		useLlmCache:              false,
+		useLlmCache:              true,
 	}
 }
 

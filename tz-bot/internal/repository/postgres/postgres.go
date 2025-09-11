@@ -960,7 +960,7 @@ func (s *Storage) CreateErrorFeedback(ctx context.Context, req *modelrepo.Create
 // LLMCacheRepository implementation
 
 func (s *Storage) GetCachedResponse(ctx context.Context, messagesHash string) (*modelrepo.LLMCache, error) {
-	query := `SELECT id, messages_hash, response_data, created_at, updated_at FROM llm_cache WHERE messages_hash = $1`
+	query := `SELECT id, messages_hash, response_data, created_at, updated_at FROM llm_cache WHERE messages_hash = $1 ORDER BY created_at DESC LIMIT 1`
 
 	var cache modelrepo.LLMCache
 	err := s.db.QueryRow(ctx, query, messagesHash).Scan(
