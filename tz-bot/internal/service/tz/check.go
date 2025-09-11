@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
-	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser2/paragraphs"
 
 	//docxToDocx2007clientclient "repairCopilotBot/tz-bot/internal/pkg/docxToDocx2007client"
@@ -91,7 +90,15 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 
 	originalFileName := tz_name + GetCurrentDateTimeString()
 	// Сохраняем оригинальный файл в S3
-	err = tz.s3.SaveDocument(ctx, originalFileName, file, "docs")
+	err = tz.s3.SaveDocument(ctx, originalFileName, file, "docs",
+		func() string {
+			if isDocFormat {
+				return ".doc"
+			} else {
+				return ".docx"
+			}
+		}(),
+	)
 	if err != nil {
 		log.Error("ошибка сохранения оригинального файла в S3: ", sl.Err(err))
 		tz.decrementInspectionsForUser(ctx, userID, log)
@@ -130,10 +137,6 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 
 	log.Info("async processing started")
 	return newVersionID, RemoveDocxExtension(filename), time.Now(), nil
-}
-
-type ErrorsArray struct {
-	Errors []Error `json:"errors"`
 }
 
 type Error struct {
@@ -181,8 +184,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	//}
 
 	if isDocFormat {
-		docToDocxConverterClient := doctodocxconverterclient.NewClient("localhost", 8070)
-		newFile, err := docToDocxConverterClient.Convert(file, filename)
+		newFile, err := tz.docToDocXConverterClient.Convert(file, filename)
 		if err != nil {
 			log.Error("ошибка при конвертации doc в docx: ", sl.Err(err))
 		}
@@ -234,7 +236,9 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	log.Info("конвертация HTML в markdown успешна")
 	log.Info(fmt.Sprintf("получены дополнительные данные: message=%s, mappings_count=%d", markdownResponse.Message, len(markdownResponse.Mappings)))
 
+	tz.mu.RLock()
 	promts, schema, errorsDescrptions, err := tz.promtBuilderClient.GeneratePromts(markdownResponse.Markdown, tz.ggID)
+	tz.mu.RUnlock()
 	if err != nil {
 		tz.handleProcessingError(ctx, versionID, userID, "ошибка генерации промтов: "+err.Error(), log)
 		return
@@ -268,8 +272,9 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 					resultChan <- llmRequestResult{err: fmt.Errorf("паника в goroutine: %v", r)}
 				}
 			}()
-
-			llmResp, err := tz.llmClient.SendMessage(*messages, schema)
+			tz.mu.RLock()
+			llmResp, err := tz.llmClient.SendMessage(*messages, schema, tz.useLlmCache)
+			tz.mu.RUnlock()
 			if err != nil {
 				log.Error("ошибка от llm request: ", sl.Err(err))
 				resultChan <- llmRequestResult{err: err}
@@ -342,10 +347,10 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		}
 	}
 
-	errors := ErrorsFormation(groupReports, errorsDescrptions)
-	SortErrorsByCode(errors)
-	for i := range errors {
-		errors[i].OrderNumber = i
+	errorsInTz := ErrorsFormation(groupReports, errorsDescrptions)
+	SortErrorsByCode(errorsInTz)
+	for i := range errorsInTz {
+		errorsInTz[i].OrderNumber = i
 	}
 
 	outInvalidErrors, outMissingErrors, htmlParagrapsWithWrappedErrors := HandleErrors(&groupReports, &markdownResponse.Mappings)
@@ -363,23 +368,23 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		(*outInvalidErrors)[i].OrderNumber = i
 	}
 
-	for i := range errors {
+	for i := range errorsInTz {
 		invalidInstances := make([]OutInvalidError, 0)
 		missingInstances := make([]OutMissingError, 0)
 		for j := range *outInvalidErrors {
-			if (*outInvalidErrors)[j].ErrorID == errors[i].ID {
+			if (*outInvalidErrors)[j].ErrorID == errorsInTz[i].ID {
 				invalidInstances = append(invalidInstances, (*outInvalidErrors)[j])
 			}
 		}
 
 		for j := range missingInstances {
-			if missingInstances[j].ErrorID == errors[i].ID {
+			if missingInstances[j].ErrorID == errorsInTz[i].ID {
 				missingInstances = append(missingInstances, missingInstances[j])
 			}
 		}
 
-		errors[i].InvalidInstances = &invalidInstances
-		errors[i].MissingInstances = &missingInstances
+		errorsInTz[i].InvalidInstances = &invalidInstances
+		errorsInTz[i].MissingInstances = &missingInstances
 	}
 
 	err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
@@ -395,8 +400,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	}
 
 	invalidInstances2 := make([]OutInvalidError, 0)
-	for i := range errors {
-		invalidInstancesFromDb, err := tz.repo.GetInvalidInstancesByErrorID(ctx, errors[i].ID)
+	for i := range errorsInTz {
+		invalidInstancesFromDb, err := tz.repo.GetInvalidInstancesByErrorID(ctx, errorsInTz[i].ID)
 		if err != nil {
 			log.Error("failed to get version errors: ", sl.Err(err))
 		} else {
@@ -404,35 +409,33 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 				(*invalidInstancesFromDb)[j].HtmlIDStr = strconv.Itoa(int((*invalidInstancesFromDb)[j].HtmlID))
 			}
 			invalidInstances2 = append(invalidInstances2, *invalidInstancesFromDb...)
-			errors[i].InvalidInstances = invalidInstancesFromDb
+			errorsInTz[i].InvalidInstances = invalidInstancesFromDb
 		}
 
-		missingInstances, err := tz.repo.GetMissingInstancesByErrorID(ctx, errors[i].ID)
+		missingInstances, err := tz.repo.GetMissingInstancesByErrorID(ctx, errorsInTz[i].ID)
 		if err != nil {
 			log.Error("failed to get version missing instances: ", sl.Err(err))
 		} else {
-			errors[i].MissingInstances = missingInstances
+			errorsInTz[i].MissingInstances = missingInstances
 		}
 	}
 
-	client := NewClient("http://localhost:8050", 30*time.Second)
-
 	var reportFilename string
 
-	response, err := client.GenerateDocument(ctx, ErrorsArray{Errors: errors})
+	reportCodument, err := tz.reportGeneratorClient.GenerateDocument(ctx, errorsInTz)
 	if err != nil {
 		log.Error("ошибка генерации docx-отчёта: ", sl.Err(err))
 	} else {
 		reportFilename = "отчёт_" + tzName + "_" + GetCurrentDateTimeString()
-		err = tz.s3.SaveDocument(ctx, reportFilename, response.Data, "reports")
+		err = tz.s3.SaveDocument(ctx, reportFilename, reportCodument, "reports", ".docx")
 		if err != nil {
 			log.Error("ошибка сохранения docx отчёта в s3: ", sl.Err(err))
 		}
 	}
 
-	if errors != nil && len(errors) > 0 {
-		errorData := make([]modelrepo.ErrorData, 0, len(errors))
-		for _, err := range errors {
+	if errorsInTz != nil && len(errorsInTz) > 0 {
+		errorData := make([]modelrepo.ErrorData, 0, len(errorsInTz))
+		for _, err := range errorsInTz {
 			instancesJSON, jsonErr := json.Marshal(err.Instances)
 			if jsonErr != nil {
 				log.Error("ошибка сериализации instances: ", sl.Err(jsonErr))

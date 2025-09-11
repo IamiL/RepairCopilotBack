@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,23 +20,29 @@ import (
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
-	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 )
 
 type Tz struct {
-	log                  *slog.Logger
-	wordConverterClient  *word_parser_client.Client
-	wordConverterClient2 *word_parser2.WordConverterClient
-	markdownClient       *markdown_service_client.Client
-	llmClient            *tz_llm_client.Client
-	promtBuilderClient   *promt_builder.Client
-	tgClient             *tg_client.Client
-	userServiceClient    *user_service_client.Client
-	s3                   *s3minio.MinioRepository
-	repo                 Repository
-	ggID                 int
+	log                      *slog.Logger
+	wordConverterClient      *word_parser_client.Client
+	wordConverterClient2     *word_parser2.WordConverterClient
+	docToDocXConverterClient *doctodocxconverterclient.Client
+	reportGeneratorClient    ReportGeneratorClient
+	markdownClient           *markdown_service_client.Client
+	llmClient                *tz_llm_client.Client
+	promtBuilderClient       *promt_builder.Client
+	userServiceClient        *user_service_client.Client
+	s3                       *s3minio.MinioRepository
+	repo                     Repository
+	ggID                     int
+	useLlmCache              bool
+	mu                       sync.RWMutex
+}
+
+type ReportGeneratorClient interface {
+	GenerateDocument(ctx context.Context, errors []Error) ([]byte, error)
 }
 
 type ErrorSaver interface {
@@ -89,26 +97,29 @@ func New(
 	log *slog.Logger,
 	wordConverterClient *word_parser_client.Client,
 	wordConverterClient2 *word_parser2.WordConverterClient,
+	docToDocXConverterClient *doctodocxconverterclient.Client,
+	reportGeneratorClient ReportGeneratorClient,
 	markdownClient *markdown_service_client.Client,
 	llmClient *tz_llm_client.Client,
 	promtBuilder *promt_builder.Client,
-	tgClient *tg_client.Client,
 	userServiceClient *user_service_client.Client,
 	s3 *s3minio.MinioRepository,
 	repo Repository,
 ) *Tz {
 	return &Tz{
-		log:                  log,
-		wordConverterClient:  wordConverterClient,
-		wordConverterClient2: wordConverterClient2,
-		markdownClient:       markdownClient,
-		llmClient:            llmClient,
-		promtBuilderClient:   promtBuilder,
-		tgClient:             tgClient,
-		userServiceClient:    userServiceClient,
-		s3:                   s3,
-		repo:                 repo,
-		ggID:                 1,
+		log:                      log,
+		wordConverterClient:      wordConverterClient,
+		wordConverterClient2:     wordConverterClient2,
+		docToDocXConverterClient: docToDocXConverterClient,
+		reportGeneratorClient:    reportGeneratorClient,
+		markdownClient:           markdownClient,
+		llmClient:                llmClient,
+		promtBuilderClient:       promtBuilder,
+		userServiceClient:        userServiceClient,
+		s3:                       s3,
+		repo:                     repo,
+		ggID:                     1,
+		useLlmCache:              false,
 	}
 }
 
@@ -651,4 +662,34 @@ func (tz *Tz) NewVerificationFeedbackError(ctx context.Context, instanceID uuid.
 
 	log.Info("feedback created successfully")
 	return nil
+}
+
+// SetGGID изменяет ggID и возвращает текущее значение
+func (tz *Tz) SetGGID(newGGID int) int {
+	tz.mu.Lock()
+	defer tz.mu.Unlock()
+	tz.ggID = newGGID
+	return tz.ggID
+}
+
+// GetGGID возвращает текущий ggID
+func (tz *Tz) GetGGID() int {
+	tz.mu.RLock()
+	defer tz.mu.RUnlock()
+	return tz.ggID
+}
+
+// SetUseLlmCache изменяет useLlmCache и возвращает текущее значение
+func (tz *Tz) SetUseLlmCache(useLlmCache bool) bool {
+	tz.mu.Lock()
+	defer tz.mu.Unlock()
+	tz.useLlmCache = useLlmCache
+	return tz.useLlmCache
+}
+
+// GetUseLlmCache возвращает текущее значение useLlmCache
+func (tz *Tz) GetUseLlmCache() bool {
+	tz.mu.RLock()
+	defer tz.mu.RUnlock()
+	return tz.useLlmCache
 }

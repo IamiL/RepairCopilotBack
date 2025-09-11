@@ -320,14 +320,15 @@ func (s *MinioRepository) SaveDocument(
 	id string,
 	object []byte,
 	bucketName string,
+	fileExtension string,
 ) error {
-	log.Printf("saving building preview: id=%s, size=%d bytes", id, len(object))
+	log.Printf("saving document: bucket=%s, id=%s, size=%d bytes", bucketName, id, len(object))
 
 	reader := bytes.NewReader(object)
 	info, err := s.Session.PutObject(
 		ctx,
 		bucketName,
-		id+".docx",
+		id+fileExtension,
 		reader,
 		int64(len(object)),
 		minio.PutObjectOptions{
@@ -335,12 +336,13 @@ func (s *MinioRepository) SaveDocument(
 		},
 	)
 	if err != nil {
-		log.Printf("failed to save building preview: %v", err)
-		return fmt.Errorf("failed to save building preview: %w", err)
+		log.Printf("failed to save document to s3 bucket: %s, err: %v", bucketName, err)
+		return fmt.Errorf("failed to save document to s3 bucket: %w", err)
 	}
 
 	log.Printf(
-		"successfully saved building preview: id=%s, size=%d bytes",
+		"successfully saved document: bucket=%s, id=%s, size=%d bytes",
+		bucketName,
 		id,
 		info.Size,
 	)

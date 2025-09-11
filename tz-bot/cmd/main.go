@@ -27,12 +27,21 @@ func main() {
 		&cfg.Llm,
 		&cfg.WordParser,
 		&cfg.WordParser2,
+		&cfg.DocToDocXConverterClient,
+		&cfg.ReportGeneratorClient,
 		&cfg.MarkdownService,
 		&cfg.PromtBuilder,
-		&cfg.Tg,
 		&cfg.S3minio,
 		&cfg.Postgres,
+		&cfg.TelegramBot,
 	)
+
+	// Запускаем Telegram-бот если он доступен
+	if application.TelegramBot != nil {
+		if err := application.TelegramBot.Start(); err != nil {
+			log.Error("failed to start telegram bot", "error", err)
+		}
+	}
 
 	application.GRPCServer.MustRun()
 
@@ -41,6 +50,13 @@ func main() {
 
 	<-stop
 	log.Info("stopping server")
+
+	// Останавливаем Telegram-бот если он доступен
+	if application.TelegramBot != nil {
+		if err := application.TelegramBot.Stop(); err != nil {
+			log.Error("failed to stop telegram bot", "error", err)
+		}
+	}
 
 	application.GRPCServer.Stop()
 

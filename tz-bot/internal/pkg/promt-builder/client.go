@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -80,6 +81,8 @@ func (c *Client) makeHTTPRequest(req Request) (*SuccessResponse, error) {
 
 	fmt.Printf("Отправляем запрос к promt-builder: %s\n", c.url)
 
+	//debugWriteFile("req.json", string(jsonData))
+
 	// Создаем HTTP запрос
 	httpReq, err := http.NewRequest("POST", c.url, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -106,6 +109,8 @@ func (c *Client) makeHTTPRequest(req Request) (*SuccessResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ошибка чтения тела ответа: %w", err)
 	}
+
+	//debugWriteFile("resp.json", string(body))
 
 	// Обрабатываем ответ в зависимости от статус кода
 	switch resp.StatusCode {
@@ -174,4 +179,12 @@ func (c *Client) GeneratePromts(doc string, ggID int) (
 	// Выполняем запрос
 	return resp.Items, resp.Schema, errorsMap, nil
 
+}
+
+func debugWriteFile(filename, content string) {
+	if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
+		fmt.Printf("Ошибка записи дебаг файла %s: %v\n", filename, err)
+	} else {
+		fmt.Printf("Дебаг файл записан: %s\n", filename)
+	}
 }

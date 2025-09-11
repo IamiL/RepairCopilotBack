@@ -200,11 +200,12 @@ func (c *Client) SendMessage(Messages []struct {
 	Content *string `json:"content"`
 },
 	Schema map[string]interface{},
+	useCache bool,
 ) (*SuccessResponse, error) {
 	ctx := context.Background()
 
 	// Если репозиторий настроен, проверяем кэш
-	if c.repository != nil {
+	if c.repository != nil && useCache {
 		// Вычисляем хэш сообщений
 		messagesHash, err := calculateMessagesHash(Messages)
 		if err != nil {

@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+type Config struct {
+	Host string `yaml:"host"`
+	Port int    `yaml:"port"`
+}
+
 // Client представляет клиент для сервиса конвертации DOC в DOCX
 type Client struct {
 	baseURL    string
@@ -33,7 +38,7 @@ type ConvertOptions struct {
 // NewClient создает новый клиент для сервиса конвертации
 func NewClient(host string, port int) *Client {
 	return &Client{
-		baseURL: fmt.Sprintf("http://%s:%d", host, port),
+		baseURL: fmt.Sprintf("%s:%d", host, port),
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},

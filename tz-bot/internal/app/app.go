@@ -2,19 +2,22 @@ package app
 
 import (
 	"log/slog"
+	"time"
+	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
+	reportgeneratorclient "repairCopilotBot/tz-bot/internal/pkg/report-generator-client"
 	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 
 	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
+	tgapp "repairCopilotBot/tz-bot/internal/app/tg"
+	"repairCopilotBot/tz-bot/internal/config"
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
-	"repairCopilotBot/tz-bot/internal/pkg/tg"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
-	"time"
 )
 
 type Config struct {
@@ -23,7 +26,8 @@ type Config struct {
 }
 
 type App struct {
-	GRPCServer *grpcapp.App
+	GRPCServer   *grpcapp.App
+	TelegramBot  *tgapp.App
 }
 
 func New(
@@ -32,11 +36,13 @@ func New(
 	LlmConfig *tz_llm_client.Config,
 	WordParserConfig *word_parser_client.Config,
 	WordParser2Config *word_parser2.Config,
+	docToDocXConverterClientConfig *doctodocxconverterclient.Config,
+	reportGeneratorClientConfig *reportgeneratorclient.Config,
 	MarkdownServiceConfig *markdown_service_client.Config,
 	PromtBuilderConfig *promt_builder.Config,
-	TgConfig *tg_client.Config,
 	s3Config *s3minio.Config,
 	postgresConfig *postgres.Config,
+	telegramBotConfig *config.TelegramBotConfig,
 ) *App {
 	postgresConn, err := postgres.NewConnPool(postgresConfig)
 	if err != nil {
@@ -54,16 +60,13 @@ func New(
 
 	wordParserClient2 := word_parser2.NewWordConverterClient(WordParser2Config.Host, WordParser2Config.Port)
 
+	docToDocXConverterClient := doctodocxconverterclient.NewClient(docToDocXConverterClientConfig.Host, docToDocXConverterClientConfig.Port)
+
+	reportGeneratorClient := reportgeneratorclient.New(reportGeneratorClientConfig.Host, reportGeneratorClientConfig.Port)
+
 	markdownClient := markdown_service_client.New(MarkdownServiceConfig.Url)
 
 	prompBuilderClient := promt_builder.New(PromtBuilderConfig.Url)
-
-	tgBot, err := tg_client.NewBot(TgConfig.Token)
-	if err != nil {
-		panic(err)
-	}
-
-	tgClient := tg_client.New(tgBot, TgConfig.ChatID)
 
 	s3Conn, err := s3minio.NewConn(s3Config)
 	if err != nil {
@@ -80,11 +83,20 @@ func New(
 		userServiceClient = nil
 	}
 
-	tzService := tzservice.New(log, wordParserClient, wordParserClient2, markdownClient, llmClient, prompBuilderClient, tgClient, userServiceClient, s3Client, postgres)
+	tzService := tzservice.New(log, wordParserClient, wordParserClient2, docToDocXConverterClient, reportGeneratorClient, markdownClient, llmClient, prompBuilderClient, userServiceClient, s3Client, postgres)
 
 	grpcApp := grpcapp.New(log, tzService, grpcConfig)
 
+	// Создаем Telegram бот
+	telegramBot, err := tgapp.New(log, telegramBotConfig, tzService)
+	if err != nil {
+		log.Error("failed to create telegram bot", "error", err)
+		// При ошибке создания бота продолжаем без него, но логируем ошибку
+		telegramBot = nil
+	}
+
 	return &App{
-		GRPCServer: grpcApp,
+		GRPCServer:  grpcApp,
+		TelegramBot: telegramBot,
 	}
 }

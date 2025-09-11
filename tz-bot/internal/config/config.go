@@ -3,12 +3,13 @@ package config
 import (
 	"flag"
 	"os"
-	"repairCopilotBot/tz-bot/internal/app"
+	"time"
 	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
+	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
-	"repairCopilotBot/tz-bot/internal/pkg/tg"
+	reportgeneratorclient "repairCopilotBot/tz-bot/internal/pkg/report-generator-client"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
@@ -17,18 +18,34 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+type AppConfig struct {
+	TokenTTL time.Duration `yaml:"token_ttl" env-default:"300h"`
+	GRPCPort string        `yaml:"grpc_port" env-default:":50051"`
+}
+
 type Config struct {
-	Env             string                         `yaml:"env" env-default:"local"`
-	App             app.Config                     `yaml:"app"`
-	GRPC            grpcapp.Config                 `yaml:"grpc_server"`
-	Llm             tz_llm_client.Config           `yaml:"llm_client"`
-	PromtBuilder    promt_builder.Config           `yaml:"promt_builder"`
-	Tg              tg_client.Config               `yaml:"tg_client"`
-	WordParser      word_parser_client.Config      `yaml:"word_parser_client"`
-	WordParser2     word_parser2.Config            `yaml:"word_parser_client2"`
-	MarkdownService markdown_service_client.Config `yaml:"markdown_service_client"`
-	S3minio         s3minio.Config                 `yaml:"s3minio"`
-	Postgres        postgres.Config                `yaml:"postgres"`
+	Env                      string                          `yaml:"env" env-default:"local"`
+	App                      AppConfig                       `yaml:"app"`
+	GRPC                     grpcapp.Config                  `yaml:"grpc_server"`
+	Llm                      tz_llm_client.Config            `yaml:"llm_client"`
+	PromtBuilder             promt_builder.Config            `yaml:"promt_builder"`
+	WordParser               word_parser_client.Config       `yaml:"word_parser_client"`
+	WordParser2              word_parser2.Config             `yaml:"word_parser_client2"`
+	DocToDocXConverterClient doctodocxconverterclient.Config `yaml:"doc_to_docx_converter_client"`
+	ReportGeneratorClient    reportgeneratorclient.Config    `yaml:"report_generator_client"`
+	MarkdownService          markdown_service_client.Config  `yaml:"markdown_service_client"`
+	S3minio                  s3minio.Config                  `yaml:"s3minio"`
+	Postgres                 postgres.Config                 `yaml:"postgres"`
+	TelegramBot              TelegramBotConfig               `yaml:"telegram_bot"`
+}
+
+type TelegramBotConfig struct {
+	Token       string `yaml:"token"`
+	ChatID      string `yaml:"chat_id"`
+	UseWebhooks bool   `yaml:"use_webhooks" env-default:"false"`
+	WebhookHost string `yaml:"webhook_host" env-default:""`
+	WebhookPort int    `yaml:"webhook_port" env-default:"8443"`
+	WebhookPath string `yaml:"webhook_path" env-default:"/webhook"`
 }
 
 func MustLoad() *Config {
