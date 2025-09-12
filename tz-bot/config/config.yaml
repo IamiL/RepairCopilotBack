@@ -21,7 +21,7 @@ word_parser_client2:
   host: localhost
   port: 8060
 doc_to_docx_converter_client:
-  host: localhost
+  host: http://localhost
   port: 8070
 report_generator_client:
   host: localhost

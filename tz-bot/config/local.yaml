@@ -34,7 +34,8 @@ s3minio:
   accessKey: minioadmin
   secretKey: minioadmin
 telegram_bot:
-  token: 7071475834:AAE3-DmHqbFa1nkXRlhCCry4Dm2EvQJq1Kk
+#  token: 7071475834:AAE3-DmHqbFa1nkXRlhCCry4Dm2EvQJq1Kk
+  token: 123
   chat_id: -1002870769486
   use_webhooks: false
   webhook_host: ""

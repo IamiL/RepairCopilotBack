@@ -453,9 +453,7 @@ func (a *App) sendShutdownMessage() error {
 		ChatID: chatID,
 		Text: fmt.Sprintf(`🔴 <b>TZ Bot остановлен</b>
 
-<i>Время остановки: %s</i>
-
-До свидания! 👋`, time.Now().Format("15:04:05 02.01.2006")),
+<i>Время остановки: %s</i>`, time.Now().Format("15:04:05 02.01.2006")),
 		ParseMode: models.ParseModeHTML,
 	})
 
