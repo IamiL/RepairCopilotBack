@@ -2,7 +2,6 @@ package tzservice
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
