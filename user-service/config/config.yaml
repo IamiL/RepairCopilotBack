@@ -1,7 +1,7 @@
 env: "local"
 grpc_server:
 #  port: localhost:8001
-  port: localhost:9001
+  port: localhost:9087
 postgres:
   host: localhost
 #  port: 8085

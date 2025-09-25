@@ -24,6 +24,6 @@ postgres:
   max_connections: 10
 user_service:
 #  address: localhost:8001
-  address: localhost:9001
+  address: localhost:9087
 chat_bot_service:
   address: localhost:9082
