@@ -47,7 +47,7 @@ func MustLoadPath(configPath string) *Config {
 func fetchConfigPath() string {
 	var res string
 
-	flag.StringVar(&res, "config", "user-service/config/config.yaml", "path to config file")
+	flag.StringVar(&res, "config", "chat-bot/config/config.yaml", "path to config file")
 	flag.Parse()
 
 	if res == "" {
