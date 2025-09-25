@@ -6,7 +6,8 @@ http_server:
   timeout: 4s
 postgres:
   host: 94.241.142.172
-  port: "8030"
+  #  port: "8030"
+  port: "9030"
   database_name: logs
   username: aAKSHDVasvd
   password: dbsaLSAGVDvadaj
@@ -19,9 +20,10 @@ tz_bot_service:
   addr: localhost:8081
 redis:
 #  address: 94.241.142.172:6379
-  address: localhost:6379
+  address: 94.241.142.172:9380
   password: r8VwP2mQe7Jx1Tz9Hb4Kc6Nf3Lg5Yd8
 user_service:
-  address: localhost:8001
+#  address: localhost:8001
+   address: localhost:9087
 chat_bot_service:
   address: localhost:9082

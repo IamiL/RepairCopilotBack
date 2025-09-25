@@ -152,6 +152,11 @@ func New(
 		handler.FinishChatHandler(log, sessionRepo, chatBotClient, actionLogRepo),
 	)
 
+	router.HandleFunc(
+		"GET /api/admin/chats/all",
+		handler.GetAllChatsHandler(log, sessionRepo, chatBotClient, userServiceClient),
+	)
+
 	routerWithCorsHandler := corsMiddleware(log, router)
 
 	srv := &http.Server{

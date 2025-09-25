@@ -86,7 +86,7 @@ func (h *ChatHandlers) GetChats(ctx context.Context, req *pb.GetChatsRequest) (*
 	}
 
 	if chatsServiceErr != nil {
-		h.log.Error("failed to get chats", slog.String("error", err.Error()))
+		h.log.Error("failed to get chats", slog.String("error", chatsServiceErr.Error()))
 		return nil, status.Error(codes.Internal, "failed to get chats")
 	}
 

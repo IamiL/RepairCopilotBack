@@ -2,7 +2,7 @@ env: "local"
 grpc_server:
   port: localhost:9082
 postgres:
-  host: localhost
+  host: 94.241.142.172
   port: 9081
   database_name: chat_bot
   username: QvXiuBQFQHOy
