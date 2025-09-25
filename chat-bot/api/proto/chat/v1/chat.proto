@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package chat.v1;
+
+option go_package = "chat/v1";
+
+import "google/protobuf/timestamp.proto";
+
+service ChatService {
+  rpc CreateNewMessage(CreateNewMessageRequest) returns (CreateNewMessageResponse);
+  rpc GetChats(GetChatsRequest) returns (GetChatsResponse);
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+  rpc FinishChat(FinishChatRequest) returns (FinishChatResponse);
+}
+
+message CreateNewMessageRequest {
+  optional string chat_id = 1;
+  string user_id = 2;
+  string message = 3;
+}
+
+message CreateNewMessageResponse {
+  optional string chat_id = 1;
+  string message = 2;
+}
+
+message GetChatsRequest {
+  optional string userID = 1;
+}
+
+message Chat {
+  string id = 1;
+  string user_id = 2;
+  google.protobuf.Timestamp created_at = 3;
+  uint32 messages_count = 4;
+  bool is_finished = 5;
+  string conclusion = 8;
+  bool is_processing = 6;
+  uint32 enclosure = 7;
+}
+
+message GetChatsResponse {
+  repeated Chat chats = 1;
+}
+
+message GetMessagesRequest {
+  string chat_id = 1;
+}
+
+message Message {
+  string id = 1;
+  string message = 2;
+  string role = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message GetMessagesResponse {
+  repeated Message messages = 1;
+}
+
+message FinishChatRequest {
+  string chat_id = 1;
+  string user_id = 2;
+}
+
+message FinishChatResponse {
+  string msg = 1;
+}
+
+service UserService {
+  rpc CreateNewUser(CreateNewUserRequest) returns (CreateNewUserResponse);
+}
+
+message CreateNewUserRequest {
+  string user_id = 1;
+}
+
+message CreateNewUserResponse {
+}

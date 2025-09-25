@@ -8,20 +8,22 @@ import (
 	"repairCopilotBot/api-gateway-service/internal/pkg/tg"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/api-gateway-service/internal/repository/postgres"
+	chatBotServiceClient "repairCopilotBot/chat-bot/pkg/client"
 	"repairCopilotBot/tz-bot/client"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env          string                 `yaml:"env" env-default:"local"`
-	App          app.Config             `yaml:"app"`
-	HTTP         httpapp.Config         `yaml:"http_server"`
-	Tg           tg_client.Config       `yaml:"tg_client"`
-	TzBotService client.Config          `yaml:"tz_bot_service"`
-	Redis        repository.RedisConfig `yaml:"redis"`
-	Postgres     postgres.Config        `yaml:"postgres"`
-	UserService  UserServiceConfig      `yaml:"user_service"`
+	Env            string                      `yaml:"env" env-default:"local"`
+	App            app.Config                  `yaml:"app"`
+	HTTP           httpapp.Config              `yaml:"http_server"`
+	Tg             tg_client.Config            `yaml:"tg_client"`
+	TzBotService   client.Config               `yaml:"tz_bot_service"`
+	ChatBotService chatBotServiceClient.Config `yaml:"chat_bot_service"`
+	Redis          repository.RedisConfig      `yaml:"redis"`
+	Postgres       postgres.Config             `yaml:"postgres"`
+	UserService    UserServiceConfig           `yaml:"user_service"`
 }
 
 type UserServiceConfig struct {

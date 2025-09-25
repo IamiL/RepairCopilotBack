@@ -8,6 +8,7 @@ import (
 	"repairCopilotBot/api-gateway-service/internal/http/handler"
 	"repairCopilotBot/api-gateway-service/internal/pkg/logger/sl"
 	"repairCopilotBot/api-gateway-service/internal/repository"
+	chatbotclient "repairCopilotBot/chat-bot/pkg/client"
 	"repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
 	"strconv"
@@ -32,6 +33,7 @@ func New(
 	config *Config,
 	tzBotClient *client.Client,
 	userServiceClient *userserviceclient.UserClient,
+	chatBotClient *chatbotclient.ChatBotClient,
 	sessionRepo *repository.SessionRepository,
 	actionLogRepo repository.ActionLogRepository,
 ) *App {
@@ -53,7 +55,7 @@ func New(
 	)
 
 	router.HandleFunc("POST /api/confirm",
-		handler.ConfirmEmail(log, userServiceClient, sessionRepo))
+		handler.ConfirmEmail(log, userServiceClient, sessionRepo, chatBotClient))
 
 	router.HandleFunc(
 		"GET /api/logout",
@@ -61,7 +63,7 @@ func New(
 
 	router.HandleFunc(
 		"GET /api/me",
-		handler.MeHandler(log, sessionRepo, tzBotClient, userServiceClient),
+		handler.MeHandler(log, sessionRepo, tzBotClient, userServiceClient, chatBotClient),
 	)
 
 	router.HandleFunc(
@@ -132,6 +134,22 @@ func New(
 	router.HandleFunc(
 		"GET /api/users/inspection-limit",
 		handler.CheckInspectionLimitHandler(log, sessionRepo, userServiceClient),
+	)
+
+	// Chat Bot routes
+	router.HandleFunc(
+		"POST /api/chat/message",
+		handler.CreateNewMessageHandler(log, sessionRepo, chatBotClient, userServiceClient, actionLogRepo),
+	)
+
+	router.HandleFunc(
+		"GET /api/chat/{chat_id}/messages",
+		handler.GetMessagesHandler(log, sessionRepo, chatBotClient),
+	)
+
+	router.HandleFunc(
+		"POST /api/chat/finish",
+		handler.FinishChatHandler(log, sessionRepo, chatBotClient, actionLogRepo),
 	)
 
 	routerWithCorsHandler := corsMiddleware(log, router)

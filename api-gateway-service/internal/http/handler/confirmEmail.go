@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"repairCopilotBot/api-gateway-service/internal/repository"
+	chatbotclient "repairCopilotBot/chat-bot/pkg/client"
 	userserviceclient "repairCopilotBot/user-service/client"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ func ConfirmEmail(
 	log *slog.Logger,
 	userServiceClient *userserviceclient.UserClient,
 	sessionRepo *repository.SessionRepository,
+	chatBotClient *chatbotclient.ChatBotClient,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.ConfirmEmailHandler"
@@ -71,6 +73,12 @@ func ConfirmEmail(
 		if err != nil {
 			log.Info("failed to confirm email", slog.String("error", err.Error()))
 			http.Error(w, "Unauthorized", http.StatusBadRequest)
+			return
+		}
+
+		err = chatBotClient.User.CreateNewUser(r.Context(), session.UserID)
+		if err != nil {
+			log.Error("failed to create new user in chat-bot service", slog.String("error", err.Error()))
 		}
 	}
 }

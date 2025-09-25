@@ -3,7 +3,6 @@ package tzservice
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"regexp"
@@ -198,32 +197,34 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	htmlWithPlaceholder := ""
 
-	html, err := tz.wordConverterClient2.Convert(file, filename)
-	if err != nil {
-		log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
-	} else {
-		respHtmlWithPlaceholdersStr, respParagraphsStr := paragraphsproc.ExtractParagraphs(html)
-		paragraphs = &respParagraphsStr
-		htmlWithPlaceholder = respHtmlWithPlaceholdersStr
-		//resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
-		//paragraphs = &resultExtractParagraphs.Paragraphs
-		//htmlWithPlaceholder = resultExtractParagraphs.HTMLWithPlaceholder
+	//html, err := tz.wordConverterClient2.Convert(file, filename)
+	//if err != nil {
+	//	log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
+	//} else {
+	//	respHtmlWithPlaceholdersStr, respParagraphsStr := paragraphsproc.ExtractParagraphs(html)
+	//	paragraphs = &respParagraphsStr
+	//	htmlWithPlaceholder = respHtmlWithPlaceholdersStr
+	//resultExtractParagraphs := word_parser2.ExtractParagraphs(html)
+	//paragraphs = &resultExtractParagraphs.Paragraphs
+	//htmlWithPlaceholder = resultExtractParagraphs.HTMLWithPlaceholder
+	//}
+	//if paragraphs == nil || *paragraphs == "" {
+	//	err = errors.New("failed to extract paragraphs")
+	//}
+	//if err != nil {
+	//log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
+	log.Info("пробуем старый word_parser")
+	oldVersion = true
+	paragraphsFromWordConverterClient, _, wordConverterClientErr := tz.wordConverterClient.Convert(file, RemoveDocExtension(filename)+".docx")
+	if wordConverterClientErr != nil {
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка при обращении к wordParserClient: "+wordConverterClientErr.Error(), log)
+		return
 	}
-	if paragraphs == nil || *paragraphs == "" {
-		err = errors.New("failed to extract paragraphs")
-	}
-	if err != nil {
-		log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
-		log.Info("пробуем старый word_parser")
-		oldVersion = true
-		paragraphsFromWordConverterClient, _, wordConverterClientErr := tz.wordConverterClient.Convert(file, filename)
-		if wordConverterClientErr != nil {
-			tz.handleProcessingError(ctx, versionID, userID, "ошибка при обращении к wordParserClient: "+wordConverterClientErr.Error(), log)
-			return
-		}
 
-		paragraphs = paragraphsFromWordConverterClient
-	}
+	html := *paragraphsFromWordConverterClient
+
+	paragraphs = paragraphsFromWordConverterClient
+	//}
 
 	log.Info("конвертация word файла в htmlText успешна")
 

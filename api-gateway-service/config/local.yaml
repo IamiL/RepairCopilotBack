@@ -18,7 +18,10 @@ tg_client:
 tz_bot_service:
   addr: localhost:8081
 redis:
-  address: 94.241.142.172:6379
+#  address: 94.241.142.172:6379
+  address: localhost:6379
   password: r8VwP2mQe7Jx1Tz9Hb4Kc6Nf3Lg5Yd8
 user_service:
   address: localhost:8001
+chat_bot_service:
+  address: localhost:9082

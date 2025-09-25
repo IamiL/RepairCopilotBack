@@ -1,0 +1,12 @@
+env: "local"
+grpc_server:
+  port: localhost:9082
+postgres:
+  host: localhost
+  port: 9081
+  database_name: chat_bot
+  username: QvXiuBQFQHOy
+  password: vkIeydiDtJWqUpQVOmHm
+  max_connections: 10
+llm_client:
+  url: http://94.228.122.106:8000

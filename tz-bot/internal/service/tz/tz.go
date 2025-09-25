@@ -4,56 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
-	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
-	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
-	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	modelrepo "repairCopilotBot/tz-bot/internal/repository/models"
 	"sort"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
 
 	"repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
-	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
-	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
-	"repairCopilotBot/tz-bot/internal/repository/s3minio"
-)
-
-type Tz struct {
-	log                      *slog.Logger
-	wordConverterClient      *word_parser_client.Client
-	wordConverterClient2     *word_parser2.WordConverterClient
-	docToDocXConverterClient *doctodocxconverterclient.Client
-	reportGeneratorClient    ReportGeneratorClient
-	markdownClient           *markdown_service_client.Client
-	llmClient                *tz_llm_client.Client
-	promtBuilderClient       *promt_builder.Client
-	userServiceClient        *user_service_client.Client
-	s3                       *s3minio.MinioRepository
-	repo                     Repository
-	ggID                     int
-	useLlmCache              bool
-	mu                       sync.RWMutex
-}
-
-type ReportGeneratorClient interface {
-	GenerateDocument(ctx context.Context, errors []Error) ([]byte, error)
-}
-
-type ErrorSaver interface {
-	SaveErrors(ctx context.Context, versionID uuid.UUID, errors *[]Error) error
-	SaveInvalidInstances(ctx context.Context, invalidInstances *[]OutInvalidError) error
-	SaveMissingInstances(ctx context.Context, missingInstances *[]OutMissingError) error
-}
-
-var (
-	ErrConvertWordFile  = errors.New("error convert word file")
-	ErrLlmAnalyzeFile   = errors.New("error in neural network file analysis")
-	ErrGenerateDocxFile = errors.New("error in generate docx file")
 )
 
 // ErrorInstance описывает одну ошибку из LLM API
@@ -90,36 +49,6 @@ type llmRequestResult struct {
 	cost        *float64
 	tokens      *int64
 	err         error
-}
-
-func New(
-	log *slog.Logger,
-	wordConverterClient *word_parser_client.Client,
-	wordConverterClient2 *word_parser2.WordConverterClient,
-	docToDocXConverterClient *doctodocxconverterclient.Client,
-	reportGeneratorClient ReportGeneratorClient,
-	markdownClient *markdown_service_client.Client,
-	llmClient *tz_llm_client.Client,
-	promtBuilder *promt_builder.Client,
-	userServiceClient *user_service_client.Client,
-	s3 *s3minio.MinioRepository,
-	repo Repository,
-) *Tz {
-	return &Tz{
-		log:                      log,
-		wordConverterClient:      wordConverterClient,
-		wordConverterClient2:     wordConverterClient2,
-		docToDocXConverterClient: docToDocXConverterClient,
-		reportGeneratorClient:    reportGeneratorClient,
-		markdownClient:           markdownClient,
-		llmClient:                llmClient,
-		promtBuilderClient:       promtBuilder,
-		userServiceClient:        userServiceClient,
-		s3:                       s3,
-		repo:                     repo,
-		ggID:                     1,
-		useLlmCache:              true,
-	}
 }
 
 // saveTechnicalSpecificationData saves technical specification data to database

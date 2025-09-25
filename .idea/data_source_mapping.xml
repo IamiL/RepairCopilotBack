@@ -18,6 +18,7 @@
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/cd85bfe1-53ea-4beb-ac00-18c6ada32483/console_2.sql" value="cd85bfe1-53ea-4beb-ac00-18c6ada32483" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/cd85bfe1-53ea-4beb-ac00-18c6ada32483/console_3.sql" value="cd85bfe1-53ea-4beb-ac00-18c6ada32483" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/cd85bfe1-53ea-4beb-ac00-18c6ada32483/console_4.sql" value="cd85bfe1-53ea-4beb-ac00-18c6ada32483" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/f1dab13c-0eca-464d-a798-bb9479c34e85/console.sql" value="f1dab13c-0eca-464d-a798-bb9479c34e85" />
     <file url="file://$PROJECT_DIR$/tz-bot/internal/repository/postgres/postgres.go" value="0c9c90e7-aa74-4d5e-b9d5-6535cf212045" />
   </component>
 </project>
