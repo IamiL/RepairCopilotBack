@@ -182,6 +182,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	//	return
 	//}
 
+	now := time.Now()
+
 	if isDocFormat {
 		newFile, err := tz.docToDocXConverterClient.Convert(file, filename)
 		if err != nil {
@@ -336,8 +338,6 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	expectedResults := len(*promts)
 	receivedResults := 0
 
-	inspectionTime := int64(0)
-
 	for result := range resultChan {
 		progressStepsMu.Lock()
 		progressSteps += 1
@@ -360,8 +360,6 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 			log.Error("ошибка в результате: ", sl.Err(result.err))
 			continue
 		}
-
-		inspectionTime += result.duration
 
 		if result.groupReport != nil {
 			groupReports = append(groupReports, *result.groupReport)
@@ -414,8 +412,6 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		log.Error("step2Llm error: " + step2LlmError.Error())
 		return
 	}
-
-	inspectionTime += *step2LlmResponse.Duration
 
 	//llmReportRaw := string(step2LlmResponse.ResultRaw)
 	//log.Info(llmReportRaw)
@@ -617,6 +613,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		log.Error("ошибка сериализации groupReportsFromLlm: ", sl.Err(groupReportsFromLlmJSONErr))
 	}
 
+	inspectionTime := time.Since(now)
+
 	// Обновляем версию с результатами обработки
 	updateReq := &modelrepo.UpdateVersionRequest{
 		ID:                              versionID,
@@ -626,7 +624,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		CheckedFileID:                   reportFilename,
 		AllRubs:                         allRubs,
 		AllTokens:                       allTokens,
-		InspectionTime:                  time.Duration(inspectionTime * 1000 * 1000),
+		InspectionTime:                  inspectionTime / 1000000,
 		NumberOfErrors:                  len(*outMissingErrors) + len(*outInvalidErrors),
 		Status:                          "completed",
 		HtmlFromWordParser:              html,
