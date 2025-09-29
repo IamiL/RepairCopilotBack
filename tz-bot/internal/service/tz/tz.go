@@ -49,6 +49,7 @@ type llmRequestResult struct {
 	ResultRaw   string
 	cost        *float64
 	tokens      *int64
+	duration    int64
 	err         error
 }
 
@@ -229,6 +230,7 @@ type VersionMe struct {
 	ReportFileID               *string
 	ReportFileLink             *string
 	Status                     string
+	Progress                   int
 }
 
 func (tz *Tz) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*VersionMe, error) {
@@ -400,7 +402,7 @@ func (tz *Tz) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timezone 
 	return points, nil
 }
 
-func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time.Time, float64, int64, time.Duration, string, string, string, *[]Error, *[]OutInvalidError, string, int64, int, string, error) {
+func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time.Time, float64, int64, time.Duration, string, string, string, *[]Error, *[]OutInvalidError, string, int64, int, string, int, error) {
 	const op = "Tz.GetVersion"
 
 	log := tz.log.With(
@@ -413,17 +415,17 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time
 	version, err := tz.repo.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version: ", sl.Err(err))
-		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", err
+		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", 0, err
 	}
 
 	if version.Status == "in_progress" {
-		return "in_progress", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", err
+		return "in_progress", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", version.Progress, err
 	}
 
 	errorsInTz, err := tz.repo.GetErrorsByVersionID(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version errors: ", sl.Err(err))
-		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", err
+		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", 0, err
 	}
 
 	invalidInstances := make([]OutInvalidError, 0)
@@ -492,7 +494,7 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time
 	//	slog.Int("invalid_errors_count", len(outInvalidErrors)),
 	//	slog.Int("missing_errors_count", len(outMissingErrors)))
 
-	return "completed", version.CreatedAt, *version.AllRubs, *version.AllTokens, *version.InspectionTime, version.OutHTML, version.CSS, version.CheckedFileID, errorsInTz, &invalidInstances, "", *version.OriginalFileSize, int(*version.NumberOfErrors), version.LlmReport, nil
+	return "completed", version.CreatedAt, *version.AllRubs, *version.AllTokens, *version.InspectionTime, version.OutHTML, version.CSS, version.CheckedFileID, errorsInTz, &invalidInstances, "", *version.OriginalFileSize, int(*version.NumberOfErrors), version.LlmReport, 0, nil
 }
 
 func SortOutInvalidErrorsByOrderNumber(errors *[]OutInvalidError) {

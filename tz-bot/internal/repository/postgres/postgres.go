@@ -146,11 +146,11 @@ func (s *Storage) DeleteTechnicalSpecification(ctx context.Context, id uuid.UUID
 // Version operations
 func (s *Storage) CreateVersion(ctx context.Context, req *modelrepo.CreateVersionRequest) error {
 	query := `
-		INSERT INTO versions (id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
+		INSERT INTO versions (id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status, progress)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`
 
 	_, err := s.db.Exec(ctx, query, req.ID, req.TechnicalSpecificationID, req.VersionNumber, req.CreatedAt, req.UpdatedAt,
-		req.OriginalFileID, req.OutHTML, req.CSS, req.CheckedFileID, &req.AllRubs, &req.AllTokens, int64(req.InspectionTime), req.OriginalFileSize, req.NumberOfErrors, req.Status)
+		req.OriginalFileID, req.OutHTML, req.CSS, req.CheckedFileID, &req.AllRubs, &req.AllTokens, int64(req.InspectionTime), req.OriginalFileSize, req.NumberOfErrors, req.Status, req.Progress)
 	if err != nil {
 		return fmt.Errorf("failed to create version: %w", err)
 	}
@@ -177,17 +177,39 @@ func (s *Storage) UpdateVersion(ctx context.Context, req *modelrepo.UpdateVersio
 	return nil
 }
 
+func (s *Storage) UpdateVersionProgress(ctx context.Context, id uuid.UUID, progress int) error {
+	query := `
+		UPDATE versions 
+		SET progress = $2 
+		WHERE id = $1`
+
+	result, err := s.db.Exec(ctx, query, id, progress)
+	if err != nil {
+		return fmt.Errorf("failed to update version: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrVersionNotFound
+	}
+
+	return nil
+}
+
 func (s *Storage) GetVersion(ctx context.Context, id uuid.UUID) (*modelrepo.Version, error) {
-	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status, report FROM versions WHERE id = $1`
+	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status, report, progress FROM versions WHERE id = $1`
 
 	var version modelrepo.Version
 	var llmReport *string
+	var progress *int
 	err := s.db.QueryRow(ctx, query, id).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime, &version.OriginalFileSize, &version.NumberOfErrors, &version.Status, &llmReport)
+			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime, &version.OriginalFileSize, &version.NumberOfErrors, &version.Status, &llmReport, &progress)
 	if llmReport != nil {
 		version.LlmReport = *llmReport
+	}
+	if progress != nil {
+		version.Progress = *progress
 	}
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -265,7 +287,7 @@ func (s *Storage) GetLatestVersion(ctx context.Context, technicalSpecificationID
 
 func (s *Storage) GetVersionsMeByUserID(ctx context.Context, userID uuid.UUID) ([]*tzservice.VersionMe, error) {
 	query := `
-		SELECT v.id, ts.name, v.version_number, v.created_at, v.original_file_id, v.checked_file_id, v.status
+		SELECT v.id, ts.name, v.version_number, v.created_at, v.original_file_id, v.checked_file_id, v.status, v.progress
 		FROM versions v
 		JOIN technical_specifications ts ON v.technical_specification_id = ts.id
 		WHERE ts.user_id = $1
@@ -281,10 +303,14 @@ func (s *Storage) GetVersionsMeByUserID(ctx context.Context, userID uuid.UUID) (
 	var versions []*tzservice.VersionMe
 	for rows.Next() {
 		var version tzservice.VersionMe
+		var progress *int
 		err := rows.Scan(&version.ID, &version.TechnicalSpecificationName,
-			&version.VersionNumber, &version.CreatedAt, &version.OriginalFileID, &version.ReportFileID, &version.Status)
+			&version.VersionNumber, &version.CreatedAt, &version.OriginalFileID, &version.ReportFileID, &version.Status, &progress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan version summary: %w", err)
+		}
+		if progress != nil {
+			version.Progress = *progress
 		}
 		versions = append(versions, &version)
 	}

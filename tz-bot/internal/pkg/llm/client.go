@@ -62,8 +62,8 @@ type Request struct {
 //}
 
 type SuccessResponse struct {
-	ResultStep2 *LlmReport
-	Result      *GroupReport
+	ResultStep2 *LlmReport      `json:"result_step_2"`
+	Result      *GroupReport    `json:"result_step_1"`
 	ResultRaw   json.RawMessage `json:"result"`
 	Usage       *struct {
 		PromptTokens     *int `json:"prompt_tokens"`
@@ -79,6 +79,7 @@ type SuccessResponse struct {
 	} `json:"cost"`
 	ModelUri *string `json:"model_uri"`
 	Attempts *int    `json:"attempts"`
+	Duration *int64  `json:"duration"`
 }
 
 type GroupReport struct {
@@ -154,93 +155,102 @@ func calculateMessagesHash(messages []struct {
 	return hex.EncodeToString(hash[:]), nil
 }
 
-// MakeHTTPRequest выполняет реальный HTTP запрос к LLM API
 func (c *Client) makeHTTPRequest(req Request, stepNumber int) (*SuccessResponse, error) {
-	// Сериализуем запрос в JSON
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка сериализации запроса: %w", err)
 	}
-	//fmt.Println("JSON DATA В ЗАПРОСЕ К ЛЛМ НАЧАЛО:")
-	//fmt.Println(string(jsonData))
-	//fmt.Println("--------КОНЕЦ-----------")
 
-	fmt.Printf("Отправляем запрос к LLM API: %s\n", c.url)
+	// 1 попытка сразу + 3 ретрая: 5с, 30с, 60с
+	backoffs := []time.Duration{0, 5 * time.Second, 30 * time.Second, time.Minute}
 
-	// Создаем HTTP запрос
-	httpReq, err := http.NewRequest("POST", c.url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("ошибка создания HTTP запроса: %w", err)
-	}
+	var lastErr error
 
-	// Устанавливаем заголовки
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Создаем HTTP клиент с таймаутом
-	client := &http.Client{
-		Timeout: 30 * time.Minute, // 30 минут таймаут для LLM запросов
-	}
-
-	// Выполняем запрос
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		fmt.Println("---------ОШИБКА ПРИ ВЫПОЛНЕНИИ HTTP-ЗАПРОСА К LLM-REQUESTER. URL: ", c.url, ", JSON: ", string(jsonData))
-		fmt.Println("---------КОНЕЦ ОШИБКИ ПРИ ВЫПОЛНЕНИИ HTTP-ЗАПРОСА К LLM-REQUESTER")
-		return nil, fmt.Errorf("ошибка выполнения HTTP запроса: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Читаем тело ответа
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка чтения тела ответа: %w", err)
-	}
-
-	// Обрабатываем ответ в зависимости от статус кода
-	switch resp.StatusCode {
-	case 200:
-		fmt.Println("__________________________")
-		fmt.Println(string(body))
-		fmt.Println("__________________________")
-		// Успешный ответ - парсим как ReportFile
-		var successResp SuccessResponse
-		if err := json.Unmarshal(body, &successResp); err != nil {
-			return nil, fmt.Errorf("ошибка парсинга успешного ответа: %w", err)
+	for attempt := 0; attempt < len(backoffs); attempt++ {
+		if attempt > 0 {
+			wait := backoffs[attempt]
+			fmt.Printf("Повторная попытка %d из %d через %s...\n", attempt+1, len(backoffs), wait)
+			time.Sleep(wait)
 		}
 
-		if stepNumber == 1 {
-			if err := json.Unmarshal(successResp.ResultRaw, &successResp.Result); err != nil {
-				return nil, fmt.Errorf("llmSendMessageMakeHTTPReq ошибка парсинга resultRawJson успешного ответа step1: %w", err)
+		fmt.Printf("Отправляем запрос к LLM API (попытка %d из %d): %s\n", attempt+1, len(backoffs), c.url)
+
+		httpReq, err := http.NewRequest("POST", c.url, bytes.NewReader(jsonData))
+		if err != nil {
+			lastErr = fmt.Errorf("ошибка создания HTTP запроса: %w", err)
+			continue
+		}
+		httpReq.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{
+			Timeout: 30 * time.Minute,
+		}
+
+		timeStart := time.Now()
+		resp, err := client.Do(httpReq)
+		if err != nil {
+			fmt.Println("---------ОШИБКА ПРИ ВЫПОЛНЕНИИ HTTP-ЗАПРОСА К LLM-REQUESTER. URL: ", c.url)
+			fmt.Println("ошибка - ", err.Error())
+			fmt.Println("---------КОНЕЦ ОШИБКИ ПРИ ВЫПОЛНЕНИИ HTTP-ЗАПРОСА К LLM-REQUESTER")
+			lastErr = fmt.Errorf("ошибка выполнения HTTP запроса: %w", err)
+			continue
+		}
+
+		inspectionTime := time.Since(timeStart).Milliseconds()
+
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("ошибка чтения тела ответа: %w", err)
+			continue
+		}
+
+		switch resp.StatusCode {
+		case 200:
+			fmt.Println("__________________________")
+			fmt.Println(string(body))
+			fmt.Println("__________________________")
+
+			var successResp SuccessResponse
+			if err := json.Unmarshal(body, &successResp); err != nil {
+				lastErr = fmt.Errorf("ошибка парсинга успешного ответа: %w", err)
+				continue
 			}
-		}
-		if stepNumber == 2 {
-			fmt.Println(string(successResp.ResultRaw))
 
-			//var inner string
-			//if err := json.Unmarshal(successResp.ResultRaw, &inner); err != nil {
-			//	panic(fmt.Errorf("не удалось распаковать строку: %w", err))
-			//}
+			successResp.Duration = &inspectionTime
 
-			if err := json.Unmarshal(successResp.ResultRaw, &successResp.ResultStep2); err != nil {
-				return nil, fmt.Errorf("llmSendMessageMakeHTTPReq ошибка парсинга resultRawJson успешного ответа step2: %w", err)
+			if stepNumber == 1 {
+				if err := json.Unmarshal(successResp.ResultRaw, &successResp.Result); err != nil {
+					lastErr = fmt.Errorf("llmSendMessageMakeHTTPReq ошибка парсинга resultRawJson успешного ответа step1: %w", err)
+					continue
+				}
+			} else if stepNumber == 2 {
+				fmt.Println(string(successResp.ResultRaw))
+				if err := json.Unmarshal(successResp.ResultRaw, &successResp.ResultStep2); err != nil {
+					lastErr = fmt.Errorf("llmSendMessageMakeHTTPReq ошибка парсинга resultRawJson успешного ответа step2: %w", err)
+					continue
+				}
 			}
+
+			return &successResp, nil
+
+		case 422:
+			var errorResp interface{}
+			if err := json.Unmarshal(body, &errorResp); err != nil {
+				lastErr = fmt.Errorf("ошибка парсинга ответа с ошибкой валидации: %w", err)
+				continue
+			}
+			lastErr = fmt.Errorf("ошибочный ответ от ллм реквестера - %#v", errorResp)
+			// по требованию — ретраем даже такие ошибки
+			continue
+
+		default:
+			lastErr = fmt.Errorf("неожиданный статус код: %d, тело ответа: %s", resp.StatusCode, string(body))
+			continue
 		}
-
-		return &successResp, nil
-
-	case 422:
-		// Ошибка валидации - парсим как ErrorResponse
-		var errorResp interface{}
-		if err := json.Unmarshal(body, &errorResp); err != nil {
-			return nil, fmt.Errorf("ошибка парсинга ответа с ошибкой валидации: %w", err)
-		}
-		return nil, fmt.Errorf("ошибочный ответ от ллм реквестера - %#v", errorResp)
-
-	default:
-		// Другие коды ответов
-		return nil, fmt.Errorf("неожиданный статус код: %d, тело ответа: %s", resp.StatusCode, string(body))
 	}
 
+	return nil, fmt.Errorf("не удалось получить корректный ответ от LLM API после %d попыток: %w", len(backoffs), lastErr)
 }
 
 func (c *Client) SendMessage(Messages []struct {

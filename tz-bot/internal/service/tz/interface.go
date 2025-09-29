@@ -85,6 +85,8 @@ type VersionRepository interface {
 	// UpdateVersion updates a version
 	UpdateVersion(ctx context.Context, req *modelrepo.UpdateVersionRequest) error
 
+	UpdateVersionProgress(ctx context.Context, id uuid.UUID, progress int) error
+
 	// DeleteVersion deletes a version and all its errors
 	DeleteVersion(ctx context.Context, id uuid.UUID) error
 }

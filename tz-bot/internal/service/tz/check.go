@@ -124,6 +124,7 @@ func (tz *Tz) CheckTz(ctx context.Context, file []byte, filename string, userID 
 		OriginalFileSize:         int64(len(file)),
 		NumberOfErrors:           0,
 		Status:                   "in_progress",
+		Progress:                 3,
 	}
 	err = tz.repo.CreateVersion(ctx, versionReq)
 	if err != nil {
@@ -173,8 +174,6 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-
-	timeStart := time.Now()
 
 	//htmlText, css, err := tz.wordConverterClient.Convert(file, filename)
 	//if err != nil {
@@ -259,6 +258,11 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	resultChan := make(chan llmRequestResult, len(*promts))
 	var wg sync.WaitGroup
 
+	progressNumberSteps := len(*promts) + 1
+	progressOneStep := 100 / progressNumberSteps
+	progressSteps := 0
+	var progressStepsMu sync.RWMutex
+
 	// Запускаем горутины для параллельной обработки запросов
 	for _, v := range *promts {
 		wg.Add(1)
@@ -306,6 +310,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 			result := llmRequestResult{
 				groupReport: llmResp.Result,
 				ResultRaw:   string(llmResp.ResultRaw),
+				duration:    *llmResp.Duration,
 			}
 
 			if llmResp.Cost != nil {
@@ -331,13 +336,32 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	expectedResults := len(*promts)
 	receivedResults := 0
 
+	inspectionTime := int64(0)
+
 	for result := range resultChan {
+		progressStepsMu.Lock()
+		progressSteps += 1
+		progressStepsMu.Unlock()
+
+		progressStepsMu.RLock()
+		go func() {
+			UpdateVersionProgressErr := tz.repo.UpdateVersionProgress(ctx, versionID, progressSteps*progressOneStep)
+			if UpdateVersionProgressErr != nil {
+				log.Error("Error in UpdateVersionProgress: ", UpdateVersionProgressErr.Error())
+			} else {
+				fmt.Println("прогресс обновлён")
+			}
+		}()
+		progressStepsMu.RUnlock()
+
 		receivedResults++
 
 		if result.err != nil {
 			log.Error("ошибка в результате: ", sl.Err(result.err))
 			continue
 		}
+
+		inspectionTime += result.duration
 
 		if result.groupReport != nil {
 			groupReports = append(groupReports, *result.groupReport)
@@ -355,8 +379,6 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 			break
 		}
 	}
-
-	inspectionTime := time.Since(timeStart)
 
 	SortGroupReports(groupReports)
 
@@ -392,6 +414,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		log.Error("step2Llm error: " + step2LlmError.Error())
 		return
 	}
+
+	inspectionTime += *step2LlmResponse.Duration
 
 	//llmReportRaw := string(step2LlmResponse.ResultRaw)
 	//log.Info(llmReportRaw)
@@ -602,7 +626,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		CheckedFileID:                   reportFilename,
 		AllRubs:                         allRubs,
 		AllTokens:                       allTokens,
-		InspectionTime:                  inspectionTime,
+		InspectionTime:                  time.Duration(inspectionTime * 1000 * 1000),
 		NumberOfErrors:                  len(*outMissingErrors) + len(*outInvalidErrors),
 		Status:                          "completed",
 		HtmlFromWordParser:              html,

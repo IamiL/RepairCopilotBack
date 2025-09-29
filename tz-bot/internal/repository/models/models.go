@@ -33,6 +33,7 @@ type Version struct {
 	NumberOfErrors           *int64         `db:"number_of_errors"`
 	Status                   string         `db:"status"`
 	LlmReport                string         `db:"report"`
+	Progress                 int            `db:"progress"`
 }
 
 // VersionWithTechnicalSpec represents a version with technical specification info
@@ -132,6 +133,7 @@ type CreateVersionRequest struct {
 	OriginalFileSize         int64
 	NumberOfErrors           int
 	Status                   string
+	Progress                 int
 }
 
 // UpdateVersionRequest represents request to update an existing version

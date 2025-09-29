@@ -107,6 +107,7 @@ message VersionMe {
   string original_file_link = 5;
   optional string report_file_link = 6;
   string status = 7;
+  int32 progress = 8;
 }
 
 message GetVersionRequest {
@@ -130,6 +131,7 @@ message GetVersionResponse {
   string name = 14;
   string status = 15;
   string llm_report = 16;
+  int32 progress = 17;
 }
 
 message GetAllVersionsAdminDashboardRequest {

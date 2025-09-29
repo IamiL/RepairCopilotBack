@@ -25,9 +25,7 @@ doc_to_docx_converter_client:
   host: http://94.241.142.172
   port: 8070
 report_generator_client:
-#  host: http://94.241.142.172
-#  port: 8050
-  host: localhost
+  host: http://94.241.142.172
   port: 8050
 markdown_service_client:
   url: http://94.241.142.172:8089

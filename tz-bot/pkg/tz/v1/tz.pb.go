@@ -755,6 +755,7 @@ type VersionMe struct {
 	OriginalFileLink           string                 `protobuf:"bytes,5,opt,name=original_file_link,json=originalFileLink,proto3" json:"original_file_link,omitempty"`
 	ReportFileLink             *string                `protobuf:"bytes,6,opt,name=report_file_link,json=reportFileLink,proto3,oneof" json:"report_file_link,omitempty"`
 	Status                     string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	Progress                   int32                  `protobuf:"varint,8,opt,name=progress,proto3" json:"progress,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -838,6 +839,13 @@ func (x *VersionMe) GetStatus() string {
 	return ""
 }
 
+func (x *VersionMe) GetProgress() int32 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
+}
+
 type GetVersionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	VersionId     string                 `protobuf:"bytes,1,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
@@ -900,6 +908,7 @@ type GetVersionResponse struct {
 	Name                             string                 `protobuf:"bytes,14,opt,name=name,proto3" json:"name,omitempty"`
 	Status                           string                 `protobuf:"bytes,15,opt,name=status,proto3" json:"status,omitempty"`
 	LlmReport                        string                 `protobuf:"bytes,16,opt,name=llm_report,json=llmReport,proto3" json:"llm_report,omitempty"`
+	Progress                         int32                  `protobuf:"varint,17,opt,name=progress,proto3" json:"progress,omitempty"`
 	unknownFields                    protoimpl.UnknownFields
 	sizeCache                        protoimpl.SizeCache
 }
@@ -1044,6 +1053,13 @@ func (x *GetVersionResponse) GetLlmReport() string {
 		return x.LlmReport
 	}
 	return ""
+}
+
+func (x *GetVersionResponse) GetProgress() int32 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
 }
 
 type GetAllVersionsAdminDashboardRequest struct {
@@ -2110,7 +2126,7 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x14GetVersionsMeRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"E\n" +
 	"\x15GetVersionsMeResponse\x12,\n" +
-	"\bversions\x18\x01 \x03(\v2\x10.tz.v1.VersionMeR\bversions\"\xd8\x02\n" +
+	"\bversions\x18\x01 \x03(\v2\x10.tz.v1.VersionMeR\bversions\"\xf4\x02\n" +
 	"\tVersionMe\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x01 \x01(\tR\tversionId\x12@\n" +
@@ -2120,11 +2136,12 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12,\n" +
 	"\x12original_file_link\x18\x05 \x01(\tR\x10originalFileLink\x12-\n" +
 	"\x10report_file_link\x18\x06 \x01(\tH\x00R\x0ereportFileLink\x88\x01\x01\x12\x16\n" +
-	"\x06status\x18\a \x01(\tR\x06statusB\x13\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12\x1a\n" +
+	"\bprogress\x18\b \x01(\x05R\bprogressB\x13\n" +
 	"\x11_report_file_link\"2\n" +
 	"\x11GetVersionRequest\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x01 \x01(\tR\tversionId\"\xa7\a\n" +
+	"version_id\x18\x01 \x01(\tR\tversionId\"\xc3\a\n" +
 	"\x12GetVersionResponse\x12 \n" +
 	"\thtml_text\x18\x01 \x01(\tH\x00R\bhtmlText\x88\x01\x01\x12\x15\n" +
 	"\x03css\x18\x02 \x01(\tH\x01R\x03css\x88\x01\x01\x12\x19\n" +
@@ -2145,7 +2162,8 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x04name\x18\x0e \x01(\tR\x04name\x12\x16\n" +
 	"\x06status\x18\x0f \x01(\tR\x06status\x12\x1d\n" +
 	"\n" +
-	"llm_report\x18\x10 \x01(\tR\tllmReport\x1aJ\n" +
+	"llm_report\x18\x10 \x01(\tR\tllmReport\x12\x1a\n" +
+	"\bprogress\x18\x11 \x01(\x05R\bprogress\x1aJ\n" +
 	"\x0eErrorsMapEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.tz.v1.ErrorR\x05value:\x028\x01B\f\n" +
