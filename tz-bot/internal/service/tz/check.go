@@ -433,6 +433,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 								ErrorID:         &errorID,
 								Risks:           step1instance.Risks,
 								Priority:        step1instance.Priority,
+								LlmID:           step1instance.LlmId,
 							})
 						}
 					}
@@ -522,7 +523,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	var reportFilename string
 
-	reportCodument, err := tz.reportGeneratorClient.GenerateDocument(ctx, errorsInTz)
+	reportCodument, err := tz.reportGeneratorClient.GenerateReport(ctx, step2LlmResponse.ResultStep2)
 	if err != nil {
 		log.Error("ошибка генерации docx-отчёта: ", sl.Err(err))
 	} else {

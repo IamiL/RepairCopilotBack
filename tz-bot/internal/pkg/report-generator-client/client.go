@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
-	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
 	"time"
 )
 
@@ -17,123 +16,76 @@ type Config struct {
 	Port int    `yaml:"port"`
 }
 
+// Ошибка API с кодом и телом ответа (часто сервер присылает JSON с описанием ошибки).
+type APIError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *APIError) Error() string {
+	if e.Body == "" {
+		return fmt.Sprintf("api error: status=%d", e.StatusCode)
+	}
+	return fmt.Sprintf("api error: status=%d body=%s", e.StatusCode, e.Body)
+}
+
 type Client struct {
+	host       string
+	port       int
 	httpClient *http.Client
-	baseURL    string
 }
 
-type ValidationError struct {
-	Detail []ValidationDetail `json:"detail"`
-}
-
-type ValidationDetail struct {
-	Loc  []interface{} `json:"loc"`
-	Msg  string        `json:"msg"`
-	Type string        `json:"type"`
-}
-
-func (e ValidationError) Error() string {
-	return fmt.Sprintf("validation error: %+v", e.Detail)
-}
-
+// New создаёт клиент. Если httpClient == nil, будет использован клиент с таймаутом 60s.
 func New(host string, port int) *Client {
+	httpClient := &http.Client{Timeout: 60 * time.Second}
+
 	return &Client{
-		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
-		},
-		baseURL: fmt.Sprintf("%s:%d", host, port),
+		host:       host,
+		port:       port,
+		httpClient: httpClient,
 	}
 }
 
-type ErrorsArray struct {
-	Errors []tzservice.Error `json:"errors"`
-}
-
-func (c *Client) GenerateDocument(ctx context.Context, errors []tzservice.Error) ([]byte, error) {
-
-	errorsArray := ErrorsArray{
-		Errors: errors,
+// GenerateReport отправляет payload на POST /report и возвращает бинарный .docx.
+func (c *Client) GenerateReport(ctx context.Context, payload any) ([]byte, error) {
+	if c == nil {
+		return nil, errors.New("nil client")
 	}
-	//for _, v := range errorsArray.Errors {
-	//	if v.MissingInstances != nil && len(*v.MissingInstances) > 0 {
-	//		if v.InvalidInstances == nil {
-	//			invInsts := make([]OutInvalidError, 0)
-	//			v.InvalidInstances = &invInsts
-	//		}
-	//		for j := range *v.MissingInstances {
-	//			*v.InvalidInstances = append(*v.InvalidInstances, OutInvalidError{
-	//				SuggestedFix: (*v.MissingInstances)[j].SuggestedFix,
-	//				Quote:        "...",
-	//			})
-	//		}
-	//
-	//	}
-	//}
-	// Сериализуем ErrorsArray в JSON
-	jsonData, err := json.Marshal(errorsArray)
+	// Собираем URL. Сервис из примера слушает по HTTP.
+	url := fmt.Sprintf("http://%s:%d/report", c.host, c.port)
+
+	reqBody, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal errors array: %w", err)
-	}
-	fmt.Println(string(jsonData))
-	// Создаем HTTP запрос
-	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/generate-report", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("marshal payload: %w", err)
 	}
 
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
 	req.Header.Set("Content-Type", "application/json")
+	// На всякий случай зададим Accept на docx; сервер всё равно отдаёт attachment.
+	req.Header.Set("Accept", "application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/octet-stream,*/*")
 
-	// Выполняем запрос
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
+		return nil, fmt.Errorf("do request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Читаем тело ответа
-	body, err := io.ReadAll(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// Ограничим чтение тела ошибки, чтобы не тащить мегабайты в лог/ошибку.
+		const limit = 8192
+		slurp, _ := io.ReadAll(io.LimitReader(resp.Body, limit))
+		return nil, &APIError{StatusCode: resp.StatusCode, Body: string(slurp)}
+	}
+
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("read response: %w", err)
 	}
 
-	// Обрабатываем ошибки
-	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusUnprocessableEntity {
-			var validationErr ValidationError
-			if unmarshalErr := json.Unmarshal(body, &validationErr); unmarshalErr == nil {
-				return nil, validationErr
-			}
-		}
-		return nil, fmt.Errorf("HTTP error %d: %s", resp.StatusCode, string(body))
-	}
-
-	// Проверяем Content-Type
-	contentType := resp.Header.Get("Content-Type")
-	if contentType != "application/vnd.openxmlformats-officedocument.wordprocessingml.document" {
-		return nil, fmt.Errorf("unexpected content type: %s", contentType)
-	}
-
-	// Извлекаем filename из Content-Disposition
-	_, err = c.extractFilename(resp.Header.Get("Content-Disposition"))
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract filename: %w", err)
-	}
-
-	return body, nil
-}
-
-func (c *Client) extractFilename(contentDisposition string) (string, error) {
-	if contentDisposition == "" {
-		return "", fmt.Errorf("content-disposition header is empty")
-	}
-
-	// Регулярное выражение для извлечения filename из Content-Disposition
-	re := regexp.MustCompile(`filename="([^"]+)"`)
-	matches := re.FindStringSubmatch(contentDisposition)
-
-	if len(matches) < 2 {
-		return "", fmt.Errorf("filename not found in content-disposition: %s", contentDisposition)
-	}
-
-	return matches[1], nil
+	// По желанию: можно проверить Content-Type,
+	// но это не обязательно — документ всё равно в байтах.
+	return data, nil
 }

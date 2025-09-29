@@ -35,6 +35,7 @@ type OutInvalidError struct {
 	FeedbackVerificationMark    *bool
 	FeedbackVerificationComment *string
 	FeedbackVerificationUser    *uuid.UUID
+	sections                    *[]string
 }
 
 type OutMissingError struct {

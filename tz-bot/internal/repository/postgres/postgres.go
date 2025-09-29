@@ -181,10 +181,14 @@ func (s *Storage) GetVersion(ctx context.Context, id uuid.UUID) (*modelrepo.Vers
 	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status, report FROM versions WHERE id = $1`
 
 	var version modelrepo.Version
+	var llmReport *string
 	err := s.db.QueryRow(ctx, query, id).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime, &version.OriginalFileSize, &version.NumberOfErrors, &version.Status, &version.LlmReport)
+			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime, &version.OriginalFileSize, &version.NumberOfErrors, &version.Status, &llmReport)
+	if llmReport != nil {
+		version.LlmReport = *llmReport
+	}
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repo.ErrVersionNotFound

@@ -263,7 +263,7 @@ func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*Version,
 
 	var inner json.RawMessage
 	if err := json.Unmarshal([]byte(resp.LlmReport), &inner); err != nil {
-		panic(fmt.Errorf("не удалось распаковать строку: %w", err))
+		fmt.Println(fmt.Errorf("не удалось распаковать строку: %w", err))
 	}
 
 	// 2) Кладём как raw JSON, без повторного экранирования
@@ -275,7 +275,7 @@ func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*Version,
 	//jsonReport, err := json.Marshal(resp.LlmReport)
 
 	versionResp := &Version{
-		Report:             inner,
+		Report:             json.RawMessage(resp.LlmReport),
 		GetVersionResponse: resp,
 	}
 

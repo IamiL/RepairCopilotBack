@@ -221,7 +221,7 @@ func (c *Client) GenerateStep2Promts(step1Results string, markdownDocument strin
 	//	}
 	//}
 	// Выполняем запрос
-	return resp.Prompt.Messages, nil, nil
+	return resp.Prompt.Messages, resp.Schema, nil
 
 }
 

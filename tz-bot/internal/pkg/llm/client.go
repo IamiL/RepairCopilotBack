@@ -97,9 +97,9 @@ type ErrorReport struct {
 		Goal     *string `json:"goal"`
 		Observed *string `json:"observed"`
 	} `json:"analysis_steps"`
-	AnalysisLines []int   `json:"analysis_lines"`
-	Critique      *string `json:"critique"`
-	Verdict       struct {
+	//AnalysisLines []int   `json:"analysis_lines"`
+	Critique *string `json:"critique"`
+	Verdict  struct {
 		TextVerdict string `json:"text_verdict"`
 		Status      string `json:"status"`
 	} `json:"verdict"`
@@ -216,12 +216,12 @@ func (c *Client) makeHTTPRequest(req Request, stepNumber int) (*SuccessResponse,
 		if stepNumber == 2 {
 			fmt.Println(string(successResp.ResultRaw))
 
-			var inner string
-			if err := json.Unmarshal([]byte(string(successResp.ResultRaw)), &inner); err != nil {
-				panic(fmt.Errorf("не удалось распаковать строку: %w", err))
-			}
+			//var inner string
+			//if err := json.Unmarshal(successResp.ResultRaw, &inner); err != nil {
+			//	panic(fmt.Errorf("не удалось распаковать строку: %w", err))
+			//}
 
-			if err := json.Unmarshal([]byte(inner), &successResp.ResultStep2); err != nil {
+			if err := json.Unmarshal(successResp.ResultRaw, &successResp.ResultStep2); err != nil {
 				return nil, fmt.Errorf("llmSendMessageMakeHTTPReq ошибка парсинга resultRawJson успешного ответа step2: %w", err)
 			}
 		}
@@ -252,6 +252,9 @@ func (c *Client) SendMessage(Messages []struct {
 	useCache bool,
 ) (*SuccessResponse, error) {
 	ctx := context.Background()
+	if Schema == nil {
+		return nil, errors.New("schema is null")
+	}
 
 	// Если репозиторий настроен, проверяем кэш
 	if c.repository != nil && useCache {

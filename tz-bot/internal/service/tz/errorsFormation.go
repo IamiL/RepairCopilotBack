@@ -54,9 +54,9 @@ func ErrorsFormation(groupReports []tz_llm_client.GroupReport, errorsDescription
 			processAnalysis := ""
 			for k, v := range *(*groupReports[i].Errors)[j].AnalysisSteps {
 				if k != 0 {
-					processAnalysis = processAnalysis + "\n"
+					processAnalysis = processAnalysis + "<br/>"
 				}
-				processAnalysis = processAnalysis + "Задача: " + *v.Goal + "\nНаблюдение: " + *v.Observed
+				processAnalysis = processAnalysis + "Задача: " + *v.Goal + "<br/>Наблюдение: " + *v.Observed
 			}
 			newError := Error{
 				ID:          (*groupReports[i].Errors)[j].ID,
@@ -66,7 +66,7 @@ func ErrorsFormation(groupReports []tz_llm_client.GroupReport, errorsDescription
 				Description: errorDescription.Desc,
 				Detector:    errorDescription.Detector,
 				//PreliminaryNotes:    groupReports[i].PreliminaryNotes,
-				//OverallCritique:     groupReports[i].OverallCritique,
+				OverallCritique: &(*groupReports[i].Errors)[j].Verdict.TextVerdict,
 				Verdict:         verdict,
 				ProcessAnalysis: &processAnalysis,
 				ProcessCritique: (*groupReports[i].Errors)[j].Critique,

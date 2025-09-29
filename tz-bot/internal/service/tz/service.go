@@ -35,7 +35,7 @@ type Tz struct {
 }
 
 type ReportGeneratorClient interface {
-	GenerateDocument(ctx context.Context, errors []Error) ([]byte, error)
+	GenerateReport(ctx context.Context, payload any) ([]byte, error)
 }
 
 type ErrorSaver interface {
