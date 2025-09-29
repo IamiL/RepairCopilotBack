@@ -11,9 +11,11 @@ postgres:
 grpc_server:
   port: localhost:8081
 promt_builder:
-  url: http://localhost:8010/v1/prompt-builder/build
+#  url: http://localhost:8010/v1/prompt-builder/build
+  url1: http://localhost:9020/v1/prompt-builder/step1/build
+  url2: http://localhost:9020/v1/prompt-builder/step2/build
 llm_client:
- url: http://localhost:8020/v1/structured/run
+ url: http://localhost:9010/v1/structured/run
  model: "qwen3-235b-a22b-fp8/latest"
 word_parser_client:
   url: http://localhost:8082
