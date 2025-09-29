@@ -96,7 +96,7 @@ type ErrorReport struct {
 	AnalysisSteps *[]struct {
 		Goal     *string `json:"goal"`
 		Observed *string `json:"observed"`
-	} `json:"AnalysisSteps"`
+	} `json:"analysis_steps"`
 	AnalysisLines []int   `json:"analysis_lines"`
 	Critique      *string `json:"critique"`
 	Verdict       struct {
@@ -264,6 +264,9 @@ func (c *Client) SendMessage(Messages []struct {
 			// Проверяем наличие ответа в кэше
 			cachedResponse, err := c.repository.GetCachedResponse(ctx, messagesHash)
 			if err == nil && cachedResponse != nil {
+				fmt.Println("__________________________")
+				fmt.Println(string(cachedResponse.ResponseData))
+				fmt.Println("__________________________")
 				// Десериализуем кэшированный ответ
 				var response SuccessResponse
 				if err := json.Unmarshal(cachedResponse.ResponseData, &response); err == nil {

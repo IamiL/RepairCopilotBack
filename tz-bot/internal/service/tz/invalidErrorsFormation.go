@@ -46,7 +46,6 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									}
 
 									quoteLines = &cleanQuoteLines
-
 								} else {
 									cleanQuoteCells := SplitByPipeNoEmpty(cleanQuote)
 

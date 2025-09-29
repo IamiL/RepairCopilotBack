@@ -1,14 +1,13 @@
 package tzservice
 
 import (
-	"fmt"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	"strconv"
 )
 
 func ErrorsFormation(groupReports []tz_llm_client.GroupReport, errorsDescriptions map[string]promt_builder.ErrorDescription) []Error {
-	fmt.Println("ФОРМИРОВАНИЕ МАССИВА ОШИБОК---------------------------------------------")
+	//fmt.Println("ФОРМИРОВАНИЕ МАССИВА ОШИБОК---------------------------------------------")
 	errors := make([]Error, 0)
 
 	for i := range groupReports {
@@ -18,15 +17,15 @@ func ErrorsFormation(groupReports []tz_llm_client.GroupReport, errorsDescription
 		}
 
 		groupID = strconv.Itoa(*groupReports[i].GroupID)
-		fmt.Println("ИЗ ГРУП АЙДИ ", *groupReports[i].GroupID, " ПОЛУЧИЛИ ", groupID)
+		//fmt.Println("ИЗ ГРУП АЙДИ ", *groupReports[i].GroupID, " ПОЛУЧИЛИ ", groupID)
 
 		for j := range *groupReports[i].Errors {
-			fmt.Println(strconv.Itoa(i) + ". ОБРАБОТКА ОШИБКИ:")
-			fmt.Println((*groupReports[i].Errors)[j])
+			//fmt.Println(strconv.Itoa(i) + ". ОБРАБОТКА ОШИБКИ:")
+			//fmt.Println((*groupReports[i].Errors)[j])
 			errorCode := ""
 			verdict := ""
 			if (*groupReports[i].Errors)[j].Code == nil {
-				fmt.Println("НЕ НАШЛИ ErrorCode")
+				//fmt.Println("НЕ НАШЛИ ErrorCode")
 				continue
 			}
 			//if (*groupReports[i].Errors)[j].Verdict == nil {
@@ -52,7 +51,13 @@ func ErrorsFormation(groupReports []tz_llm_client.GroupReport, errorsDescription
 			//
 			//	processRetrieval = &processRetrievalArr
 			//}
-
+			processAnalysis := ""
+			for k, v := range *(*groupReports[i].Errors)[j].AnalysisSteps {
+				if k != 0 {
+					processAnalysis = processAnalysis + "\n"
+				}
+				processAnalysis = processAnalysis + "Задача: " + *v.Goal + "\nНаблюдение: " + *v.Observed
+			}
 			newError := Error{
 				ID:          (*groupReports[i].Errors)[j].ID,
 				GroupID:     groupID,
@@ -62,9 +67,9 @@ func ErrorsFormation(groupReports []tz_llm_client.GroupReport, errorsDescription
 				Detector:    errorDescription.Detector,
 				//PreliminaryNotes:    groupReports[i].PreliminaryNotes,
 				//OverallCritique:     groupReports[i].OverallCritique,
-				Verdict: verdict,
-				//ProcessAnalysis:     (*groupReports[i].Errors)[j].Process.Analysis,
-				//ProcessCritique:     (*groupReports[i].Errors)[j].Process.Critique,
+				Verdict:         verdict,
+				ProcessAnalysis: &processAnalysis,
+				ProcessCritique: (*groupReports[i].Errors)[j].Critique,
 				//ProcessVerification: (*groupReports[i].Errors)[j].Process.Verification,
 				ProcessRetrieval: processRetrieval,
 				Instances:        (*groupReports[i].Errors)[j].Instances,

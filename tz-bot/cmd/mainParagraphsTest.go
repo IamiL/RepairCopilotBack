@@ -17,11 +17,11 @@ func runTestScenario(html, scenarioName string) {
 	// Извлечение параграфов
 	HTMLWithPlaceholder, Paragraphs := paragraphsproc.ExtractParagraphs(html)
 
-	fmt.Println("\nHTML с плейсхолдерами:")
-	fmt.Println(HTMLWithPlaceholder)
-
-	fmt.Println("\nИзвлеченные параграфы:")
-	fmt.Println(Paragraphs)
+	//fmt.Println("\nHTML с плейсхолдерами:")
+	//fmt.Println(HTMLWithPlaceholder)
+	//
+	//fmt.Println("\nИзвлеченные параграфы:")
+	//fmt.Println(Paragraphs)
 
 	// Восстановление
 	restored := paragraphsproc.InsertParagraphs(HTMLWithPlaceholder, Paragraphs)

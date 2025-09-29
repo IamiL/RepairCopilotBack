@@ -196,7 +196,7 @@ func ExtractParagraphs(html string) ParagraphExtractionResult {
 		htmlWithPlaceholder = strings.Replace(htmlWithPlaceholder, fullArticleMatch, fmt.Sprintf("<article%s>%s</article>", articleAttrs, placeholder), 1)
 	}
 
-	fmt.Println("возвращаем из extractParagraphs: paragraphs = ", allParagraphs.String())
+	//fmt.Println("возвращаем из extractParagraphs: paragraphs = ", allParagraphs.String())
 
 	return ParagraphExtractionResult{
 		HTMLWithPlaceholder: htmlWithPlaceholder,

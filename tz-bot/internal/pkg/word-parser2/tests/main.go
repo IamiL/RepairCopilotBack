@@ -13,31 +13,31 @@ const paragraphPlaceholder = "{{PARAGRAPHS_PLACEHOLDER_{{ARTICLE_INDEX}}}}"
 // extractChildBlocks извлекает дочерние блоки из содержимого статьи
 func extractChildBlocks(articleContent string, articleIndex int) string {
 	var result strings.Builder
-	
+
 	// Находим все прямые дочерние блоки верхного уровня
 	blockRegex := regexp.MustCompile(`(?s)<(\w+)([^>]*)>(.*?)</(\w+)>`)
 	blockMatches := blockRegex.FindAllStringSubmatch(articleContent, -1)
-	
+
 	blockIndex := 0
 	for _, blockMatch := range blockMatches {
 		tagName := blockMatch[1]
 		existingAttrs := blockMatch[2]
 		blockContent := blockMatch[3]
 		closingTag := blockMatch[4]
-		
+
 		// Skip if opening and closing tags don't match
 		if tagName != closingTag {
 			continue
 		}
-		
+
 		// Add special attributes for tracking
 		newAttrs := fmt.Sprintf(`%s data-article="%d" data-block="%d"`, existingAttrs, articleIndex, blockIndex)
 		processedBlock := fmt.Sprintf(`<%s%s>%s</%s>`, tagName, newAttrs, blockContent, tagName)
 		result.WriteString(processedBlock)
-		
+
 		blockIndex++
 	}
-	
+
 	return result.String()
 }
 
@@ -76,7 +76,7 @@ func ExtractParagraphs(html string) ParagraphExtractionResult {
 		fullArticleMatch := match[0]
 		articleTagRegex := regexp.MustCompile(`<article([^>]*)>`)
 		articleTagMatch := articleTagRegex.FindStringSubmatch(fullArticleMatch)
-		
+
 		var articleAttrs string
 		if len(articleTagMatch) >= 2 {
 			articleAttrs = articleTagMatch[1]
@@ -87,7 +87,7 @@ func ExtractParagraphs(html string) ParagraphExtractionResult {
 		htmlWithPlaceholder = strings.Replace(htmlWithPlaceholder, fullArticleMatch, fmt.Sprintf("<article%s>%s</article>", articleAttrs, placeholder), 1)
 	}
 
-	fmt.Println("возвращаем из extractParagraphs: paragraphs = ", allParagraphs.String())
+	//fmt.Println("возвращаем из extractParagraphs: paragraphs = ", allParagraphs.String())
 
 	return ParagraphExtractionResult{
 		HTMLWithPlaceholder: htmlWithPlaceholder,
@@ -108,22 +108,22 @@ func InsertParagraphs(htmlWithPlaceholder, paragraphs string) string {
 		fmt.Sscanf(match[2], "%d", &articleIndex)
 		blockIndex := 0
 		fmt.Sscanf(match[3], "%d", &blockIndex)
-		
+
 		// Check if opening and closing tags match
 		tagName := match[1]
 		closingTag := match[5]
 		if tagName != closingTag {
 			continue
 		}
-		
+
 		// Remove the special attributes from the block
 		blockContent := match[4]
-		
+
 		// Extract original attributes by removing data-article and data-block
 		fullMatch := match[0]
 		startTagRegex := regexp.MustCompile(`<` + tagName + `([^>]*)>`)
 		startTagMatch := startTagRegex.FindStringSubmatch(fullMatch)
-		
+
 		var originalAttrs string
 		if len(startTagMatch) >= 2 {
 			allAttrs := startTagMatch[1]
@@ -132,7 +132,7 @@ func InsertParagraphs(htmlWithPlaceholder, paragraphs string) string {
 			allAttrs = regexp.MustCompile(`\s+data-block="[^"]*"`).ReplaceAllString(allAttrs, "")
 			originalAttrs = strings.TrimSpace(allAttrs)
 		}
-		
+
 		// Reconstruct block without special attributes
 		var cleanBlock string
 		if originalAttrs != "" {
@@ -140,11 +140,11 @@ func InsertParagraphs(htmlWithPlaceholder, paragraphs string) string {
 		} else {
 			cleanBlock = fmt.Sprintf(`<%s>%s</%s>`, tagName, blockContent, tagName)
 		}
-		
+
 		if articleBlocks[articleIndex] == nil {
 			articleBlocks[articleIndex] = make([]string, 0)
 		}
-		
+
 		// Insert block at correct position
 		for len(articleBlocks[articleIndex]) <= blockIndex {
 			articleBlocks[articleIndex] = append(articleBlocks[articleIndex], "")

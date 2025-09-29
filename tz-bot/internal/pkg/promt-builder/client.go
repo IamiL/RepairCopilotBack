@@ -84,7 +84,7 @@ func (c *Client) makeStep1HTTPRequest(req Step1Request) (*Step1SuccessResponse, 
 		return nil, fmt.Errorf("ошибка сериализации запроса: %w", err)
 	}
 
-	fmt.Printf("Отправляем запрос к promt-builder: %s\n", c.url1)
+	//fmt.Printf("Отправляем запрос к promt-builder: %s\n", c.url1)
 
 	//debugWriteFile("req.json", string(jsonData))
 
@@ -242,7 +242,7 @@ func (c *Client) makeStep2HTTPRequest(req Step2Request) (*Step2SuccessResponse, 
 		return nil, fmt.Errorf("ошибка сериализации запроса: %w", err)
 	}
 
-	fmt.Printf("Отправляем запрос к promt-builder: %s\n", c.url2)
+	//fmt.Printf("Отправляем запрос к promt-builder: %s\n", c.url2)
 
 	//debugWriteFile("req.json", string(jsonData))
 

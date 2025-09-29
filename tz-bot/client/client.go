@@ -124,7 +124,7 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
 	defer cancel()
 
-	fmt.Println("точка 11")
+	//fmt.Println("точка 11")
 	resp, err := c.api.CheckTz(ctx, &tzv1.CheckTzRequest{
 		File:      file,
 		Filename:  filename,
@@ -134,7 +134,7 @@ func (c *Client) CheckTz(ctx context.Context, file []byte, filename string, requ
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	fmt.Println("точка 12")
+	//fmt.Println("точка 12")
 
 	return &CheckTzResponse{
 		CheckTzResponse: resp,
