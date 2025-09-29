@@ -9,24 +9,32 @@ import (
 	"github.com/google/uuid"
 )
 
+//TODO: ЦИТАТ МНОГО, УЧИТЫВАЕТСЯ ТОЛЬКо ПЕВАЯ
+
 func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*[]OutInvalidError, uint32) {
+	fmt.Println("НАЧИНАЕМ ФОРМИРОВАНИЕ NewInvalidErrorsSet")
+
 	id := startId
 	outInvalidErrors := make([]OutInvalidError, 0, 50)
 	if report != nil {
+		fmt.Println("report != nil")
 		for i := range *report {
 			if (*report)[i].Errors != nil {
+				fmt.Println("(*report)[i].Errors != nil")
 				for j := range *(*report)[i].Errors {
 					if (*((*report)[i]).Errors)[j].Instances != nil {
+						fmt.Println("(*report)[i].Errors[j].Instances != nil")
 						for k := range *(*((*report)[i]).Errors)[j].Instances {
-							if (*(*((*report)[i]).Errors)[j].Instances)[k].ErrType != nil && *(*(*((*report)[i]).Errors)[j].Instances)[k].ErrType == "invalid" && (*(*((*report)[i]).Errors)[j].Instances)[k].Snippet != nil && *(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet != "" {
+							if (*(*((*report)[i]).Errors)[j].Instances)[k].Kind != nil && *(*(*((*report)[i]).Errors)[j].Instances)[k].Kind == "Invalid" && (*(*((*report)[i]).Errors)[j].Instances)[k].Quotes != nil && (*(*((*report)[i]).Errors)[j].Instances)[k].Quotes[0] != "" {
 
 								suggestedFix := ""
-								if (*(*((*report)[i]).Errors)[j].Instances)[k].SuggestedFix != nil {
-									suggestedFix = *(*(*((*report)[i]).Errors)[j].Instances)[k].SuggestedFix
+								if (*(*((*report)[i]).Errors)[j].Instances)[k].Fix != nil {
+									suggestedFix = *(*(*((*report)[i]).Errors)[j].Instances)[k].Fix
 								}
-								originalQuote := *(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet
 
-								cleanQuote := MarcdownCleaning(*(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet)
+								originalQuote := (*(*((*report)[i]).Errors)[j].Instances)[k].Quotes[0]
+
+								cleanQuote := MarcdownCleaning((*(*((*report)[i]).Errors)[j].Instances)[k].Quotes[0])
 
 								var quoteLines *[]string
 
@@ -50,20 +58,22 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									}
 								}
 
-								startLineNumber := (*(*((*report)[i]).Errors)[j].Instances)[k].LineStart
+								startLineNumber := (*(*((*report)[i]).Errors)[j].Instances)[k].Lines[0]
 								//if startLineNumber == nil {
 								//
 								//}
-								endLineNumber := (*(*((*report)[i]).Errors)[j].Instances)[k].LineEnd
+
+								lengthLines := len((*(*((*report)[i]).Errors)[j].Instances)[k].Lines)
+								endLineNumber := (*(*((*report)[i]).Errors)[j].Instances)[k].Lines[lengthLines-1]
 								//if endLineNumber == nil {
 								//
 								//}
 
 								var rationale string
 
-								if (*(*((*report)[i]).Errors)[j].Instances)[k].Rationale != nil {
-									rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
-								}
+								//if (*(*((*report)[i]).Errors)[j].Instances)[k].. != nil {
+								//	rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
+								//}
 
 								outInvalidErrors = append(outInvalidErrors, OutInvalidError{
 									ID:                    uuid.New(),
@@ -72,9 +82,9 @@ func NewInvalidErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (*
 									HtmlIDStr:             fmt.Sprintf("%d", id),
 									Quote:                 cleanQuote,
 									SuggestedFix:          suggestedFix,
-									UntilTheEndOfSentence: EllipsisCheck(*(*(*((*report)[i]).Errors)[j].Instances)[k].Snippet),
-									StartLineNumber:       startLineNumber,
-									EndLineNumber:         endLineNumber,
+									UntilTheEndOfSentence: EllipsisCheck((*(*((*report)[i]).Errors)[j].Instances)[k].Quotes[0]),
+									StartLineNumber:       &startLineNumber,
+									EndLineNumber:         &endLineNumber,
 									QuoteLines:            quoteLines,
 									OriginalQuote:         originalQuote,
 									Rationale:             rationale,

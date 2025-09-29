@@ -2,7 +2,6 @@ package app
 
 import (
 	"log/slog"
-	"time"
 	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	reportgeneratorclient "repairCopilotBot/tz-bot/internal/pkg/report-generator-client"
@@ -10,6 +9,7 @@ import (
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
+	"time"
 
 	grpcapp "repairCopilotBot/tz-bot/internal/app/grpc"
 	tgapp "repairCopilotBot/tz-bot/internal/app/tg"
@@ -26,8 +26,8 @@ type Config struct {
 }
 
 type App struct {
-	GRPCServer   *grpcapp.App
-	TelegramBot  *tgapp.App
+	GRPCServer  *grpcapp.App
+	TelegramBot *tgapp.App
 }
 
 func New(
@@ -66,7 +66,7 @@ func New(
 
 	markdownClient := markdown_service_client.New(MarkdownServiceConfig.Url)
 
-	prompBuilderClient := promt_builder.New(PromtBuilderConfig.Url)
+	prompBuilderClient := promt_builder.New(*PromtBuilderConfig)
 
 	s3Conn, err := s3minio.NewConn(s3Config)
 	if err != nil {

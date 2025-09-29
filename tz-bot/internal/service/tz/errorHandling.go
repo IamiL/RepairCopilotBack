@@ -70,7 +70,7 @@ func HandleErrors(report *[]tz_llm_client.GroupReport, htmlBlocks *[]markdown_se
 	}
 	//fmt.Println("отладка 25")
 	html := ""
-	//fmt.Println("отладка 26")
+	fmt.Println("отладка 26")
 
 	for i := range *htmlBlocks {
 		html = html + (*htmlBlocks)[i].HtmlContent

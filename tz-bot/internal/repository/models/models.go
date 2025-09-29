@@ -32,6 +32,7 @@ type Version struct {
 	OriginalFileSize         *int64         `db:"original_file_size"`
 	NumberOfErrors           *int64         `db:"number_of_errors"`
 	Status                   string         `db:"status"`
+	LlmReport                string         `db:"report"`
 }
 
 // VersionWithTechnicalSpec represents a version with technical specification info
@@ -154,6 +155,7 @@ type UpdateVersionRequest struct {
 	PromtsFromPromtBuilder          []byte
 	GroupReportsFromLlm             []byte
 	HtmlParagraphsWithWrappesErrors string
+	LlmReport                       string
 }
 
 // CreateInvalidErrorsRequest represents request to create invalid errors

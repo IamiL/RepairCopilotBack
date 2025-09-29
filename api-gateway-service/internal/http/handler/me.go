@@ -106,10 +106,9 @@ func MeHandler(
 
 					// Асинхронно регистрируем посещение пользователя
 					go func() {
-						ctx, err := context.WithTimeout(context.Background(), time.Minute)
-						if err != nil {
-							log.Error("error in create context")
-						}
+						ctx, cancelFunc := context.WithTimeout(context.Background(), time.Minute)
+						defer cancelFunc()
+
 						if err := userServiceClient.RegisterVisit(ctx, userID.String()); err != nil {
 							log.Error("failed to register user visit", slog.String("user_id", userID.String()), slog.String("error", err.Error()))
 						}
@@ -129,13 +128,13 @@ func MeHandler(
 					}
 
 					// Получаем чаты пользователя
-					userIDString := userID.String()
-					chats, err = chatBotClient.Chat.GetChats(r.Context(), &userIDString)
-					if err != nil {
-						log.Error("failed to get user chats", slog.String("error", err.Error()))
-						// Не возвращаем ошибку, продолжаем с пустым массивом чатов
-						chats = []chatbotclientChat.Chat{}
-					}
+					//userIDString := userID.String()
+					//chats, err = chatBotClient.Chat.GetChats(r.Context(), &userIDString)
+					//if err != nil {
+					//	log.Error("failed to get user chats", slog.String("error", err.Error()))
+					//	// Не возвращаем ошибку, продолжаем с пустым массивом чатов
+					//	chats = []chatbotclientChat.Chat{}
+					//}
 				}
 			}
 		}

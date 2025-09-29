@@ -53,13 +53,19 @@ type Request struct {
 		Role    *string `json:"role"`
 		Content *string `json:"content"`
 	} `json:"messages"`
-	//Schema map[string]interface{} `json:"schema"`
+	Schema json.RawMessage `json:"schema"`
 	//Codes []string `json:"codes"`
 }
 
+//type SuccessResponseStep2 struct {
+//	ResultStep2 *LlmReport
+//}
+
 type SuccessResponse struct {
-	Result *GroupReport `json:"result"`
-	Usage  *struct {
+	ResultStep2 *LlmReport
+	Result      *GroupReport
+	ResultRaw   json.RawMessage `json:"result"`
+	Usage       *struct {
 		PromptTokens     *int `json:"prompt_tokens"`
 		CompletionTokens *int `json:"completion_tokens"`
 		TotalTokens      *int `json:"total_tokens"`
@@ -76,34 +82,54 @@ type SuccessResponse struct {
 }
 
 type GroupReport struct {
-	GroupID          *string        `json:"group_id"`
-	Errors           *[]ErrorReport `json:"errors"`
-	PreliminaryNotes *string        `json:"preliminary_notes"`
-	OverallCritique  *string        `json:"overall_critique"`
+	GroupID    *int           `json:"group_id"`
+	GroupTitle *string        `json:"group_title"`
+	Errors     *[]ErrorReport `json:"errors"`
+	//PreliminaryNotes *string        `json:"preliminary_notes"`
+	//OverallCritique  *string        `json:"overall_critique"`
 }
 
 type ErrorReport struct {
-	ID        uuid.UUID   `json:"id"`
-	Code      *string     `json:"code"`
+	ID            uuid.UUID `json:"id"`
+	Code          *string   `json:"error_id"`
+	Title         *string   `json:"title"`
+	AnalysisSteps *[]struct {
+		Goal     *string `json:"goal"`
+		Observed *string `json:"observed"`
+	} `json:"AnalysisSteps"`
+	AnalysisLines []int   `json:"analysis_lines"`
+	Critique      *string `json:"critique"`
+	Verdict       struct {
+		TextVerdict string `json:"text_verdict"`
+		Status      string `json:"status"`
+	} `json:"verdict"`
 	Instances *[]Instance `json:"instances"`
-	Process   *Process    `json:"process"`
-	Verdict   *string     `json:"verdict"`
+	//Process   *Process    `json:"process"`
 }
 
-type Process struct {
-	Analysis     *string      `json:"analysis"`
-	Critique     *string      `json:"critique"`
-	Verification *string      `json:"verification"`
-	Retrieval    *[]Retrieval `json:"retrieval"`
-}
+//type Process struct {
+//	Analysis     *string      `json:"analysis"`
+//	Critique     *string      `json:"critique"`
+//	Verification *string      `json:"verification"`
+//	Retrieval    *[]Retrieval `json:"retrieval"`
+//}
 
 type Instance struct {
-	ErrType      *string `json:"err_type"`
-	Snippet      *string `json:"snippet"`
-	LineStart    *int    `json:"line_start"`
-	LineEnd      *int    `json:"line_end"`
-	SuggestedFix *string `json:"suggested_fix"`
-	Rationale    *string `json:"rationale"`
+	LlmId           *string  `json:"id"`
+	Fix             *string  `json:"fix"`
+	Kind            *string  `json:"kind"`
+	Lines           []int    `json:"lines"`
+	Risks           *string  `json:"risks"`
+	Quotes          []string `json:"quotes"`
+	Priority        *string  `json:"priority"`
+	Sections        []string `json:"sections"`
+	WhatIsIncorrect *string  `json:"what_is_incorrect"`
+	//ErrType      *string `json:"err_type"`
+	//Snippet         *string  `json:"snippet"`
+	//LineStart       *int     `json:"line_start"`
+	//LineEnd         *int     `json:"line_end"`
+	//SuggestedFix    *string  `json:"suggested_fix"`
+	//Rationale       *string  `json:"rationale"`
 }
 
 type Retrieval struct {
@@ -129,7 +155,7 @@ func calculateMessagesHash(messages []struct {
 }
 
 // MakeHTTPRequest выполняет реальный HTTP запрос к LLM API
-func (c *Client) makeHTTPRequest(req Request) (*SuccessResponse, error) {
+func (c *Client) makeHTTPRequest(req Request, stepNumber int) (*SuccessResponse, error) {
 	// Сериализуем запрос в JSON
 	jsonData, err := json.Marshal(req)
 	if err != nil {
@@ -173,11 +199,33 @@ func (c *Client) makeHTTPRequest(req Request) (*SuccessResponse, error) {
 	// Обрабатываем ответ в зависимости от статус кода
 	switch resp.StatusCode {
 	case 200:
+		fmt.Println("__________________________")
+		fmt.Println(string(body))
+		fmt.Println("__________________________")
 		// Успешный ответ - парсим как ReportFile
 		var successResp SuccessResponse
 		if err := json.Unmarshal(body, &successResp); err != nil {
 			return nil, fmt.Errorf("ошибка парсинга успешного ответа: %w", err)
 		}
+
+		if stepNumber == 1 {
+			if err := json.Unmarshal(successResp.ResultRaw, &successResp.Result); err != nil {
+				return nil, fmt.Errorf("llmSendMessageMakeHTTPReq ошибка парсинга resultRawJson успешного ответа step1: %w", err)
+			}
+		}
+		if stepNumber == 2 {
+			fmt.Println(string(successResp.ResultRaw))
+
+			var inner string
+			if err := json.Unmarshal([]byte(string(successResp.ResultRaw)), &inner); err != nil {
+				panic(fmt.Errorf("не удалось распаковать строку: %w", err))
+			}
+
+			if err := json.Unmarshal([]byte(inner), &successResp.ResultStep2); err != nil {
+				return nil, fmt.Errorf("llmSendMessageMakeHTTPReq ошибка парсинга resultRawJson успешного ответа step2: %w", err)
+			}
+		}
+
 		return &successResp, nil
 
 	case 422:
@@ -199,7 +247,8 @@ func (c *Client) SendMessage(Messages []struct {
 	Role    *string `json:"role"`
 	Content *string `json:"content"`
 },
-	Schema map[string]interface{},
+	Schema json.RawMessage,
+	stepNumber int,
 	useCache bool,
 ) (*SuccessResponse, error) {
 	ctx := context.Background()
@@ -234,11 +283,11 @@ func (c *Client) SendMessage(Messages []struct {
 		Mode:     "sync",
 		Model:    c.model,
 		Messages: Messages,
-		//Schema:   Schema,
+		Schema:   Schema,
 	}
 
 	// Выполняем запрос
-	response, err := c.makeHTTPRequest(req)
+	response, err := c.makeHTTPRequest(req, stepNumber)
 	if err != nil {
 
 		//fmt.Println(" отладка 11")
@@ -276,3 +325,45 @@ func (c *Client) SendMessage(Messages []struct {
 
 	return response, nil
 }
+
+type LlmReport struct {
+	Sections *[]Section `json:"sections"`
+	Notes    *string    `json:"notes"`
+	DocTitle *string    `json:"doc_title"`
+}
+
+type Section struct {
+	ExistsInDoc        *bool               `json:"exists_in_doc"`
+	InitialInstanceIds *[]string           `json:"initial_instance_ids"`
+	FinalInstanceIds   *[]string           `json:"final_instance_ids"`
+	PartName           *string             `json:"part"`
+	Instances          *[]LlmStep2Instance `json:"instances"`
+}
+
+type LlmStep2Instance struct {
+	ErrorID         *string `json:"error_id"`
+	LlmID           *string `json:"llm_id"`
+	WhatIsIncorrect *string `json:"what_is_incorrect"`
+	Fix             *string `json:"how_to_fix"`
+	Risks           *string `json:"risks"`
+	Priority        *string `json:"priority"`
+}
+
+//type LlmReport struct {
+//	Sections *[]Section `json:"sections"`
+//	Notes    *string    `json:"notes"`
+//}
+//
+//type Step2Instance struct {
+//	WhatSsIncorrect *string `json:"what_is_incorrect"`
+//	Fix             *string `json:"how_to_fix"`
+//	ErrorID         *string `json:"error_id"`
+//}
+//
+//type Section struct {
+//	ExistsInDoc        bool        `json:"exists_in_doc"`
+//	InitialInstanceIds []string    `json:"initial_instance_ids"`
+//	FinalInstanceIds   []string    `json:"final_instance_ids"`
+//	PartName           string      `json:"part"`
+//	Instances          *[]Instance `json:"instances"`
+//}

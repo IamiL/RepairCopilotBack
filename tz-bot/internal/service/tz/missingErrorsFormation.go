@@ -16,16 +16,16 @@ func NewIMissingErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (
 				for j := range *(*report)[i].Errors {
 					if (*((*report)[i]).Errors)[j].Instances != nil {
 						for k := range *(*((*report)[i]).Errors)[j].Instances {
-							if (*(*((*report)[i]).Errors)[j].Instances)[k].ErrType != nil && *(*(*((*report)[i]).Errors)[j].Instances)[k].ErrType == "missing" {
+							if (*(*((*report)[i]).Errors)[j].Instances)[k].Kind != nil && *(*(*((*report)[i]).Errors)[j].Instances)[k].Kind == "Missing" {
 								suggestedFix := ""
-								if (*(*((*report)[i]).Errors)[j].Instances)[k].SuggestedFix != nil {
-									suggestedFix = *(*(*((*report)[i]).Errors)[j].Instances)[k].SuggestedFix
+								if (*(*((*report)[i]).Errors)[j].Instances)[k].Fix != nil {
+									suggestedFix = *(*(*((*report)[i]).Errors)[j].Instances)[k].Fix
 								}
 
 								var rationale string
-								if (*(*((*report)[i]).Errors)[j].Instances)[k].Rationale != nil {
-									rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
-								}
+								//if (*(*((*report)[i]).Errors)[j].Instances)[k].Rationale != nil {
+								//	rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
+								//}
 
 								outInvalidErrors = append(outInvalidErrors, OutMissingError{
 									ErrorID:      (*((*report)[i]).Errors)[j].ID,

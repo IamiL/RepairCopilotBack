@@ -899,6 +899,7 @@ type GetVersionResponse struct {
 	ErrorsMap                        map[string]*Error      `protobuf:"bytes,13,rep,name=errorsMap,proto3" json:"errorsMap,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Name                             string                 `protobuf:"bytes,14,opt,name=name,proto3" json:"name,omitempty"`
 	Status                           string                 `protobuf:"bytes,15,opt,name=status,proto3" json:"status,omitempty"`
+	LlmReport                        string                 `protobuf:"bytes,16,opt,name=llm_report,json=llmReport,proto3" json:"llm_report,omitempty"`
 	unknownFields                    protoimpl.UnknownFields
 	sizeCache                        protoimpl.SizeCache
 }
@@ -1034,6 +1035,13 @@ func (x *GetVersionResponse) GetName() string {
 func (x *GetVersionResponse) GetStatus() string {
 	if x != nil {
 		return x.Status
+	}
+	return ""
+}
+
+func (x *GetVersionResponse) GetLlmReport() string {
+	if x != nil {
+		return x.LlmReport
 	}
 	return ""
 }
@@ -2116,7 +2124,7 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x11_report_file_link\"2\n" +
 	"\x11GetVersionRequest\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x01 \x01(\tR\tversionId\"\x88\a\n" +
+	"version_id\x18\x01 \x01(\tR\tversionId\"\xa7\a\n" +
 	"\x12GetVersionResponse\x12 \n" +
 	"\thtml_text\x18\x01 \x01(\tH\x00R\bhtmlText\x88\x01\x01\x12\x15\n" +
 	"\x03css\x18\x02 \x01(\tH\x01R\x03css\x88\x01\x01\x12\x19\n" +
@@ -2135,7 +2143,9 @@ const file_tz_v1_tz_proto_rawDesc = "" +
 	"\x0enumberOfErrors\x18\f \x01(\x05H\bR\x0enumberOfErrors\x88\x01\x01\x12F\n" +
 	"\terrorsMap\x18\r \x03(\v2(.tz.v1.GetVersionResponse.ErrorsMapEntryR\terrorsMap\x12\x12\n" +
 	"\x04name\x18\x0e \x01(\tR\x04name\x12\x16\n" +
-	"\x06status\x18\x0f \x01(\tR\x06status\x1aJ\n" +
+	"\x06status\x18\x0f \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"llm_report\x18\x10 \x01(\tR\tllmReport\x1aJ\n" +
 	"\x0eErrorsMapEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\"\n" +
 	"\x05value\x18\x02 \x01(\v2\f.tz.v1.ErrorR\x05value:\x028\x01B\f\n" +

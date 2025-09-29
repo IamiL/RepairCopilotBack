@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser2/paragraphs"
 
 	//docxToDocx2007clientclient "repairCopilotBot/tz-bot/internal/pkg/docxToDocx2007client"
@@ -261,10 +262,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	// Запускаем горутины для параллельной обработки запросов
 	for _, v := range *promts {
 		wg.Add(1)
-		go func(messages *[]struct {
-			Role    *string `json:"role"`
-			Content *string `json:"content"`
-		}, schema map[string]interface{}) {
+		go func(messagesFromPromtBuilder *[]promt_builder.Message, schema json.RawMessage) {
 			defer wg.Done()
 
 			defer func() {
@@ -273,8 +271,25 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 					resultChan <- llmRequestResult{err: fmt.Errorf("паника в goroutine: %v", r)}
 				}
 			}()
+
+			messages := make([]struct {
+				Role    *string `json:"role"`
+				Content *string `json:"content"`
+			},
+				0)
+
+			for _, msg := range *messagesFromPromtBuilder {
+				messages = append(messages, struct {
+					Role    *string `json:"role"`
+					Content *string `json:"content"`
+				}{
+					Role:    msg.Role,
+					Content: msg.Content,
+				})
+			}
+
 			tz.mu.RLock()
-			llmResp, err := tz.llmClient.SendMessage(*messages, schema, tz.useLlmCache)
+			llmResp, err := tz.llmClient.SendMessage(messages, schema, 1, tz.useLlmCache)
 			tz.mu.RUnlock()
 			if err != nil {
 				log.Error("ошибка от llm request: ", sl.Err(err))
@@ -290,6 +305,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 			result := llmRequestResult{
 				groupReport: llmResp.Result,
+				ResultRaw:   string(llmResp.ResultRaw),
 			}
 
 			if llmResp.Cost != nil {
@@ -342,10 +358,93 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	inspectionTime := time.Since(timeStart)
 
+	SortGroupReports(groupReports)
+
+	rawGroupAnalizeResult, err := json.Marshal(groupReports)
+	if err != nil {
+		return
+	}
+
+	messagesFromPromtBuilder, step2schema, GenerateStep2PromtsErr := tz.promtBuilderClient.GenerateStep2Promts(string(rawGroupAnalizeResult), markdownResponse.Markdown)
+	if GenerateStep2PromtsErr != nil {
+		log.Error("GenerateStep2Promts error: " + GenerateStep2PromtsErr.Error())
+		return
+	}
+
+	messages := make([]struct {
+		Role    *string `json:"role"`
+		Content *string `json:"content"`
+	},
+		0)
+
+	for _, msg := range *messagesFromPromtBuilder {
+		messages = append(messages, struct {
+			Role    *string `json:"role"`
+			Content *string `json:"content"`
+		}{
+			Role:    msg.Role,
+			Content: msg.Content,
+		})
+	}
+
+	step2LlmResponse, step2LlmError := tz.llmClient.SendMessage(messages, step2schema, 2, tz.useLlmCache)
+	if step2LlmError != nil {
+		log.Error("step2Llm error: " + step2LlmError.Error())
+		return
+	}
+
+	//llmReportRaw := string(step2LlmResponse.ResultRaw)
+	//log.Info(llmReportRaw)
+
+	//var llmReport LlmReport
+
+	//step2LlmResponseMarshaled, step2LlmResponseMarshalErr := step2LlmResponse.ResultRaw.MarshalJSON()
+	//if step2LlmResponseMarshalErr != nil {
+	//	log.Error("step2LlmResponseMarshal error: " + step2LlmResponseMarshalErr.Error())
+	//}
+	//
+	//UnmarshalLlmReportRawErr := json.Unmarshal(step2LlmResponseMarshaled, &llmReport)
+	//if UnmarshalLlmReportRawErr != nil {
+	//	log.Error("UnmarshalLlmReportRaw error: " + UnmarshalLlmReportRawErr.Error())
+	//	return
+	//}
+
 	for i := range groupReports {
 		for j := range *groupReports[i].Errors {
 			(*groupReports[i].Errors)[j].ID = uuid.New()
 		}
+	}
+
+	for i := range *step2LlmResponse.ResultStep2.Sections {
+		for j := range *(*step2LlmResponse.ResultStep2.Sections)[i].FinalInstanceIds {
+			for _, step1groupReport := range groupReports {
+				for _, step1error := range *step1groupReport.Errors {
+					for _, step1instance := range *step1error.Instances {
+						if *step1instance.LlmId == (*(*step2LlmResponse.ResultStep2.Sections)[i].FinalInstanceIds)[j] {
+							if (*step2LlmResponse.ResultStep2.Sections)[i].Instances == nil {
+								insts := make([]tz_llm_client.LlmStep2Instance, 0)
+								(*step2LlmResponse.ResultStep2.Sections)[i].Instances = &insts
+							}
+
+							errorID := step1error.ID.String()
+							*(*step2LlmResponse.ResultStep2.Sections)[i].Instances = append(*(*step2LlmResponse.ResultStep2.Sections)[i].Instances, tz_llm_client.LlmStep2Instance{
+								WhatIsIncorrect: step1instance.WhatIsIncorrect,
+								Fix:             step1instance.Fix,
+								ErrorID:         &errorID,
+								Risks:           step1instance.Risks,
+								Priority:        step1instance.Priority,
+							})
+						}
+					}
+				}
+			}
+		}
+	}
+
+	llmFinalReport, llmFinalReportMarshalErr := json.Marshal(*step2LlmResponse.ResultStep2)
+	if llmFinalReportMarshalErr != nil {
+		log.Error("llmFinalReport Marshal error: " + llmFinalReportMarshalErr.Error())
+		return
 	}
 
 	errorsInTz := ErrorsFormation(groupReports, errorsDescrptions)
@@ -514,6 +613,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		PromtsFromPromtBuilder:          promtsFromPromtBuilderJSON,
 		GroupReportsFromLlm:             groupReportsFromLlmJSON,
 		HtmlParagraphsWithWrappesErrors: htmlParagrapsWithWrappedErrors,
+		LlmReport:                       string(llmFinalReport),
 	}
 	err = tz.repo.UpdateVersion(ctx, updateReq)
 	if err != nil {
@@ -523,6 +623,41 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	log.Info("async processing completed successfully")
 }
+
+func SortGroupReports(reports []tz_llm_client.GroupReport) {
+	sort.Slice(reports, func(i, j int) bool {
+		gi, gj := reports[i].GroupID, reports[j].GroupID
+		switch {
+		case gi == nil && gj == nil:
+			return false // равны — порядок не меняем
+		case gi == nil:
+			return false // nil после не-nil
+		case gj == nil:
+			return true // не-nil перед nil
+		default:
+			return *gi < *gj // обычное сравнение
+		}
+	})
+}
+
+//type LlmReport struct {
+//	Sections *[]Section `json:"sections"`
+//	Notes    *string    `json:"notes"`
+//}
+//
+//type Instance struct {
+//	WhatSsIncorrect *string `json:"what_is_incorrect"`
+//	Fix             *string `json:"how_to_fix"`
+//	ErrorID         *string `json:"error_id"`
+//}
+//
+//type Section struct {
+//	ExistsInDoc        *bool       `json:"exists_in_doc"`
+//	InitialInstanceIds *[]string   `json:"initial_instance_ids"`
+//	FinalInstanceIds   *[]string   `json:"final_instance_ids"`
+//	PartName           *string     `json:"part"`
+//	Instances          *[]Instance `json:"instances"`
+//}
 
 func (tz *Tz) updateVersionWithError(ctx context.Context, versionID uuid.UUID, status string) {
 	updateReq := &modelrepo.UpdateVersionRequest{

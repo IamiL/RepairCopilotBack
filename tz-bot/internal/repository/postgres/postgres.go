@@ -161,11 +161,11 @@ func (s *Storage) CreateVersion(ctx context.Context, req *modelrepo.CreateVersio
 func (s *Storage) UpdateVersion(ctx context.Context, req *modelrepo.UpdateVersionRequest) error {
 	query := `
 		UPDATE versions 
-		SET updated_at = $2, out_html = $3, css = $4, checked_file_id = $5, all_rubs = $6, all_tokens = $7, inspection_time = $8, number_of_errors = $9, status = $10, html_from_word_parser = $11, html_with_placeholder = $12, html_paragraphs = $13, markdown_from_markdown_service = $14, html_with_ids_from_markdown_service = $15, mappings_from_markdown_service = $16, promts_from_promt_builder = $17, group_reports_from_llm = $18, html_paragraphs_with_wrapped_errors = $19
+		SET updated_at = $2, out_html = $3, css = $4, checked_file_id = $5, all_rubs = $6, all_tokens = $7, inspection_time = $8, number_of_errors = $9, status = $10, html_from_word_parser = $11, html_with_placeholder = $12, html_paragraphs = $13, markdown_from_markdown_service = $14, html_with_ids_from_markdown_service = $15, mappings_from_markdown_service = $16, promts_from_promt_builder = $17, group_reports_from_llm = $18, html_paragraphs_with_wrapped_errors = $19, report = $20 
 		WHERE id = $1`
 
 	result, err := s.db.Exec(ctx, query, req.ID, req.UpdatedAt, req.OutHTML, req.CSS, req.CheckedFileID,
-		&req.AllRubs, &req.AllTokens, int64(req.InspectionTime), req.NumberOfErrors, req.Status, req.HtmlFromWordParser, req.HtmlWithPlacrholder, req.HtmlParagraphs, req.MarkdownFromMarkdownService, req.HtmlWithIdsFromMarkdownService, req.MappingsFromMarkdownService, req.PromtsFromPromtBuilder, req.GroupReportsFromLlm, req.HtmlParagraphsWithWrappesErrors)
+		&req.AllRubs, &req.AllTokens, int64(req.InspectionTime), req.NumberOfErrors, req.Status, req.HtmlFromWordParser, req.HtmlWithPlacrholder, req.HtmlParagraphs, req.MarkdownFromMarkdownService, req.HtmlWithIdsFromMarkdownService, req.MappingsFromMarkdownService, req.PromtsFromPromtBuilder, req.GroupReportsFromLlm, req.HtmlParagraphsWithWrappesErrors, req.LlmReport)
 	if err != nil {
 		return fmt.Errorf("failed to update version: %w", err)
 	}
@@ -178,13 +178,13 @@ func (s *Storage) UpdateVersion(ctx context.Context, req *modelrepo.UpdateVersio
 }
 
 func (s *Storage) GetVersion(ctx context.Context, id uuid.UUID) (*modelrepo.Version, error) {
-	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status FROM versions WHERE id = $1`
+	query := `SELECT id, technical_specification_id, version_number, created_at, updated_at, original_file_id, out_html, css, checked_file_id, all_rubs, all_tokens, inspection_time, original_file_size, number_of_errors, status, report FROM versions WHERE id = $1`
 
 	var version modelrepo.Version
 	err := s.db.QueryRow(ctx, query, id).
 		Scan(&version.ID, &version.TechnicalSpecificationID, &version.VersionNumber,
 			&version.CreatedAt, &version.UpdatedAt, &version.OriginalFileID,
-			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime, &version.OriginalFileSize, &version.NumberOfErrors, &version.Status)
+			&version.OutHTML, &version.CSS, &version.CheckedFileID, &version.AllRubs, &version.AllTokens, &version.InspectionTime, &version.OriginalFileSize, &version.NumberOfErrors, &version.Status, &version.LlmReport)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, repo.ErrVersionNotFound

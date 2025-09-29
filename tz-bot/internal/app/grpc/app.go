@@ -350,7 +350,7 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		return nil, status.Error(codes.InvalidArgument, "invalid version ID format")
 	}
 
-	statusTz, createdAt, allRubs, allTokens, inspectionDuration, htmlText, css, docId, errorsTz, invalidInstances, fileId, originalFileSize, numberOfErrors, err := s.tzService.GetVersion(ctx, versionID)
+	statusTz, createdAt, allRubs, allTokens, inspectionDuration, htmlText, css, docId, errorsTz, invalidInstances, fileId, originalFileSize, numberOfErrors, llmReport, err := s.tzService.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version", slog.String("error", err.Error()))
 		return nil, status.Error(codes.Internal, "failed to get version")
@@ -432,6 +432,7 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		NumberOfErrors:                   &numberOfErrrorsInt32,
 		Status:                           statusTz,
 		ErrorsMap:                        errorsMap,
+		LlmReport:                        llmReport,
 	}
 
 	return resp, nil

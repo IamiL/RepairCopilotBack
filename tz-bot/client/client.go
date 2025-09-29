@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -245,7 +246,12 @@ func (c *Client) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*GetVer
 	return versions, nil
 }
 
-func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*tzv1.GetVersionResponse, error) {
+type Version struct {
+	*tzv1.GetVersionResponse
+	Report json.RawMessage `json:"report"`
+}
+
+func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*Version, error) {
 	const op = "tz_client.GetVersion"
 
 	resp, err := c.api.GetVersion(ctx, &tzv1.GetVersionRequest{
@@ -254,7 +260,26 @@ func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*tzv1.Get
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-	return resp, nil
+
+	var inner json.RawMessage
+	if err := json.Unmarshal([]byte(resp.LlmReport), &inner); err != nil {
+		panic(fmt.Errorf("не удалось распаковать строку: %w", err))
+	}
+
+	// 2) Кладём как raw JSON, без повторного экранирования
+	type Payload struct {
+		Report json.RawMessage `json:"report"`
+		// добавь остальные поля запроса при необходимости
+	}
+
+	//jsonReport, err := json.Marshal(resp.LlmReport)
+
+	versionResp := &Version{
+		Report:             inner,
+		GetVersionResponse: resp,
+	}
+
+	return versionResp, nil
 }
 
 type VersionAdminDashboard struct {

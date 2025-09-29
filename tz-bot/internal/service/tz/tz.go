@@ -46,6 +46,7 @@ type OutError struct {
 // llmRequestResult represents the result of a single LLM request
 type llmRequestResult struct {
 	groupReport *tz_llm_client.GroupReport
+	ResultRaw   string
 	cost        *float64
 	tokens      *int64
 	err         error
@@ -399,7 +400,7 @@ func (tz *Tz) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timezone 
 	return points, nil
 }
 
-func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time.Time, float64, int64, time.Duration, string, string, string, *[]Error, *[]OutInvalidError, string, int64, int, error) {
+func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time.Time, float64, int64, time.Duration, string, string, string, *[]Error, *[]OutInvalidError, string, int64, int, string, error) {
 	const op = "Tz.GetVersion"
 
 	log := tz.log.With(
@@ -412,17 +413,17 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time
 	version, err := tz.repo.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version: ", sl.Err(err))
-		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, err
+		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", err
 	}
 
 	if version.Status == "in_progress" {
-		return "in_progress", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, err
+		return "in_progress", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", err
 	}
 
 	errorsInTz, err := tz.repo.GetErrorsByVersionID(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version errors: ", sl.Err(err))
-		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, err
+		return "", time.Time{}, 0, 0, 0, "", "", "", nil, nil, "", 0, 0, "", err
 	}
 
 	invalidInstances := make([]OutInvalidError, 0)
@@ -491,7 +492,7 @@ func (tz *Tz) GetVersion(ctx context.Context, versionID uuid.UUID) (string, time
 	//	slog.Int("invalid_errors_count", len(outInvalidErrors)),
 	//	slog.Int("missing_errors_count", len(outMissingErrors)))
 
-	return "completed", version.CreatedAt, *version.AllRubs, *version.AllTokens, *version.InspectionTime, version.OutHTML, version.CSS, version.CheckedFileID, errorsInTz, &invalidInstances, "", *version.OriginalFileSize, int(*version.NumberOfErrors), nil
+	return "completed", version.CreatedAt, *version.AllRubs, *version.AllTokens, *version.InspectionTime, version.OutHTML, version.CSS, version.CheckedFileID, errorsInTz, &invalidInstances, "", *version.OriginalFileSize, int(*version.NumberOfErrors), version.LlmReport, nil
 }
 
 func SortOutInvalidErrorsByOrderNumber(errors *[]OutInvalidError) {

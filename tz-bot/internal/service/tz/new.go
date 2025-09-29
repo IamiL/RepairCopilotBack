@@ -37,7 +37,7 @@ func New(
 		userServiceClient:        userServiceClient,
 		s3:                       s3,
 		repo:                     repo,
-		ggID:                     1,
+		ggID:                     6,
 		useLlmCache:              true,
 	}
 }

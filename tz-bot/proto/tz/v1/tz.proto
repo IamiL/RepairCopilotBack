@@ -129,6 +129,7 @@ message GetVersionResponse {
   map<string, Error> errorsMap = 13;
   string name = 14;
   string status = 15;
+  string llm_report = 16;
 }
 
 message GetAllVersionsAdminDashboardRequest {

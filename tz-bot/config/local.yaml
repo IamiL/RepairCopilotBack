@@ -11,7 +11,8 @@ postgres:
 grpc_server:
   port: localhost:8081
 promt_builder:
-  url: https://promtbuilder.timuroid.ru/v1/prompt-builder/build
+  url1: https://pgadmin.timuroid.ru/v1/prompt-builder/step1/build
+  url2: https://pgadmin.timuroid.ru/v1/prompt-builder/step2/build
 llm_client:
   url: https://llmrequester.timuroid.ru/v1/structured/run
   model: "qwen3-235b-a22b-fp8/latest"
