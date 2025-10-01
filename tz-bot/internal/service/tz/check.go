@@ -240,7 +240,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	// Сохраняем markdown документ в S3
 	markdownFileName := tzName + "_" + GetCurrentDateTimeString()
-	err = tz.s3.SaveDocument(ctx, markdownFileName, []byte(markdownResponse.Message), "mds", ".md")
+	err = tz.s3.SaveDocument(ctx, markdownFileName, []byte(markdownResponse.Markdown), "mds", ".md")
 	if err != nil {
 		log.Error("ошибка сохранения markdown файла в S3: ", sl.Err(err))
 	} else {
