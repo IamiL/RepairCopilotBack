@@ -238,6 +238,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	log.Info("конвертация HTML в markdown успешна")
 
+	markdownResponse.Markdown = RemoveBase64Images(markdownResponse.Markdown)
+
 	// Сохраняем markdown документ в S3
 	markdownFileName := tzName + "_" + GetCurrentDateTimeString()
 	err = tz.s3.SaveDocument(ctx, markdownFileName, []byte(markdownResponse.Markdown), "mds", ".md")
@@ -842,4 +844,24 @@ func GetCurrentDateTimeString() string {
 		now.Minute(),
 		now.Second(),
 		now.Nanosecond()/1000000)
+}
+
+// RemoveBase64Images удаляет строки с base64 изображениями из markdown
+// Строки имеют формат: [номер] ![](data:image/...;base64,...)
+func RemoveBase64Images(markdown string) string {
+	lines := strings.Split(markdown, "\n")
+	filteredLines := make([]string, 0, len(lines))
+
+	// Регулярное выражение для поиска строк с base64 изображениями
+	// Ищем паттерн: [число] ![](data:image/
+	re := regexp.MustCompile(`^\[\d+\]\s*!\[\]\(data:image/`)
+
+	for _, line := range lines {
+		// Если строка не содержит base64 изображение, добавляем её
+		if !re.MatchString(line) {
+			filteredLines = append(filteredLines, line)
+		}
+	}
+
+	return strings.Join(filteredLines, "\n")
 }
