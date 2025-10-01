@@ -382,12 +382,15 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	rawGroupAnalizeResult, err := json.Marshal(groupReports)
 	if err != nil {
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка rawGroupAnalizeResult: "+err.Error(), log)
 		return
 	}
 
 	messagesFromPromtBuilder, step2schema, GenerateStep2PromtsErr := tz.promtBuilderClient.GenerateStep2Promts(string(rawGroupAnalizeResult), markdownResponse.Markdown)
 	if GenerateStep2PromtsErr != nil {
 		log.Error("GenerateStep2Promts error: " + GenerateStep2PromtsErr.Error())
+
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка messagesFromPromtBuilder: "+GenerateStep2PromtsErr.Error(), log)
 		return
 	}
 
@@ -410,6 +413,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	step2LlmResponse, step2LlmError := tz.llmClient.SendMessage(messages, step2schema, 2, tz.useLlmCache)
 	if step2LlmError != nil {
 		log.Error("step2Llm error: " + step2LlmError.Error())
+
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка step2Llm send message: "+step2LlmError.Error(), log)
 		return
 	}
 
@@ -465,6 +470,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	llmFinalReport, llmFinalReportMarshalErr := json.Marshal(*step2LlmResponse.ResultStep2)
 	if llmFinalReportMarshalErr != nil {
 		log.Error("llmFinalReport Marshal error: " + llmFinalReportMarshalErr.Error())
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка llmFinalReportMarshalErr: "+llmFinalReportMarshalErr.Error(), log)
 		return
 	}
 
@@ -624,7 +630,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		CheckedFileID:                   reportFilename,
 		AllRubs:                         allRubs,
 		AllTokens:                       allTokens,
-		InspectionTime:                  inspectionTime / 1000000,
+		InspectionTime:                  inspectionTime,
 		NumberOfErrors:                  len(*outMissingErrors) + len(*outInvalidErrors),
 		Status:                          "completed",
 		HtmlFromWordParser:              html,
