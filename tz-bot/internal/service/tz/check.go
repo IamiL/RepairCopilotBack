@@ -429,6 +429,14 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		return
 	}
 
+	if step2LlmResponse.Cost != nil && step2LlmResponse.Cost.TotalRub != nil {
+		allRubs += *step2LlmResponse.Cost.TotalRub
+	}
+
+	if step2LlmResponse.Usage != nil && step2LlmResponse.Usage.TotalTokens != nil {
+		allTokens += int64(*step2LlmResponse.Usage.TotalTokens)
+	}
+
 	//llmReportRaw := string(step2LlmResponse.ResultRaw)
 	//log.Info(llmReportRaw)
 
