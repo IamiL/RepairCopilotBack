@@ -237,6 +237,15 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	}
 
 	log.Info("конвертация HTML в markdown успешна")
+
+	// Сохраняем markdown документ в S3
+	markdownFileName := tzName + "_" + GetCurrentDateTimeString()
+	err = tz.s3.SaveDocument(ctx, markdownFileName, []byte(markdownResponse.Message), "mds", ".md")
+	if err != nil {
+		log.Error("ошибка сохранения markdown файла в S3: ", sl.Err(err))
+	} else {
+		log.Info("markdown файл успешно сохранён в S3", slog.String("file_id", markdownFileName))
+	}
 	log.Info(fmt.Sprintf("получены дополнительные данные: message=%s, mappings_count=%d", markdownResponse.Message, len(markdownResponse.Mappings)))
 
 	tz.mu.RLock()
