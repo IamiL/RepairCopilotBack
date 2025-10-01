@@ -854,22 +854,28 @@ func GetCurrentDateTimeString() string {
 		now.Nanosecond()/1000000)
 }
 
-// RemoveBase64Images удаляет строки с base64 изображениями из markdown
+// RemoveBase64Images заменяет base64 изображения на заглушку
 // Строки имеют формат: [номер] ![](data:image/...;base64,...)
+// Результат: [номер] ![](data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMKKKKACiiigAooooA//Z)
 func RemoveBase64Images(markdown string) string {
 	lines := strings.Split(markdown, "\n")
-	filteredLines := make([]string, 0, len(lines))
+	resultLines := make([]string, 0, len(lines))
 
 	// Регулярное выражение для поиска строк с base64 изображениями
-	// Ищем паттерн: [число] ![](data:image/
-	re := regexp.MustCompile(`^\[\d+\]\s*!\[\]\(data:image/`)
+	// Ищем паттерн: [число] ![](data:image/...
+	// Захватываем номер строки в первой группе
+	re := regexp.MustCompile(`^(\[\d+\])\s*!\[\]\(data:image/[^)]+\)`)
 
 	for _, line := range lines {
-		// Если строка не содержит base64 изображение, добавляем её
-		if !re.MatchString(line) {
-			filteredLines = append(filteredLines, line)
+		// Если строка содержит base64 изображение, заменяем его на заглушку
+		if match := re.FindStringSubmatch(line); match != nil {
+			// match[1] содержит номер строки в квадратных скобках
+			resultLines = append(resultLines, match[1]+" ![](data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMKKKKACiiigAooooA//Z)")
+		} else {
+			// Если строка не содержит base64 изображение, оставляем её как есть
+			resultLines = append(resultLines, line)
 		}
 	}
 
-	return strings.Join(filteredLines, "\n")
+	return strings.Join(resultLines, "\n")
 }

@@ -277,13 +277,16 @@ func (c *Client) SendMessage(Messages []struct {
 			// Проверяем наличие ответа в кэше
 			cachedResponse, err := c.repository.GetCachedResponse(ctx, messagesHash)
 			if err == nil && cachedResponse != nil {
-				fmt.Println("__________________________")
-				fmt.Println(string(cachedResponse.ResponseData))
-				fmt.Println("__________________________")
+				//fmt.Println("__________________________")
+				//fmt.Println(string(cachedResponse.ResponseData))
+				//fmt.Println("__________________________")
 				// Десериализуем кэшированный ответ
 				var response SuccessResponse
 				if err := json.Unmarshal(cachedResponse.ResponseData, &response); err == nil {
 					fmt.Printf("Найден кэшированный ответ для запроса\n")
+					if response.Duration != nil {
+						time.Sleep(time.Duration(*response.Duration) * time.Millisecond)
+					}
 					return &response, nil
 				} else {
 					fmt.Printf("Ошибка десериализации кэшированного ответа: %v\n", err)
