@@ -27,7 +27,7 @@ func NewIMissingErrorsSet(startId uint32, report *[]tz_llm_client.GroupReport) (
 								//	rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Rationale
 								//}
 								if (*(*((*report)[i]).Errors)[j].Instances)[k].Risks != nil {
-									rationale = *(*(*((*report)[i]).Errors)[j].Instances)[k].Risks
+									rationale = "Риски: " + *(*(*((*report)[i]).Errors)[j].Instances)[k].Risks
 								}
 
 								outInvalidErrors = append(outInvalidErrors, OutMissingError{
