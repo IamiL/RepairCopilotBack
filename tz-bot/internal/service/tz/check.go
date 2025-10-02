@@ -855,24 +855,28 @@ func GetCurrentDateTimeString() string {
 }
 
 // RemoveBase64Images заменяет base64 изображения на заглушку
-// Строки имеют формат: [номер] ![](data:image/...;base64,...)
+// Строки имеют формат: [номер] ...любые символы... data:image/...;base64,...
 // Результат: [номер] ![](data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMKKKKACiiigAooooA//Z)
 func RemoveBase64Images(markdown string) string {
 	lines := strings.Split(markdown, "\n")
 	resultLines := make([]string, 0, len(lines))
 
-	// Регулярное выражение для поиска строк с base64 изображениями
-	// Ищем паттерн: [число] ![](data:image/...
-	// Захватываем номер строки в первой группе
-	re := regexp.MustCompile(`^(\[\d+\])\s*!\[\]\(data:image/[^)]+\)`)
+	// Регулярное выражение для извлечения номера строки
+	lineNumRe := regexp.MustCompile(`^\[(\d+)\]`)
 
 	for _, line := range lines {
-		// Если строка содержит base64 изображение, заменяем его на заглушку
-		if match := re.FindStringSubmatch(line); match != nil {
-			// match[1] содержит номер строки в квадратных скобках
-			resultLines = append(resultLines, match[1]+" ![](data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMKKKKACiiigAooooA//Z)")
+		// Если строка содержит data:image, заменяем на заглушку
+		if strings.Contains(line, "data:image") {
+			// Извлекаем номер строки
+			if match := lineNumRe.FindStringSubmatch(line); match != nil {
+				// match[1] содержит номер строки (без скобок)
+				resultLines = append(resultLines, "["+match[1]+"] ![](data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMKKKKACiiigAooooA//Z)")
+			} else {
+				// Если номер строки не найден, оставляем строку как есть
+				resultLines = append(resultLines, line)
+			}
 		} else {
-			// Если строка не содержит base64 изображение, оставляем её как есть
+			// Если строка не содержит data:image, оставляем её как есть
 			resultLines = append(resultLines, line)
 		}
 	}

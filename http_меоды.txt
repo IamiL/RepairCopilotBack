@@ -1,0 +1,545 @@
+# API Gateway Service - Документация HTTP Endpoints
+
+## Аутентификация
+Все эндпоинты (кроме `/api/users/login`, `/api/register`, `/api/analytics/billing/limits`, и `/api/analytics/billing/daily`) требуют аутентификацию через cookie `auth_token`.
+
+---
+
+## 1. POST /api/tz
+**Описание**: Загрузка и анализ документа технического задания
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**:
+- **Body**: multipart/form-data
+  - `file` (file, обязательный): Файл документа для анализа (макс. 10MB)
+
+**Выходные параметры**:
+```json
+{
+  "html_text": "string",           // HTML форматированный документ
+  "css": "string",                  // CSS стили для документа
+  "doc_id": "string",               // ID документа
+  "errors": [...],                  // Массив объектов ошибок
+  "invalid_instances": [...],       // Массив невалидных экземпляров
+  "created_at": "timestamp"         // Временная метка создания
+}
+```
+
+---
+
+## 2. POST /api/users/login
+**Описание**: Аутентификация пользователя и создание сессии
+
+**Аутентификация**: Не требуется
+
+**Входные параметры**:
+- **Body** (application/json):
+```json
+{
+  "login": "string",      // Логин пользователя (обязательный)
+  "password": "string"    // Пароль пользователя (обязательный)
+}
+```
+
+**Выходные параметры**:
+```json
+{
+  "level": 0,                      // Уровень пользователя: 0=обычный, 1=admin
+  "versions": [                    // Массив версий документов пользователя
+    {
+      "version_id": "string",
+      "technical_specification_name": "string",
+      "version_number": 1,
+      "created_at": "timestamp",
+      "original_file_link": "string",
+      "report_file_link": "string"
+    }
+  ],
+  "userinfo": {                    // Информация о пользователе
+    "user_id": "string",
+    "login": "string",
+    "first_name": "string",
+    "last_name": "string",
+    "email": "string",
+    "is_admin": false,
+    "is_confirmed": false,
+    "registered_at": "timestamp",
+    "last_visit_at": "timestamp"
+  }
+}
+```
+
+**Побочные эффекты**: Устанавливает cookie `auth_token` (срок действия 24 часа)
+
+---
+
+## 3. POST /api/register
+**Описание**: Регистрация нового пользователя
+
+**Аутентификация**: Не требуется
+
+**Входные параметры**:
+- **Body** (application/json):
+```json
+{
+  "email": "string",       // Email пользователя (обязательный)
+  "firstName": "string",   // Имя (обязательное)
+  "lastName": "string",    // Фамилия (обязательная)
+  "login": "string",       // Логин (обязательный)
+  "password": "string"     // Пароль (обязательный)
+}
+```
+
+**Выходные параметры**:
+```json
+{
+  "message": "string",     // Сообщение об успехе
+  "login": "string",       // Зарегистрированный логин
+  "user_id": "string"      // Сгенерированный ID пользователя (UUID)
+}
+```
+
+**Побочные эффекты**: Устанавливает cookie `auth_token`, создаёт учётную запись
+
+---
+
+## 4. POST /api/confirm
+**Описание**: Подтверждение email с кодом верификации
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**:
+- **Body** (application/json):
+```json
+{
+  "code": "string"         // Код подтверждения email (обязательный)
+}
+```
+
+**Выходные параметры**: 200 OK (без тела)
+
+---
+
+## 5. GET /api/logout
+**Описание**: Выход пользователя и очистка сессии
+
+**Аутентификация**: Не требуется
+
+**Входные параметры**: Нет
+
+**Выходные параметры**: 200 OK (без тела)
+
+**Побочные эффекты**: Очищает cookie `auth_token`
+
+---
+
+## 6. GET /api/me
+**Описание**: Получение информации о текущем аутентифицированном пользователе
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**: Нет
+
+**Выходные параметры**:
+```json
+{
+  "level": 0,                      // Уровень пользователя: 0=обычный, 1=admin
+  "versions": [...],               // Массив версий документов пользователя
+  "user_id": "string",
+  "login": "string",
+  "first_name": "string",
+  "last_name": "string",
+  "email": "string",
+  "is_admin1": false,
+  "is_confirmed": false,
+  "registered_at": "timestamp",
+  "last_visit_at": "timestamp",
+  "inspections_count": 0,
+  "error_feedback_count": 0,
+  "inspections_per_day": 0,
+  "inspections_for_today": 0
+}
+```
+
+---
+
+## 7. GET /api/tz/{version_id}
+**Описание**: Получение конкретной версии документа по ID
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**:
+- **Path**:
+  - `version_id` (UUID string, обязательный): ID версии
+
+**Выходные параметры**:
+```json
+{
+  "html_text": "string",           // HTML форматированный документ
+  "css": "string",                  // CSS стили
+  "errors": [...],                  // Массив ошибок
+  "invalid_instances": [...],       // Массив невалидных экземпляров
+  "created_at": "timestamp"
+}
+```
+
+---
+
+## 8. GET /api/users
+**Описание**: Получение всех пользователей (admin эндпоинт)
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**: Нет
+
+**Выходные параметры**:
+```json
+[
+  {
+    "user_id": "string",
+    "login": "string",
+    "first_name": "string",
+    "last_name": "string",
+    "email": "string",
+    "is_admin": false,
+    "is_confirmed": false,
+    "registered_at": "timestamp",
+    "last_visit_at": "timestamp",
+    "inspections_count": 0,
+    "error_feedback_count": 0,
+    "inspections_per_day": 0,
+    "inspections_for_today": 0
+  }
+]
+```
+
+---
+
+## 9. GET /api/users/{user_id}/info
+**Описание**: Получение информации о пользователе по ID (не реализовано)
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**:
+- **Path**:
+  - `user_id` (UUID string, обязательный): ID пользователя
+
+**Выходные параметры**: Не реализовано (возвращает 200 OK)
+
+---
+
+## 10. GET /api/users/{user_id}
+**Описание**: Получение детальной информации о пользователе включая версии и обратную связь
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**:
+- **Path**:
+  - `user_id` (UUID string, обязательный): ID пользователя
+
+**Выходные параметры**:
+```json
+{
+  "user_id": "string",
+  "login": "string",
+  "first_name": "string",
+  "last_name": "string",
+  "email": "string",
+  "is_admin": false,
+  "is_confirmed": false,
+  "registered_at": "timestamp",
+  "last_visit_at": "timestamp",
+  "inspections_count": 0,
+  "error_feedback_count": 0,
+  "inspections_per_day": 0,
+  "inspections_for_today": 0,
+  "versions": [...],               // Массив объектов версий
+  "feedbacks": [...]               // Массив объектов обратной связи
+}
+```
+
+---
+
+## 11. GET /api/action-logs
+**Описание**: Получение всех логов действий (admin эндпоинт)
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**: Нет
+
+**Выходные параметры**:
+```json
+[
+  {
+    "id": 1,
+    "action": "string",            // Описание действия
+    "user_id": "UUID",
+    "created_at": "timestamp",
+    "action_type": 1               // 1=логин, 2=отзыв, 3=документ, 4=регистрация, 5=админ
+  }
+]
+```
+
+---
+
+## 12. GET /api/admin/dashboard
+**Описание**: Получение комплексных данных админ-панели
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**: Нет
+
+**Выходные параметры**:
+```json
+{
+  "users": [...],                  // Массив всех пользователей
+  "versions": [...],               // Массив всех версий документов
+  "statistics": {
+    "total_versions": 0,
+    "total_tokens": 0,
+    "total_rubs": 0.0,
+    "average_inspection_time_nanoseconds": 0
+  },
+  "action_logs": [...],            // Массив всех логов действий
+  "feedbacks": [...]               // Массив всех отзывов
+}
+```
+
+---
+
+## 13. GET /api/admin/inspections
+**Описание**: Получение всех проверок (версий документов) с данными пользователей
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**: Нет
+
+**Выходные параметры**:
+```json
+[
+  {
+    "version_id": "string",
+    "technical_specification_name": "string",
+    "user_id": "string",
+    "version_number": 1,
+    "all_tokens": 0,
+    "all_rubs": 0.0,
+    "number_of_errors": 0,
+    "inspection_time": 0,
+    "original_file_size": 0,
+    "number_of_pages": 0,
+    "created_at": "timestamp",
+    "original_file_link": "string",
+    "report_file_link": "string",
+    "user": {
+      "first_name": "string",
+      "last_name": "string"
+    }
+  }
+]
+```
+
+---
+
+## 14. POST /api/feedback
+**Описание**: Отправка обратной связи для экземпляра ошибки
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**:
+- **Body** (application/json):
+```json
+{
+  "instance_id": "string",         // UUID экземпляра ошибки (обязательный)
+  "instance_type": "string",       // "invalid" или "missing" (обязательный)
+  "feedback_mark": true,           // Булева оценка (опционально)
+  "feedback_comment": "string"     // Текстовый комментарий (опционально)
+}
+```
+Примечание: Должен быть предоставлен хотя бы один из `feedback_mark` или `feedback_comment`.
+
+**Выходные параметры**:
+```json
+{
+  "success": true,
+  "message": "Feedback created successfully"
+}
+```
+
+---
+
+## 15. POST /api/feedback/verification
+**Описание**: Отправка верификационной обратной связи для экземпляра ошибки
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**:
+- **Body** (application/json):
+```json
+{
+  "instance_id": "string",         // UUID экземпляра ошибки (обязательный)
+  "instance_type": "string",       // "invalid" или "missing" (обязательный)
+  "feedback_mark": true,           // Булева оценка (опционально)
+  "feedback_comment": "string"     // Текстовый комментарий (опционально)
+}
+```
+Примечание: Должен быть предоставлен хотя бы один из `feedback_mark` или `feedback_comment`.
+
+**Выходные параметры**:
+```json
+{
+  "success": true,
+  "message": "Feedback created successfully"
+}
+```
+
+---
+
+## 16. GET /api/analytics/billing/limits
+**Описание**: Получение границ диапазона дат для биллинг-аналитики
+
+**Аутентификация**: Не требуется
+
+**Входные параметры**: Нет
+
+**Выходные параметры**:
+```json
+{
+  "min_date": "YYYY-MM-DD",        // Самая ранняя доступная дата
+  "max_date": "YYYY-MM-DD"         // Самая поздняя доступная дата
+}
+```
+
+---
+
+## 17. GET /api/analytics/billing/daily
+**Описание**: Получение ежедневной биллинг-аналитики
+
+**Аутентификация**: Не требуется
+
+**Входные параметры**:
+- **Query параметры**:
+  - `from` (string, обязательный): Дата начала (формат YYYY-MM-DD)
+  - `to` (string, обязательный): Дата окончания (формат YYYY-MM-DD)
+  - `tz` (string, опционально): Временная зона
+  - `groupBy` (string, опционально): Метод группировки (по умолчанию: "day", поддерживается только "day")
+  - `metrics` (string, опционально): Метрики через запятую (consumption, toPay, tz)
+
+**Выходные параметры**:
+```json
+{
+  "series": [
+    {
+      "date": "YYYY-MM-DD",
+      "consumption": 1000,         // Потребление токенов (опционально)
+      "toPay": 50.5,               // Сумма к оплате в рублях (опционально)
+      "tz": 5                      // Количество документов (опционально)
+    }
+  ]
+}
+```
+
+---
+
+## 18. GET /api/feedbacks
+**Описание**: Получение всех отзывов с данными пользователей
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**: Нет
+
+**Выходные параметры**:
+```json
+[
+  {
+    "feedback_id": "string",
+    "instance_id": "string",
+    "instance_type": "string",
+    "feedback_mark": true,
+    "feedback_comment": "string",
+    "feedback_user": "string",
+    "created_at": "timestamp",
+    "user": {
+      "first_name": "string",
+      "last_name": "string"
+    }
+  }
+]
+```
+
+---
+
+## 19. POST /api/admin/users/update-inspections-per-day
+**Описание**: Обновление дневного лимита проверок для пользователя (admin эндпоинт)
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**:
+- **Body** (application/json):
+```json
+{
+  "user_id": "string",             // UUID пользователя (обязательный)
+  "inspections_per_day": 10        // Дневной лимит (uint32, обязательный, 0 = без лимита)
+}
+```
+
+**Выходные параметры**:
+```json
+{
+  "success": true,
+  "message": "string",
+  "updated_count": 1               // Количество обновлённых записей
+}
+```
+
+---
+
+## 20. GET /api/users/inspection-limit
+**Описание**: Проверка статуса лимита проверок текущего пользователя
+
+**Аутентификация**: Требуется (cookie: auth_token)
+
+**Входные параметры**: Нет
+
+**Выходные параметры** (когда лимит не исчерпан):
+```json
+{
+  "status": "success",
+  "inspections_left": 5            // Количество оставшихся проверок на сегодня
+}
+```
+
+**Выходные параметры** (когда лимит исчерпан):
+```json
+{
+  "status": "limit_exhausted",
+  "time_until_reset": "HH:MM:SS"   // Время до полуночи (сброс лимита)
+}
+```
+
+---
+
+## Общие ответы об ошибках
+
+Все эндпоинты могут возвращать следующие коды статуса ошибок:
+
+- **400 Bad Request**: Невалидные входные параметры или некорректный JSON
+- **401 Unauthorized**: Отсутствующий или невалидный токен аутентификации
+- **403 Forbidden**: Недостаточно прав (admin эндпоинты)
+- **500 Internal Server Error**: Ошибка обработки на стороне сервера
+
+Ответы об ошибках обычно имеют формат:
+```
+HTTP/1.1 <status_code> <status_message>
+<error_description>
+```
+
+---
+
+## Примечания
+
+1. Все временные метки в формате RFC3339
+2. Все UUID в стандартном формате UUID (например, "123e4567-e89b-12d3-a456-426614174000")
+3. Загрузка файлов (POST /api/tz) поддерживает multipart/form-data с макс. размером 10MB
+4. Admin эндпоинты требуют флаг `is_admin1` установленный в true
