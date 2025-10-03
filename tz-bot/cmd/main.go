@@ -34,6 +34,7 @@ func main() {
 		&cfg.S3minio,
 		&cfg.Postgres,
 		&cfg.TelegramBot,
+		&cfg.TelegramClient,
 	)
 
 	// Запускаем Telegram-бот если он доступен

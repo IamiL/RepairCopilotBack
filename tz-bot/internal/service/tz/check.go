@@ -188,6 +188,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		newFile, err := tz.docToDocXConverterClient.Convert(file, filename)
 		if err != nil {
 			log.Error("ошибка при конвертации doc в docx: ", sl.Err(err))
+			tz.handleProcessingError(ctx, versionID, userID, "ошибка при конвертации doc в docx: "+err.Error(), log)
+			return
 		}
 
 		file = newFile
@@ -245,6 +247,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	err = tz.s3.SaveDocument(ctx, markdownFileName, []byte(markdownResponse.Markdown), "mds", ".md")
 	if err != nil {
 		log.Error("ошибка сохранения markdown файла в S3: ", sl.Err(err))
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения markdown файла в S3: "+err.Error(), log)
+		return
 	} else {
 		log.Info("markdown файл успешно сохранён в S3", slog.String("file_id", markdownFileName))
 	}
@@ -348,6 +352,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	// Собираем результаты
 	expectedResults := len(*promts)
 	receivedResults := 0
+	hasErrors := false
+	var firstError error
 
 	for result := range resultChan {
 		progressStepsMu.Lock()
@@ -369,6 +375,10 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 		if result.err != nil {
 			log.Error("ошибка в результате: ", sl.Err(result.err))
+			hasErrors = true
+			if firstError == nil {
+				firstError = result.err
+			}
 			continue
 		}
 
@@ -387,6 +397,12 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		if receivedResults >= expectedResults {
 			break
 		}
+	}
+
+	// Проверяем, были ли критические ошибки
+	if hasErrors && firstError != nil {
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка при обработке запросов к LLM: "+firstError.Error(), log)
+		return
 	}
 
 	SortGroupReports(groupReports)
@@ -533,16 +549,20 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		errorsInTz[i].MissingInstances = &missingInstances
 	}
 
-	err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
-	if err != nil {
-		tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения invalid instances: "+err.Error(), log)
-		return
+	if outInvalidErrors != nil {
+		err = tz.repo.SaveInvalidInstances(ctx, outInvalidErrors)
+		if err != nil {
+			tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения invalid instances: "+err.Error(), log)
+			return
+		}
 	}
 
-	err = tz.repo.SaveMissingInstances(ctx, outMissingErrors)
-	if err != nil {
-		tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения missing instances: "+err.Error(), log)
-		return
+	if outMissingErrors != nil {
+		err = tz.repo.SaveMissingInstances(ctx, outMissingErrors)
+		if err != nil {
+			tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения missing instances: "+err.Error(), log)
+			return
+		}
 	}
 
 	invalidInstances2 := make([]OutInvalidError, 0)
@@ -571,11 +591,15 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	reportCodument, err := tz.reportGeneratorClient.GenerateReport(ctx, step2LlmResponse.ResultStep2)
 	if err != nil {
 		log.Error("ошибка генерации docx-отчёта: ", sl.Err(err))
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка генерации docx-отчёта: "+err.Error(), log)
+		return
 	} else {
 		reportFilename = "отчёт_" + tzName + "_" + GetCurrentDateTimeString()
 		err = tz.s3.SaveDocument(ctx, reportFilename, reportCodument, "reports", ".docx")
 		if err != nil {
 			log.Error("ошибка сохранения docx отчёта в s3: ", sl.Err(err))
+			tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения docx отчёта в s3: "+err.Error(), log)
+			return
 		}
 	}
 
@@ -615,6 +639,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		err = tz.repo.CreateErrors(ctx, errorsReq)
 		if err != nil {
 			log.Error("ошибка сохранения errors: ", sl.Err(err))
+			tz.handleProcessingError(ctx, versionID, userID, "ошибка сохранения errors: "+err.Error(), log)
+			return
 		} else {
 			log.Info("errors saved", slog.Int("count", len(errorData)))
 		}
@@ -624,18 +650,24 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	mappingsFromMarkdownServiceJSON, mappingsFromMarkdownServiceJSONErr := json.Marshal(markdownResponse.Mappings)
 	if mappingsFromMarkdownServiceJSONErr != nil {
 		log.Error("ошибка сериализации mappingsFromMarkdownService: ", sl.Err(mappingsFromMarkdownServiceJSONErr))
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации mappingsFromMarkdownService: "+mappingsFromMarkdownServiceJSONErr.Error(), log)
+		return
 	}
 
 	promtsFromPromtBuilderJSON := make([]byte, 1)
 	promtsFromPromtBuilderJSON, promtsFromPromtBuilderJSONErr := json.Marshal(promts)
 	if promtsFromPromtBuilderJSONErr != nil {
 		log.Error("ошибка сериализации promtsFromPromtBuilder: ", sl.Err(promtsFromPromtBuilderJSONErr))
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации promtsFromPromtBuilder: "+promtsFromPromtBuilderJSONErr.Error(), log)
+		return
 	}
 
 	groupReportsFromLlmJSON := make([]byte, 1)
 	groupReportsFromLlmJSON, groupReportsFromLlmJSONErr := json.Marshal(groupReports)
 	if groupReportsFromLlmJSONErr != nil {
 		log.Error("ошибка сериализации groupReportsFromLlm: ", sl.Err(groupReportsFromLlmJSONErr))
+		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации groupReportsFromLlm: "+groupReportsFromLlmJSONErr.Error(), log)
+		return
 	}
 
 	inspectionTime := time.Since(now)
@@ -729,6 +761,7 @@ func (tz *Tz) updateVersionWithError(ctx context.Context, versionID uuid.UUID, s
 // handleProcessingError обрабатывает ошибку в асинхронной обработке:
 // 1. Обновляет статус версии на "error"
 // 2. Декрементирует счетчик проверок пользователя
+// 3. Отправляет уведомление в Telegram
 func (tz *Tz) handleProcessingError(ctx context.Context, versionID uuid.UUID, userID uuid.UUID, errorMsg string, log *slog.Logger) {
 	log.Error(errorMsg)
 
@@ -742,6 +775,22 @@ func (tz *Tz) handleProcessingError(ctx context.Context, versionID uuid.UUID, us
 			log.Error("failed to decrement inspections for today", sl.Err(err))
 		} else {
 			log.Info("inspections counter decremented due to processing error")
+		}
+	}
+
+	// Отправляем уведомление в Telegram
+	if tz.telegramClient != nil {
+		message := fmt.Sprintf(
+			"<b>⚠️ Ошибка при обработке ТЗ</b>\n\n"+
+				"<b>Version ID:</b> <code>%s</code>\n"+
+				"<b>User ID:</b> <code>%s</code>\n"+
+				"<b>Ошибка:</b> %s",
+			versionID.String(),
+			userID.String(),
+			errorMsg,
+		)
+		if err := tz.telegramClient.SendMessage(message); err != nil {
+			log.Error("failed to send telegram notification", sl.Err(err))
 		}
 	}
 }

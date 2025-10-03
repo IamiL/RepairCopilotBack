@@ -5,6 +5,7 @@ import (
 	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	reportgeneratorclient "repairCopilotBot/tz-bot/internal/pkg/report-generator-client"
+	telegramclient "repairCopilotBot/tz-bot/internal/pkg/telegram-client"
 	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
@@ -43,6 +44,7 @@ func New(
 	s3Config *s3minio.Config,
 	postgresConfig *postgres.Config,
 	telegramBotConfig *config.TelegramBotConfig,
+	telegramClientConfig *telegramclient.Config,
 ) *App {
 	postgresConn, err := postgres.NewConnPool(postgresConfig)
 	if err != nil {
@@ -83,7 +85,15 @@ func New(
 		userServiceClient = nil
 	}
 
-	tzService := tzservice.New(log, wordParserClient, wordParserClient2, docToDocXConverterClient, reportGeneratorClient, markdownClient, llmClient, prompBuilderClient, userServiceClient, s3Client, postgres)
+	// Создаем Telegram клиент для уведомлений об ошибках
+	telegramClient, err := telegramclient.New(*telegramClientConfig)
+	if err != nil {
+		log.Error("failed to create telegram client", "error", err)
+		// Если не удается создать telegram клиент, продолжаем без него
+		telegramClient = nil
+	}
+
+	tzService := tzservice.New(log, wordParserClient, wordParserClient2, docToDocXConverterClient, reportGeneratorClient, markdownClient, llmClient, prompBuilderClient, userServiceClient, telegramClient, s3Client, postgres)
 
 	grpcApp := grpcapp.New(log, tzService, grpcConfig)
 

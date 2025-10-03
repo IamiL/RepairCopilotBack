@@ -10,6 +10,7 @@ import (
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	reportgeneratorclient "repairCopilotBot/tz-bot/internal/pkg/report-generator-client"
+	telegramclient "repairCopilotBot/tz-bot/internal/pkg/telegram-client"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
@@ -37,6 +38,7 @@ type Config struct {
 	S3minio                  s3minio.Config                  `yaml:"s3minio"`
 	Postgres                 postgres.Config                 `yaml:"postgres"`
 	TelegramBot              TelegramBotConfig               `yaml:"telegram_bot"`
+	TelegramClient           telegramclient.Config           `yaml:"telegram_client"`
 }
 
 type TelegramBotConfig struct {

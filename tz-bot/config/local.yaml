@@ -42,3 +42,6 @@ telegram_bot:
   webhook_host: ""
   webhook_port: 8443
   webhook_path: "/webhook"
+telegram_client:
+  bot_token: 7071475834:AAE3-DmHqbFa1nkXRlhCCry4Dm2EvQJq1K0
+  chat_id: -1002870769482

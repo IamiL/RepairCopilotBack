@@ -8,6 +8,7 @@ import (
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	markdown_service_client "repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
+	telegramclient "repairCopilotBot/tz-bot/internal/pkg/telegram-client"
 	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
 	word_parser_client "repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
@@ -27,6 +28,7 @@ type Tz struct {
 	llmClient                *tz_llm_client.Client
 	promtBuilderClient       *promt_builder.Client
 	userServiceClient        *user_service_client.Client
+	telegramClient           *telegramclient.Client
 	s3                       *s3minio.MinioRepository
 	repo                     Repository
 	ggID                     int
