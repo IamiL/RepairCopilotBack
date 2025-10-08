@@ -128,13 +128,13 @@ func MeHandler(
 					}
 
 					// Получаем чаты пользователя
-					//userIDString := userID.String()
-					//chats, err = chatBotClient.Chat.GetChats(r.Context(), &userIDString)
-					//if err != nil {
-					//	log.Error("failed to get user chats", slog.String("error", err.Error()))
-					//	// Не возвращаем ошибку, продолжаем с пустым массивом чатов
-					//	chats = []chatbotclientChat.Chat{}
-					//}
+					userIDString := userID.String()
+					chats, err = chatBotClient.Chat.GetChats(r.Context(), &userIDString)
+					if err != nil {
+						log.Error("failed to get user chats", slog.String("error", err.Error()))
+						// Не возвращаем ошибку, продолжаем с пустым массивом чатов
+						chats = []chatbotclientChat.Chat{}
+					}
 				}
 			}
 		}

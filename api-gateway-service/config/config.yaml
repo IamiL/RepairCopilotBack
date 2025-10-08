@@ -2,8 +2,8 @@ env: "local"
 app:
   token_ttl: 300h
 http_server:
-#  port: 9086
-  port: 8080
+  port: 9086
+#  port: 8080
   timeout: 4s
 tg_client:
   token: 7071475834:AAE3-DmHqbFa1nkXRlhCCry4Dm2EvQJq1Kk
@@ -24,7 +24,7 @@ postgres:
   password: dbsaLSAGVDvadaj
   max_connections: 10
 user_service:
-  address: localhost:8001
-#  address: localhost:9087
+#  address: localhost:8001
+  address: localhost:9087
 chat_bot_service:
   address: localhost:9082

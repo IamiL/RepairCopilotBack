@@ -3,14 +3,11 @@ package llmClient
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
-	"net/url"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -25,16 +22,16 @@ type Client struct {
 func New(config Config) (*Client, error) {
 	client := &Client{
 		Url:    config.Url,
-		Mocked: true,
+		Mocked: false,
 	}
 	return client, nil
 }
 
 type ValidationError struct {
 	Detail []struct {
-		Loc  []string `json:"loc"`
-		Msg  string   `json:"msg"`
-		Type string   `json:"type"`
+		Loc  []interface{} `json:"loc"`
+		Msg  string        `json:"msg"`
+		Type string        `json:"type"`
 	} `json:"detail"`
 }
 
@@ -46,137 +43,167 @@ func (e ValidationError) Error() string {
 	return fmt.Sprintf("Validation error: %v", msgs)
 }
 
-func (c *Client) StartDialog(chatID uuid.UUID) error {
+// MessagePair represents a pair of user and bot messages in history
+type MessagePair struct {
+	User string `json:"user"`
+	Bot  string `json:"bot"`
+}
+
+// ChatState holds the current state of the dialog (history and tree)
+type ChatState struct {
+	History []MessagePair          `json:"history"`
+	Tree    map[string]interface{} `json:"tree"`
+}
+
+// ChatRequest is the request body for /chat endpoint
+type ChatRequest struct {
+	UserMessage string                 `json:"user_message"`
+	History     []MessagePair          `json:"history"`
+	Tree        map[string]interface{} `json:"tree"`
+}
+
+// ChatResponse is the response body from /chat endpoint
+type ChatResponse struct {
+	Response string                 `json:"response"`
+	Tree     map[string]interface{} `json:"tree"`
+}
+
+// EndDialogRequest is the request body for /end_dialog endpoint
+type EndDialogRequest struct {
+	History []MessagePair          `json:"history"`
+	Tree    map[string]interface{} `json:"tree"`
+}
+
+// EndDialogResponse is the response body from /end_dialog endpoint
+type EndDialogResponse struct {
+	Summary string `json:"summary"`
+}
+
+// SendMessage sends a message to the LLM service and returns the response and updated state
+// For new dialogs, pass an empty ChatState with History: []MessagePair{} and Tree: make(map[string]interface{})
+func (c *Client) SendMessage(state *ChatState, message string) (string, *ChatState, error) {
 	if c.Mocked {
 		time.Sleep(time.Second * 5)
-		return nil
-	}
-	baseURL := c.Url + "/start_dialog"
-	params := url.Values{}
-	params.Add("user_id", chatID.String())
-
-	resp, err := http.Post(fmt.Sprintf("%s?%s", baseURL, params.Encode()), "application/json", nil)
-	if err != nil {
-		fmt.Println(fmt.Errorf("request failed: %v", err))
-
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(fmt.Errorf("failed to read response: %v", err))
-	}
-	if resp.StatusCode == http.StatusUnprocessableEntity { // 422
-		var validationErr ValidationError
-		if err := json.Unmarshal(body, &validationErr); err != nil {
-			fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+		mockResponse := "замокано (ответ на сообщение - " + message + ")"
+		newState := &ChatState{
+			History: append(state.History, MessagePair{User: message, Bot: mockResponse}),
+			Tree:    state.Tree,
 		}
-		fmt.Println(validationErr)
+		return mockResponse, newState, nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("Unexpected status code: " + resp.Status)
-	}
-
-	return nil
-}
-
-type ClientRequestBody struct {
-	UserID  string `json:"user_id"`
-	Message string `json:"message"`
-}
-
-type ClientResponseBody struct {
-	Message string `json:"response"`
-}
-
-func (c *Client) SendMessage(chatId uuid.UUID, message string) (string, error) {
-	if c.Mocked {
-		time.Sleep(time.Second * 5)
-		return "замокано (ответ на сообщение - " + message + ")", nil
-	}
-	requestBody := ClientRequestBody{
-		UserID:  chatId.String(),
-		Message: message,
+	requestBody := ChatRequest{
+		UserMessage: message,
+		History:     state.History,
+		Tree:        state.Tree,
 	}
 
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
-		return "", err
+		return "", nil, fmt.Errorf("error marshaling JSON: %w", err)
 	}
 
-	resp, err := http.Post(c.Url+"/chat", "application/json", bytes.NewBuffer(jsonData))
+	endpoint := c.Url + "/chat"
+	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		fmt.Println("Error sending POST request:", err)
-		return "", err
+		log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Error: %v", endpoint, string(jsonData), err)
+		return "", nil, fmt.Errorf("error sending POST request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to read response: %v", err))
+		statusCode := 0
+		if resp != nil {
+			statusCode = resp.StatusCode
+		}
+		log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Response status: %d, Error reading response: %v", endpoint, string(jsonData), statusCode, err)
+		return "", nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	var response ClientResponseBody
+	if resp.StatusCode == http.StatusUnprocessableEntity { // 422
+		var validationErr ValidationError
+		if err := json.Unmarshal(body, &validationErr); err != nil {
+			log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Response status: %d, Response body: %s, Error parsing validation: %v", endpoint, string(jsonData), resp.StatusCode, string(body), err)
+			return "", nil, fmt.Errorf("failed to parse validation error: %w", err)
+		}
+		log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Response status: %d, Response body: %s, Validation error: %v", endpoint, string(jsonData), resp.StatusCode, string(body), validationErr)
+		return "", nil, validationErr
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Response status: %d, Response body: %s", endpoint, string(jsonData), resp.StatusCode, string(body))
+		return "", nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var response ChatResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+		return "", nil, fmt.Errorf("failed to parse response: %w", err)
 	}
-	fmt.Println(response)
-	fmt.Printf("Тело ответа:\n%s\n", response.Message)
 
-	return response.Message, nil
+	// Update state with the new message pair and tree
+	newState := &ChatState{
+		History: append(state.History, MessagePair{User: message, Bot: response.Response}),
+		Tree:    response.Tree,
+	}
+
+	return response.Response, newState, nil
 }
 
-type ClientResponseEndChatBody struct {
-	Message string `json:"summary"`
-}
-
-func (c *Client) FinishChat(chatID uuid.UUID) (string, error) {
+// FinishChat ends the dialog and returns a summary
+func (c *Client) FinishChat(state *ChatState) (string, error) {
 	if c.Mocked {
 		time.Sleep(time.Second * 5)
 		return "замокано (завершение чата)", nil
 	}
-	baseURL := c.Url + "/end_dialog"
-	params := url.Values{}
-	params.Add("user_id", chatID.String())
 
-	resp, err := http.Post(fmt.Sprintf("%s?%s", baseURL, params.Encode()), "application/json", nil)
-	if err != nil {
-		fmt.Println(fmt.Errorf("request failed: %v", err))
-
-		return "", err
+	requestBody := EndDialogRequest{
+		History: state.History,
+		Tree:    state.Tree,
 	}
 
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling JSON: %w", err)
+	}
+
+	endpoint := c.Url + "/end_dialog"
+	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Error: %v", endpoint, string(jsonData), err)
+		return "", fmt.Errorf("request failed: %w", err)
+	}
 	defer resp.Body.Close()
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to read response: %v", err))
+		statusCode := 0
+		if resp != nil {
+			statusCode = resp.StatusCode
+		}
+		log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Response status: %d, Error reading response: %v", endpoint, string(jsonData), statusCode, err)
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusUnprocessableEntity { // 422
+		var validationErr ValidationError
+		if err := json.Unmarshal(body, &validationErr); err != nil {
+			log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Response status: %d, Response body: %s, Error parsing validation: %v", endpoint, string(jsonData), resp.StatusCode, string(body), err)
+			return "", fmt.Errorf("failed to parse validation error: %w", err)
+		}
+		log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Response status: %d, Response body: %s, Validation error: %v", endpoint, string(jsonData), resp.StatusCode, string(body), validationErr)
+		return "", validationErr
 	}
 
 	if resp.StatusCode != http.StatusOK {
-
-		var validationErr ValidationError
-		if err := json.Unmarshal(body, &validationErr); err != nil {
-			fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
-		}
-		fmt.Println(validationErr)
-		fmt.Printf("Код ответа: %d\n", resp.StatusCode)
+		log.Printf("[LLM Client Error] Endpoint: %s, Method: POST, Request body: %s, Response status: %d, Response body: %s", endpoint, string(jsonData), resp.StatusCode, string(body))
+		return "", fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
-	fmt.Printf("Тело ответа:\n%s\n", string(body))
-
-	var response ClientResponseEndChatBody
+	var response EndDialogResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		fmt.Println(fmt.Errorf("failed to parse validation error: %v", err))
+		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
-	fmt.Println(response)
-	fmt.Printf("Тело ответа:\n%s\n", response.Message)
 
-	return response.Message, nil
+	return response.Summary, nil
 }

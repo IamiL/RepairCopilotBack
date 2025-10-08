@@ -9,4 +9,4 @@ postgres:
   password: vkIeydiDtJWqUpQVOmHm
   max_connections: 10
 llm_client:
-  url: http://94.228.122.106:8000
+  url: http://localhost:7000

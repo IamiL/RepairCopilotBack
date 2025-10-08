@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	chatmodel "repairCopilotBot/chat-bot/internal/domain/model/chat"
@@ -130,5 +131,32 @@ func (r *Repository) FinishChat(ctx context.Context, chatID uuid.UUID, conclusio
 	`
 
 	_, err := r.db.Exec(ctx, query, conclusion, chatID)
+	return err
+}
+
+func (r *Repository) GetChatTree(ctx context.Context, chatID uuid.UUID) (json.RawMessage, error) {
+	query := `
+		SELECT tree
+		FROM chats
+		WHERE id = $1
+	`
+
+	var tree json.RawMessage
+	err := r.db.QueryRow(ctx, query, chatID).Scan(&tree)
+	if err != nil {
+		return nil, err
+	}
+
+	return tree, nil
+}
+
+func (r *Repository) UpdateChatTree(ctx context.Context, chatID uuid.UUID, tree json.RawMessage) error {
+	query := `
+		UPDATE chats
+		SET tree = $1, updated_at = NOW()
+		WHERE id = $2
+	`
+
+	_, err := r.db.Exec(ctx, query, tree, chatID)
 	return err
 }

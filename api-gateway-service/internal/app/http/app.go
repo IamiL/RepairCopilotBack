@@ -54,7 +54,7 @@ func New(
 		handler.RegisterHandler(log, userServiceClient, sessionRepo, actionLogRepo),
 	)
 
-	router.HandleFunc("POST /api/confirm",
+	router.HandleFunc("POST /api/confirm-email",
 		handler.ConfirmEmail(log, userServiceClient, sessionRepo, chatBotClient))
 
 	router.HandleFunc(

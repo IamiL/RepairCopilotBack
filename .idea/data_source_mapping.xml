@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourcePerFileMappings">
-    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/0c9c90e7-aa74-4d5e-b9d5-6535cf212045/console.sql" value="0c9c90e7-aa74-4d5e-b9d5-6535cf212045" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/43ccea42-9649-41fd-95d5-e45e8935d39d/console.sql" value="43ccea42-9649-41fd-95d5-e45e8935d39d" />
     <file url="file://$PROJECT_DIR$/tz-bot/internal/repository/postgres/postgres.go" value="0c9c90e7-aa74-4d5e-b9d5-6535cf212045" />
   </component>
 </project>

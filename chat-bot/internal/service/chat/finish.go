@@ -2,10 +2,11 @@ package chatservice
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
+	"repairCopilotBot/chat-bot/internal/pkg/llmClient"
 	"repairCopilotBot/chat-bot/internal/pkg/logger/sl"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -38,33 +39,51 @@ func (c *ChatService) FinishChat(ctx context.Context, userID uuid.UUID, chatID u
 		return "", errors.New("chat is processing")
 	}
 
-	now := time.Now()
-
-	err = c.msgSaver.CreateMessage(ctx, chatID, "user", "Завершить чат", 0, now, now)
+	// Получаем tree и messages
+	tree, err := c.chatProvider.GetChatTree(ctx, chatID)
 	if err != nil {
-		log.Error("Error in saving message", sl.Err(err))
+		log.Error("Error in getting chat tree", sl.Err(err))
 		return "", errors.New("internal server error")
 	}
 
-	msg, err := c.llmClient.FinishChat(chatID)
+	messages, err := c.msgProvider.Messages(ctx, chatID)
+	if err != nil {
+		log.Error("Error in getting messages", sl.Err(err))
+		return "", errors.New("internal server error")
+	}
+
+	// Конвертируем сообщения в пары {user, bot}
+	history := convertMessagesToHistory(messages)
+
+	// Десериализуем tree
+	var treeMap map[string]interface{}
+	if len(tree) > 0 {
+		if err := json.Unmarshal(tree, &treeMap); err != nil {
+			log.Error("Error in unmarshaling tree", sl.Err(err))
+			return "", errors.New("internal server error")
+		}
+	} else {
+		treeMap = make(map[string]interface{})
+	}
+
+	state := &llmClient.ChatState{
+		History: history,
+		Tree:    treeMap,
+	}
+
+	// Получаем summary от LLM
+	summary, err := c.llmClient.FinishChat(state)
 	if err != nil {
 		log.Error("Error in finishing chat", sl.Err(err))
 		return "", errors.New("internal server error")
 	}
 
-	now = time.Now()
-
-	//err = c.msgSaver.CreateMessage(ctx, chatID, "llm", msg, 0, now, now)
-	//if err != nil {
-	//	log.Error("Error in saving message", sl.Err(err))
-	//	return "", errors.New("internal server error")
-	//}
-
-	err = c.chatSaver.FinishChat(ctx, chatID, msg)
+	// Сохраняем чат как завершенный с резюме
+	err = c.chatSaver.FinishChat(ctx, chatID, summary)
 	if err != nil {
 		log.Error("Error in finishing chat", sl.Err(err))
 		return "", errors.New("internal server error")
 	}
 
-	return msg, nil
+	return summary, nil
 }

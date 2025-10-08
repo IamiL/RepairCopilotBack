@@ -4,8 +4,8 @@ grpc_server:
 #   port: localhost:9087
 postgres:
   host: 94.241.142.172
-  port: 8085
-#  port: 9085
+#  port: 8085
+  port: 9085
   database_name: user
   username: QvXiuBQFQHOy
   password: vkIeydiDtJWqUpQVOmHm
