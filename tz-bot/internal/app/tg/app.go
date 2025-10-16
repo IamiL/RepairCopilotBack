@@ -205,14 +205,14 @@ func (a *App) handleStatus(ctx context.Context, b *bot.Bot, update *models.Updat
 func (a *App) handleCallbackQuery(ctx context.Context, b *bot.Bot, update *models.Update) {
 	callback := update.CallbackQuery
 
-	// Получаем chat ID из callback query
+	// Получаем search ID из callback query
 	var chatID int64
 
 	// Проверяем есть ли у callback.Message поле Message (доступное сообщение)
 	if callback.Message.Message != nil {
 		chatID = callback.Message.Message.Chat.ID
 	} else {
-		a.log.Error("Не удалось получить chat ID из callback message")
+		a.log.Error("Не удалось получить search ID из callback message")
 		return
 	}
 

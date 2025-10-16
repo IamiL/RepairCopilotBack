@@ -14,6 +14,7 @@ type DailyAnalyticsPoint struct {
 	Consumption *int64
 	ToPay       *float64
 	Tz          *int32
+	AverageTime *int64
 }
 
 // FeedbackInstance represents a feedback instance with full context information
@@ -27,6 +28,7 @@ type FeedbackInstance struct {
 	ErrorCode                  string
 	VersionID                  string
 	TechnicalSpecificationName string
+	CreatedAt                  *time.Time
 }
 
 // TechnicalSpecificationRepository defines the interface for technical specification operations

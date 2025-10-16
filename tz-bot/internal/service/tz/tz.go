@@ -371,6 +371,20 @@ func (tz *Tz) GetFeedbacks(ctx context.Context, userID *string) ([]*FeedbackInst
 		return nil, fmt.Errorf("failed to get feedbacks: %w", err)
 	}
 
+	// Сортируем feedbacks по CreatedAt (элементы с nil в конце)
+	sort.Slice(feedbacks, func(i, j int) bool {
+		// Если CreatedAt == nil у элемента i, он должен быть после j
+		if feedbacks[i].CreatedAt == nil {
+			return false
+		}
+		// Если CreatedAt == nil у элемента j, элемент i должен быть перед ним
+		if feedbacks[j].CreatedAt == nil {
+			return true
+		}
+		// Оба поля не nil - сравниваем даты (сортировка по возрастанию)
+		return feedbacks[i].CreatedAt.Before(*feedbacks[j].CreatedAt)
+	})
+
 	log.Info("feedbacks retrieved successfully",
 		slog.Int("feedbacks_count", len(feedbacks)))
 

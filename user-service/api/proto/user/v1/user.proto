@@ -46,6 +46,9 @@ service UserService {
 
   // Проверка лимита проверок на сегодня
   rpc CheckInspectionLimit(CheckInspectionLimitRequest) returns (CheckInspectionLimitResponse);
+
+  // Смена роли пользователя
+  rpc ChangeUserRole(ChangeUserRoleRequest) returns (ChangeUserRoleResponse);
 }
 
 // GetUserInfoRequest запрос для получения информации о пользователе по ID
@@ -238,4 +241,16 @@ message CheckInspectionLimitRequest {
 
 message CheckInspectionLimitResponse {
   uint32 inspections_left = 1;  // Количество оставшихся проверок на сегодня
+}
+
+// ChangeUserRoleRequest запрос для смены роли пользователя
+message ChangeUserRoleRequest {
+  string user_id = 1;  // UUID пользователя
+  bool is_admin = 2;   // true для роли admin, false для роли user
+}
+
+// ChangeUserRoleResponse ответ на смену роли
+message ChangeUserRoleResponse {
+  bool success = 1;    // Статус успешности операции
+  string message = 2;  // Сообщение о результате
 }

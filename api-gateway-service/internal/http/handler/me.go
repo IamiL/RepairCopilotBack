@@ -8,6 +8,8 @@ import (
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	chatbotclient "repairCopilotBot/chat-bot/pkg/client"
 	chatbotclientChat "repairCopilotBot/chat-bot/pkg/client/chat"
+	searchbotclient "repairCopilotBot/search-bot/pkg/client"
+	searchbotclientChat "repairCopilotBot/search-bot/pkg/client/chat"
 	"repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
 	"time"
@@ -27,8 +29,9 @@ type MeResponse struct {
 	Level int `json:"level"`
 	//FirstName   string                         `json:"firstName"`
 	//LastName    string                         `json:"lastName"`
-	Versions []*client.GetVersionMeResponse `json:"versions"`
-	Chats    []chatbotclientChat.Chat       `json:"chats"`
+	Versions    []*client.GetVersionMeResponse `json:"versions"`
+	Chats       []chatbotclientChat.Chat       `json:"chats"`
+	SearchChats []searchbotclientChat.Chat     `json:"searchChats"`
 	//Email       string                         `json:"email"`
 	//IsConfirmed bool                           `json:"is_confirmed"`
 	*userserviceclient.GetUserInfoResponse
@@ -40,6 +43,7 @@ func MeHandler(
 	tzBotClient *client.Client,
 	userServiceClient *userserviceclient.UserClient,
 	chatBotClient *chatbotclient.ChatBotClient,
+	searchbotclient *searchbotclient.SearchBotClient,
 ) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handler.MeHandler"
@@ -87,6 +91,7 @@ func MeHandler(
 		level := 0
 		var tzVersions []*client.GetVersionMeResponse
 		var chats []chatbotclientChat.Chat
+		var searchChats []searchbotclientChat.Chat
 		// Получаем версии технических заданий от tz-bot
 		if session.UserID != "" {
 			userID, err := uuid.Parse(session.UserID)
@@ -135,6 +140,13 @@ func MeHandler(
 						// Не возвращаем ошибку, продолжаем с пустым массивом чатов
 						chats = []chatbotclientChat.Chat{}
 					}
+
+					searchChats, err = searchbotclient.Chat.GetChats(r.Context(), &userIDString)
+					if err != nil {
+						log.Error("failed to get user chats", slog.String("error", err.Error()))
+						// Не возвращаем ошибку, продолжаем с пустым массивом чатов
+						chats = []chatbotclientChat.Chat{}
+					}
 				}
 			}
 		}
@@ -143,6 +155,7 @@ func MeHandler(
 			Level:               level,
 			Versions:            tzVersions,
 			Chats:               chats,
+			SearchChats:         searchChats,
 			GetUserInfoResponse: userInfo,
 		}
 

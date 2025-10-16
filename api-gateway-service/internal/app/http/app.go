@@ -9,6 +9,7 @@ import (
 	"repairCopilotBot/api-gateway-service/internal/pkg/logger/sl"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	chatbotclient "repairCopilotBot/chat-bot/pkg/client"
+	searchbotclient "repairCopilotBot/search-bot/pkg/client"
 	"repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
 	"strconv"
@@ -34,6 +35,7 @@ func New(
 	tzBotClient *client.Client,
 	userServiceClient *userserviceclient.UserClient,
 	chatBotClient *chatbotclient.ChatBotClient,
+	searchBotClient *searchbotclient.SearchBotClient,
 	sessionRepo *repository.SessionRepository,
 	actionLogRepo repository.ActionLogRepository,
 ) *App {
@@ -57,13 +59,16 @@ func New(
 	router.HandleFunc("POST /api/confirm-email",
 		handler.ConfirmEmail(log, userServiceClient, sessionRepo, chatBotClient))
 
+	router.HandleFunc("POST /api/confirm",
+		handler.ConfirmEmail(log, userServiceClient, sessionRepo, chatBotClient))
+
 	router.HandleFunc(
 		"GET /api/logout",
 		handler.LogoutHandler(log))
 
 	router.HandleFunc(
 		"GET /api/me",
-		handler.MeHandler(log, sessionRepo, tzBotClient, userServiceClient, chatBotClient),
+		handler.MeHandler(log, sessionRepo, tzBotClient, userServiceClient, chatBotClient, searchBotClient),
 	)
 
 	router.HandleFunc(
@@ -132,8 +137,24 @@ func New(
 	)
 
 	router.HandleFunc(
+		"POST /api/admin/users/change-role",
+		handler.ChangeUserRoleHandler(log, userServiceClient, sessionRepo, actionLogRepo),
+	)
+
+	router.HandleFunc(
 		"GET /api/users/inspection-limit",
 		handler.CheckInspectionLimitHandler(log, sessionRepo, userServiceClient),
+	)
+
+	// Chat Bot routes
+	router.HandleFunc(
+		"POST /api/searchchat/message",
+		handler.CreateNewSearchMessageHandler(log, sessionRepo, searchBotClient, userServiceClient, actionLogRepo),
+	)
+
+	router.HandleFunc(
+		"GET /api/searchchat/{chat_id}/messages",
+		handler.GetSearchMessagesHandler(log, sessionRepo, searchBotClient),
 	)
 
 	// Chat Bot routes

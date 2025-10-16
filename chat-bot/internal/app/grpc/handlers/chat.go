@@ -160,8 +160,8 @@ func (h *ChatHandlers) FinishChat(ctx context.Context, req *pb.FinishChatRequest
 
 	msg, err := h.chatService.FinishChat(ctx, userID, chatID)
 	if err != nil {
-		h.log.Error("failed to finish chat", slog.String("error", err.Error()))
-		return nil, status.Error(codes.Internal, "failed to finish chat")
+		h.log.Error("failed to finish search", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to finish search")
 	}
 
 	return &pb.FinishChatResponse{

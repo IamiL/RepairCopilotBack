@@ -18,13 +18,13 @@ type Client struct {
 
 type Config struct {
 	Address string        `yaml:"address" env-default:"localhost:50053"`
-	Timeout time.Duration `yaml:"timeout" env-default:"10s"`
+	Timeout time.Duration `yaml:"timeout" env-default:"1000s"`
 }
 
 func New(cfg *Config) (*Client, error) {
 	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to chat service: %w", err)
+		return nil, fmt.Errorf("failed to connect to search service: %w", err)
 	}
 
 	client := pb.NewChatServiceClient(conn)
@@ -119,7 +119,7 @@ func (c *Client) FinishChat(ctx context.Context, chatID string, userID string) (
 
 	resp, err := c.client.FinishChat(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to finish chat: %w", err)
+		return "", fmt.Errorf("failed to finish search: %w", err)
 	}
 
 	return resp.Msg, nil

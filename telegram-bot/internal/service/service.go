@@ -13,9 +13,9 @@ import (
 )
 
 type Service struct {
-	repo        repository.Repository
-	userClient  *userserviceclient.UserClient
-	chatClient  *chatclient.Client
+	repo       repository.Repository
+	userClient *userserviceclient.UserClient
+	chatClient *chatclient.Client
 }
 
 func NewService(
@@ -97,52 +97,37 @@ func (s *Service) AuthenticateUser(ctx context.Context, tgUserID int64, login, p
 	return nil
 }
 
-// StartChat начинает новый чат или возвращает существующий
-func (s *Service) StartChat(ctx context.Context, tgUserID int64) (*uuid.UUID, error) {
-	// Получаем пользователя
+// StartChat начинает новый чат локально (без создания чата в search-service)
+func (s *Service) StartChat(ctx context.Context, tgUserID int64) error {
+	// Получаем пользователя для проверки авторизации
 	user, err := s.repo.GetTelegramUser(ctx, tgUserID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get telegram user: %w", err)
+		return fmt.Errorf("failed to get telegram user: %w", err)
 	}
 
 	if user.UserID == nil {
-		return nil, fmt.Errorf("user is not authenticated")
+		return fmt.Errorf("user is not authenticated")
 	}
 
-	// Создаем новый чат через chat-service (отправляем пустое сообщение для инициализации)
-	chatIDStr, _, err := s.chatClient.CreateNewMessage(ctx, nil, user.UserID.String(), "")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create chat: %w", err)
-	}
-
-	chatID, err := uuid.Parse(chatIDStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid chat_id from chat-service: %w", err)
-	}
-
-	// Сохраняем chat_id в состоянии пользователя
-	if err := s.repo.UpdateCurrentChatID(ctx, tgUserID, &chatID); err != nil {
-		return nil, fmt.Errorf("failed to update current chat_id: %w", err)
+	// Очищаем current_chat_id (чтобы при первом сообщении создался новый чат)
+	if err := s.repo.UpdateCurrentChatID(ctx, tgUserID, nil); err != nil {
+		return fmt.Errorf("failed to clear current chat_id: %w", err)
 	}
 
 	// Обновляем состояние на "в чате"
 	if err := s.repo.UpdateUserState(ctx, tgUserID, models.StateInChat); err != nil {
-		return nil, fmt.Errorf("failed to update state to in_chat: %w", err)
+		return fmt.Errorf("failed to update state to in_chat: %w", err)
 	}
 
-	return &chatID, nil
+	return nil
 }
 
-// SendMessage отправляет сообщение в текущий чат
+// SendMessage отправляет сообщение в текущий чат или создает новый чат
 func (s *Service) SendMessage(ctx context.Context, tgUserID int64, message string) (string, error) {
 	// Получаем состояние пользователя
 	state, err := s.repo.GetUserState(ctx, tgUserID)
 	if err != nil {
 		return "", fmt.Errorf("failed to get user state: %w", err)
-	}
-
-	if state.CurrentChatID == nil {
-		return "", fmt.Errorf("no active chat")
 	}
 
 	// Получаем пользователя для user_id
@@ -155,55 +140,75 @@ func (s *Service) SendMessage(ctx context.Context, tgUserID int64, message strin
 		return "", fmt.Errorf("user is not authenticated")
 	}
 
-	// Отправляем сообщение через chat-service
-	chatIDStr := state.CurrentChatID.String()
-	_, responseMessage, err := s.chatClient.CreateNewMessage(ctx, &chatIDStr, user.UserID.String(), message)
+	// Определяем chatIDStr для отправки
+	var chatIDStr *string
+	if state.CurrentChatID != nil {
+		// Используем существующий чат
+		chatIDValue := state.CurrentChatID.String()
+		chatIDStr = &chatIDValue
+	}
+	// Если CurrentChatID == nil, то chatIDStr = nil - создастся новый чат
+
+	// Отправляем сообщение через search-service
+	responseChatIDStr, responseMessage, err := s.chatClient.CreateNewMessage(ctx, chatIDStr, user.UserID.String(), message)
 	if err != nil {
 		return "", fmt.Errorf("failed to send message: %w", err)
+	}
+
+	// Если чат был создан (CurrentChatID был nil), сохраняем новый chat_id
+	if state.CurrentChatID == nil && responseChatIDStr != "" {
+		chatID, err := uuid.Parse(responseChatIDStr)
+		if err != nil {
+			return "", fmt.Errorf("invalid chat_id from search-service: %w", err)
+		}
+
+		if err := s.repo.UpdateCurrentChatID(ctx, tgUserID, &chatID); err != nil {
+			return "", fmt.Errorf("failed to update current chat_id: %w", err)
+		}
 	}
 
 	return responseMessage, nil
 }
 
-// FinishChat завершает текущий чат
-func (s *Service) FinishChat(ctx context.Context, tgUserID int64) error {
+// FinishChat завершает текущий чат и возвращает суммаризацию
+func (s *Service) FinishChat(ctx context.Context, tgUserID int64) (string, error) {
 	// Получаем состояние пользователя
 	state, err := s.repo.GetUserState(ctx, tgUserID)
 	if err != nil {
-		return fmt.Errorf("failed to get user state: %w", err)
+		return "", fmt.Errorf("failed to get user state: %w", err)
 	}
 
 	if state.CurrentChatID == nil {
-		return fmt.Errorf("no active chat")
+		return "", fmt.Errorf("no active search")
 	}
 
 	// Получаем пользователя для user_id
 	user, err := s.repo.GetTelegramUser(ctx, tgUserID)
 	if err != nil {
-		return fmt.Errorf("failed to get telegram user: %w", err)
+		return "", fmt.Errorf("failed to get telegram user: %w", err)
 	}
 
 	if user.UserID == nil {
-		return fmt.Errorf("user is not authenticated")
+		return "", fmt.Errorf("user is not authenticated")
 	}
 
-	// Завершаем чат через chat-service
-	_, err = s.chatClient.FinishChat(ctx, state.CurrentChatID.String(), user.UserID.String())
+	// Завершаем чат через search-service и получаем суммаризацию
+	summary, err := s.chatClient.FinishChat(ctx, state.CurrentChatID.String(), user.UserID.String())
 	if err != nil {
-		return fmt.Errorf("failed to finish chat: %w", err)
+		return "", fmt.Errorf("failed to finish search: %w", err)
 	}
 
 	// Очищаем current_chat_id
 	if err := s.repo.UpdateCurrentChatID(ctx, tgUserID, nil); err != nil {
-		return fmt.Errorf("failed to clear current chat_id: %w", err)
+		return "", fmt.Errorf("failed to clear current chat_id: %w", err)
 	}
 
 	// Возвращаем состояние на "авторизован"
 	if err := s.repo.UpdateUserState(ctx, tgUserID, models.StateAuthorized); err != nil {
-		return fmt.Errorf("failed to update state to authorized: %w", err)
+		return "", fmt.Errorf("failed to update state to authorized: %w", err)
 	}
 
-	return nil
+	return summary, nil
 }
 
 // GetUserState возвращает текущее состояние пользователя

@@ -1,20 +1,22 @@
 env: "local"
 
 telegram:
-  bot_token: "YOUR_TELEGRAM_BOT_TOKEN"
+  bot_token: "7584175600:AAGT2d_ypZDzInzYJ_xf8SHhKmT-Pit83UM"
 
 postgres:
+#  host: "94.241.142.172"
   host: "localhost"
-  port: "5432"
+  port: "9078"
   database_name: "telegram_bot"
-  username: "postgres"
-  password: "postgres"
+  username: "QvXiuBQFQHOy"
+  password: "vkIeydiDtJWqUpQVOmHm"
   max_connections: 10
 
 user_service:
-  address: "localhost:8001"
+#  address: "localhost:8001"
+  address: "localhost:9087"
   timeout: 10s
 
 chat_service:
-  address: "localhost:50053"
-  timeout: 10s
+  address: "localhost:9082"
+  timeout: 60s

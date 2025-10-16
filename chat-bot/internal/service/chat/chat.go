@@ -11,7 +11,7 @@ import (
 )
 
 func (c *ChatService) Chats(ctx context.Context) ([]chatmodel.Chat, error) {
-	op := "chat.Chats"
+	op := "search.Chats"
 	log := c.log.With(
 		slog.String("op", op),
 	)
@@ -28,7 +28,7 @@ func (c *ChatService) Chats(ctx context.Context) ([]chatmodel.Chat, error) {
 }
 
 func (c *ChatService) ChatsForUser(ctx context.Context, userID uuid.UUID) ([]chatmodel.Chat, error) {
-	op := "chat.ChatsForUser"
+	op := "search.ChatsForUser"
 	log := c.log.With(
 		slog.String("op", op),
 		slog.String("userID", userID.String()),

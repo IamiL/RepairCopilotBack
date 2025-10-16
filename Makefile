@@ -76,7 +76,7 @@ clean-proto:
 	@rm -rf chat-bot/pkg/chat/
 	@echo "Generated proto files cleaned"
 
-# Build chat-bot for Linux
+# Build search-bot for Linux
 build-chat-bot-linux:
 	@echo "Building chat-bot for Linux..."
 	@mkdir -p chat-bot/bin

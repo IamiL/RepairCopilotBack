@@ -28,7 +28,7 @@ func FinishChatHandler(
 		const op = "handler.FinishChatHandler"
 
 		log := log.With(slog.String("op", op))
-		log.Info("finish chat request started")
+		log.Info("finish search request started")
 
 		// Получаем токен из куки
 		cookie, err := r.Cookie("auth_token")
@@ -83,10 +83,10 @@ func FinishChatHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
 
-		// Вызываем метод клиента chat-bot
+		// Вызываем метод клиента search-bot
 		message, err := chatBotClient.Chat.FinishChat(ctx, req.ChatID, session.UserID)
 		if err != nil {
-			log.Error("failed to finish chat", slog.String("error", err.Error()))
+			log.Error("failed to finish search", slog.String("error", err.Error()))
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -113,7 +113,7 @@ func FinishChatHandler(
 			return
 		}
 
-		log.Info("finish chat request completed successfully",
+		log.Info("finish search request completed successfully",
 			slog.String("user_id", session.UserID),
 			slog.String("chat_id", req.ChatID))
 	}

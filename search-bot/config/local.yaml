@@ -1,0 +1,12 @@
+env: "local"
+grpc_server:
+  port: localhost:9082
+postgres:
+  host: 94.241.142.172
+  port: 9081
+  database_name: search_bot
+  username: QvXiuBQFQHOy
+  password: vkIeydiDtJWqUpQVOmHm
+  max_connections: 10
+llm_client:
+  url: http://94.241.142.172:7000

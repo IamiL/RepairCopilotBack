@@ -30,6 +30,7 @@ func main() {
 		&cfg.Redis,
 		&cfg.Postgres,
 		&cfg.ChatBotService,
+		&cfg.SearchBotService,
 		cfg.UserService.Address,
 	)
 

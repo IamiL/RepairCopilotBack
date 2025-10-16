@@ -55,14 +55,14 @@ type ChatState struct {
 	Tree    map[string]interface{} `json:"tree"`
 }
 
-// ChatRequest is the request body for /chat endpoint
+// ChatRequest is the request body for /search endpoint
 type ChatRequest struct {
 	UserMessage string                 `json:"user_message"`
 	History     []MessagePair          `json:"history"`
 	Tree        map[string]interface{} `json:"tree"`
 }
 
-// ChatResponse is the response body from /chat endpoint
+// ChatResponse is the response body from /search endpoint
 type ChatResponse struct {
 	Response string                 `json:"response"`
 	Tree     map[string]interface{} `json:"tree"`

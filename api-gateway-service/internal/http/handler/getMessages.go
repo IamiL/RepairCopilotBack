@@ -67,7 +67,7 @@ func GetMessagesHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
 
-		// Вызываем метод клиента chat-bot
+		// Вызываем метод клиента search-bot
 		messages, err := chatBotClient.Chat.GetMessages(ctx, chatID)
 		if err != nil {
 			log.Error("failed to get messages", slog.String("error", err.Error()))

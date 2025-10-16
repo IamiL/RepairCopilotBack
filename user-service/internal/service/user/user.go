@@ -61,6 +61,7 @@ type UserProvider interface {
 	GetUserIDByLogin(ctx context.Context, login string) (uuid.UUID, error)
 	GetUserAuthDataByLogin(ctx context.Context, login string) (*models.User, error)
 	UpdateInspectionsPerDay(ctx context.Context, userID string, inspectionsPerDay int) (int64, error)
+	UpdateInspectionsLeftForToday(ctx context.Context, userID string, inspectionsLeftForToday int) (int64, error)
 	GetFullNamesById(ctx context.Context, ids []string) (map[string]FullName, error)
 	UpdateLastVisit(ctx context.Context, userID string) error
 	GetConfirmationCodeByUserId(ctx context.Context, userID uuid.UUID) (string, error)
@@ -70,6 +71,7 @@ type UserProvider interface {
 	GetInspectionsLeftForToday(ctx context.Context, userID string) (int, error)
 	IncrementInspectionsLeftForToday(ctx context.Context, userID string) error
 	DecrementInspectionsLeftForToday(ctx context.Context, userID string) error
+	UpdateIsAdmin1(ctx context.Context, userID string, isAdmin bool) error
 }
 
 func New(
@@ -382,19 +384,24 @@ func (u *User) UpdateInspectionsPerDay(ctx context.Context, userID string, inspe
 		log.Info("updating inspections_per_day for specific user")
 	}
 
-	rowsAffected, err := u.usrProvider.UpdateInspectionsPerDay(ctx, userID, inspectionsPerDay)
+	rowsAffectedInspectionsPerDay, err := u.usrProvider.UpdateInspectionsPerDay(ctx, userID, inspectionsPerDay)
 	if err != nil {
 		log.Error("failed to update inspections_per_day", sl.Err(err))
 		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = u.usrProvider.UpdateInspectionsLeftForToday(ctx, userID, inspectionsPerDay)
+	if err != nil {
+		log.Error("failed to update inspections_per_day", sl.Err(err))
 	}
 
 	//if userID != "" {
 	//	inspectionsLeftForToday
 	//}
 
-	log.Info("inspections_per_day updated successfully", slog.Int64("rowsAffected", rowsAffected))
+	log.Info("inspections_per_day updated successfully", slog.Int64("rowsAffected", rowsAffectedInspectionsPerDay))
 
-	return rowsAffected, nil
+	return rowsAffectedInspectionsPerDay, nil
 }
 
 type FullName struct {
@@ -603,4 +610,29 @@ func (u *User) CheckInspectionLimit(ctx context.Context, userID string) (int, er
 
 	log.Info("inspection limit checked successfully", slog.Int("inspectionsLeft", inspectionsLeft))
 	return inspectionsLeft, nil
+}
+
+func (u *User) ChangeUserRole(ctx context.Context, userID string, isAdmin bool) error {
+	const op = "User.ChangeUserRole"
+
+	log := u.log.With(
+		slog.String("op", op),
+		slog.String("userID", userID),
+		slog.Bool("isAdmin", isAdmin),
+	)
+
+	log.Info("changing user role")
+
+	err := u.usrProvider.UpdateIsAdmin1(ctx, userID, isAdmin)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+			return fmt.Errorf("%s: user not found", op)
+		}
+		log.Error("failed to update user role", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("user role changed successfully")
+	return nil
 }

@@ -15,7 +15,8 @@ import (
 )
 
 func (c *ChatService) NewMessage(ctx context.Context, userID uuid.UUID, chatID uuid.UUID, text string) (string, uuid.UUID, error) {
-	op := "chat.NewMessage"
+	op := "search.NewMessage"
+	ctx = context.Background()
 
 	log := c.log.With(
 		slog.String("op", op),
@@ -40,12 +41,12 @@ func (c *ChatService) NewMessage(ctx context.Context, userID uuid.UUID, chatID u
 	isNewChat := chatID == uuid.Nil
 
 	if isNewChat {
-		log.Info("chatID is Nil. Creating new chat")
+		log.Info("chatID is Nil. Creating new search")
 		newChatId := uuid.New()
 
 		err = c.chatSaver.CreateChat(ctx, newChatId, userID, false, false, 0, now, now)
 		if err != nil {
-			log.Error("Error in creating new chat", sl.Err(err))
+			log.Error("Error in creating new search", sl.Err(err))
 			return "", uuid.Nil, errors.New("internal server error")
 		}
 
@@ -82,7 +83,7 @@ func (c *ChatService) NewMessage(ctx context.Context, userID uuid.UUID, chatID u
 		// Существующий чат - получаем tree и messages
 		tree, err := c.chatProvider.GetChatTree(ctx, chatID)
 		if err != nil {
-			log.Error("Error in getting chat tree", sl.Err(err))
+			log.Error("Error in getting search tree", sl.Err(err))
 			return "", uuid.Nil, errors.New("internal server error")
 		}
 
@@ -126,9 +127,9 @@ func (c *ChatService) NewMessage(ctx context.Context, userID uuid.UUID, chatID u
 		return "", uuid.Nil, errors.New("internal server error")
 	}
 
-	err = c.chatSaver.UpdateChatTree(ctx, chatID, treeJSON)
+	err = c.chatSaver.UpdateChatTree(context.Background(), chatID, treeJSON)
 	if err != nil {
-		log.Error("Error in updating chat tree", sl.Err(err))
+		log.Error("Error in updating search tree", sl.Err(err))
 		return "", uuid.Nil, errors.New("internal server error")
 	}
 

@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	Address string        `yaml:"address" env-default:"localhost:50053"`
-	Timeout time.Duration `yaml:"timeout" env-default:"10s"`
+	Timeout time.Duration `yaml:"timeout" env-default:"1000s"`
 }
 
 type ChatBotClient struct {
@@ -31,7 +31,7 @@ func New(cfg *Config) (*ChatBotClient, error) {
 
 	chat, err := chatClient.New(chatClientConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create chat client: %w", err)
+		return nil, fmt.Errorf("failed to create search client: %w", err)
 	}
 
 	user, err := userClient.New(userClientConfig)
@@ -50,7 +50,7 @@ func (c *ChatBotClient) Close() error {
 	var errs []error
 
 	if err := c.Chat.Close(); err != nil {
-		errs = append(errs, fmt.Errorf("failed to close chat client: %w", err))
+		errs = append(errs, fmt.Errorf("failed to close search client: %w", err))
 	}
 
 	if err := c.User.Close(); err != nil {

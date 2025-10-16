@@ -46,22 +46,22 @@ func New(cfg *config.Config) (*App, error) {
 
 	log.Println("Connected to user-service")
 
-	// Создаем клиент для chat-service
+	// Создаем клиент для search-service
 	chatClient, err := chatclient.New(&chatclient.Config{
 		Address: cfg.ChatService.Address,
 		Timeout: cfg.ChatService.Timeout,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create chat service client: %w", err)
+		return nil, fmt.Errorf("failed to create search service client: %w", err)
 	}
 
-	log.Println("Connected to chat-service")
+	log.Println("Connected to search-service")
 
 	// Создаем service
 	svc := service.NewService(repo, userClient, chatClient)
 
-	// Создаем Telegram handler
-	handler, err := telegram.NewHandler(cfg.Telegram.BotToken, svc)
+	// Создаем Telegram handler (передаем repo для state machine)
+	handler, err := telegram.NewHandler(cfg.Telegram.BotToken, svc, repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create telegram handler: %w", err)
 	}

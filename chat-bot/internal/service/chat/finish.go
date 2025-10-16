@@ -12,7 +12,7 @@ import (
 )
 
 func (c *ChatService) FinishChat(ctx context.Context, userID uuid.UUID, chatID uuid.UUID) (string, error) {
-	op := "chat.FinishChat"
+	op := "search.FinishChat"
 
 	log := c.log.With(
 		slog.String("op", op),
@@ -20,7 +20,7 @@ func (c *ChatService) FinishChat(ctx context.Context, userID uuid.UUID, chatID u
 		slog.String("chatID", chatID.String()),
 	)
 
-	log.Info("processing finish chat")
+	log.Info("processing finish search")
 
 	chatUserID, isFinished, isProcessing, err := c.chatProvider.ChatShortInfo(ctx, chatID)
 
@@ -30,19 +30,19 @@ func (c *ChatService) FinishChat(ctx context.Context, userID uuid.UUID, chatID u
 	}
 
 	if isFinished {
-		log.Info("chat already finished")
-		return "", errors.New("chat already finished")
+		log.Info("search already finished")
+		return "", errors.New("search already finished")
 	}
 
 	if isProcessing {
-		log.Info("chat is processing")
-		return "", errors.New("chat is processing")
+		log.Info("search is processing")
+		return "", errors.New("search is processing")
 	}
 
 	// Получаем tree и messages
 	tree, err := c.chatProvider.GetChatTree(ctx, chatID)
 	if err != nil {
-		log.Error("Error in getting chat tree", sl.Err(err))
+		log.Error("Error in getting search tree", sl.Err(err))
 		return "", errors.New("internal server error")
 	}
 
@@ -74,14 +74,14 @@ func (c *ChatService) FinishChat(ctx context.Context, userID uuid.UUID, chatID u
 	// Получаем summary от LLM
 	summary, err := c.llmClient.FinishChat(state)
 	if err != nil {
-		log.Error("Error in finishing chat", sl.Err(err))
+		log.Error("Error in finishing search", sl.Err(err))
 		return "", errors.New("internal server error")
 	}
 
 	// Сохраняем чат как завершенный с резюме
 	err = c.chatSaver.FinishChat(ctx, chatID, summary)
 	if err != nil {
-		log.Error("Error in finishing chat", sl.Err(err))
+		log.Error("Error in finishing search", sl.Err(err))
 		return "", errors.New("internal server error")
 	}
 

@@ -20,5 +20,6 @@ type Repository interface {
 	CreateUserState(ctx context.Context, tgUserID int64) (*models.UserState, error)
 	UpdateUserState(ctx context.Context, tgUserID int64, state models.UserStateEnum) error
 	UpdateLoginAttempt(ctx context.Context, tgUserID int64, login string) error
+	ClearLoginAttempt(ctx context.Context, tgUserID int64) error
 	UpdateCurrentChatID(ctx context.Context, tgUserID int64, chatID *uuid.UUID) error
 }

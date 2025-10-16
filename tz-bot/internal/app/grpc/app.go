@@ -35,8 +35,13 @@ type serverAPI struct {
 }
 
 func New(log *slog.Logger, tzService *tzservice.Tz, config *Config) *App {
-	// Настраиваем gRPC сервер с увеличенными таймаутами
+	// Увеличиваем максимальный размер сообщения до 50 МБ
+	maxMsgSize := 50 * 1024 * 1024 // 50 MB
+
+	// Настраиваем gRPC сервер с увеличенными таймаутами и размером сообщений
 	gRPCServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxSendMsgSize(maxMsgSize),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle: 30 * time.Minute,
 			Time:              30 * time.Minute,
@@ -664,6 +669,9 @@ func (s *serverAPI) GetDailyAnalytics(ctx context.Context, req *tzv1.GetDailyAna
 		if point.Tz != nil {
 			pbPoint.Tz = point.Tz
 		}
+		if point.AverageTime != nil {
+			pbPoint.AverageTime = point.AverageTime
+		}
 
 		pbPoints[i] = pbPoint
 	}
@@ -696,7 +704,7 @@ func (s *serverAPI) GetFeedbacks(ctx context.Context, req *tzv1.GetFeedbacksRequ
 	feedbacksOut := make([]*tzv1.FeedbackInstance, 0)
 
 	for _, feedback := range feedbacks {
-		feedbacksOut = append(feedbacksOut, &tzv1.FeedbackInstance{
+		feedbackInstance := tzv1.FeedbackInstance{
 			InstanceId:                 feedback.InstanceID,
 			InstanceType:               feedback.InstanceType,
 			FeedbackMark:               feedback.FeedbackMark,
@@ -706,7 +714,13 @@ func (s *serverAPI) GetFeedbacks(ctx context.Context, req *tzv1.GetFeedbacksRequ
 			ErrorCode:                  feedback.ErrorCode,
 			VersionId:                  feedback.VersionID,
 			TechnicalSpecificationName: feedback.TechnicalSpecificationName,
-		})
+		}
+
+		if feedback.CreatedAt != nil {
+			feedbackInstance.CreatedAt = timestamppb.New(*feedback.CreatedAt)
+		}
+
+		feedbacksOut = append(feedbacksOut, &feedbackInstance)
 	}
 	return &tzv1.GetFeedbacksResponse{
 		Feedbacks: feedbacksOut,

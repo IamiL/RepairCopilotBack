@@ -86,11 +86,10 @@ func CreateNewMessageHandler(
 		}
 
 		// Создаем контекст с таймаутом
-		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+		_, cancel := context.WithTimeout(r.Context(), 1000*time.Second)
 		defer cancel()
 
-		// Вызываем метод клиента chat-bot
-		chatID, responseMessage, err := chatBotClient.Chat.CreateNewMessage(ctx, req.ChatID, session.UserID, req.Message)
+		chatID, responseMessage, err := chatBotClient.Chat.CreateNewMessage(r.Context(), req.ChatID, session.UserID, req.Message)
 		if err != nil {
 			log.Error("failed to create new message", slog.String("error", err.Error()))
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

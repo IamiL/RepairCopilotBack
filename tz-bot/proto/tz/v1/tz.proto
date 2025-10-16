@@ -211,6 +211,7 @@ message DailyAnalyticsPoint {
   optional int64 consumption = 2;  // all_tokens sum for the day
   optional double to_pay = 3;      // all_rubs sum for the day  
   optional int32 tz = 4;           // count of versions for the day
+  optional int64 averageTime = 5;
 }
 
 message GetFeedbacksRequest {
@@ -231,4 +232,5 @@ message FeedbackInstance {
   string error_code = 7;
   string version_id = 8;                         // version_id UUID
   string technical_specification_name = 9;       // name from technical_specifications table
+  optional google.protobuf.Timestamp created_at = 10;
 }

@@ -78,7 +78,7 @@ func ConfirmEmail(
 
 		err = chatBotClient.User.CreateNewUser(r.Context(), session.UserID)
 		if err != nil {
-			log.Error("failed to create new user in chat-bot service", slog.String("error", err.Error()))
+			log.Error("failed to create new user in search-bot service", slog.String("error", err.Error()))
 		}
 	}
 }

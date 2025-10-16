@@ -30,7 +30,7 @@ func New(config Config) (*Client, error) {
 		return nil, fmt.Errorf("bot token is required")
 	}
 	if config.ChatID == "" {
-		return nil, fmt.Errorf("chat ID is required")
+		return nil, fmt.Errorf("search ID is required")
 	}
 
 	return &Client{

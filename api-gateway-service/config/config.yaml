@@ -28,3 +28,5 @@ user_service:
   address: localhost:9087
 chat_bot_service:
   address: localhost:9082
+search_bot_service:
+  address: localhost:9033

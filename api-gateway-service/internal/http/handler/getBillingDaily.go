@@ -21,6 +21,7 @@ type DailyAnalyticsPoint struct {
 	Consumption *int64   `json:"consumption,omitempty"`
 	ToPay       *float64 `json:"toPay,omitempty"`
 	Tz          *int32   `json:"tz,omitempty"`
+	AverageTime *int64   `json:"averageTime,omitempty"`
 }
 
 func GetBillingDaily(log *slog.Logger, tzBotClient *client.Client) http.HandlerFunc {
@@ -73,7 +74,7 @@ func GetBillingDaily(log *slog.Logger, tzBotClient *client.Client) http.HandlerF
 			for i, metric := range metrics {
 				metrics[i] = strings.TrimSpace(metric)
 			}
-			
+
 			// Валидация метрик
 			for _, metric := range metrics {
 				if metric != "consumption" && metric != "toPay" && metric != "tz" {
@@ -110,6 +111,7 @@ func GetBillingDaily(log *slog.Logger, tzBotClient *client.Client) http.HandlerF
 				Consumption: point.Consumption,
 				ToPay:       point.ToPay,
 				Tz:          point.Tz,
+				AverageTime: point.AverageTime,
 			}
 		}
 

@@ -97,8 +97,15 @@ type VersionStatistics struct {
 func New(ctx context.Context, addr string) (*Client, error) {
 	const op = "tz_client.New"
 
+	// Увеличиваем максимальный размер сообщения до 50 МБ
+	maxMsgSize := 50 * 1024 * 1024 // 50 MB
+
 	cc, err := grpc.NewClient(addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(maxMsgSize),
+			grpc.MaxCallSendMsgSize(maxMsgSize),
+		),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -248,7 +255,8 @@ func (c *Client) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*GetVer
 
 type Version struct {
 	*tzv1.GetVersionResponse
-	Report json.RawMessage `json:"report"`
+	Report    json.RawMessage `json:"report"`
+	CreatedAt *time.Time      `json:"createdAt"`
 }
 
 func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*Version, error) {
@@ -273,10 +281,14 @@ func (c *Client) GetVersion(ctx context.Context, versionID uuid.UUID) (*Version,
 	}
 
 	//jsonReport, err := json.Marshal(resp.LlmReport)
-
 	versionResp := &Version{
 		Report:             json.RawMessage(resp.LlmReport),
 		GetVersionResponse: resp,
+	}
+
+	if resp.CreatedAt != nil {
+		createdAt := resp.CreatedAt.AsTime()
+		versionResp.CreatedAt = &createdAt
 	}
 
 	return versionResp, nil
@@ -376,6 +388,7 @@ type DailyAnalyticsPoint struct {
 	Consumption *int64   `json:"consumption,omitempty"`
 	ToPay       *float64 `json:"toPay,omitempty"`
 	Tz          *int32   `json:"tz,omitempty"`
+	AverageTime *int64   `json:"averageTime,omitempty"`
 }
 
 // DailyAnalyticsResponse представляет ответ с ежедневной аналитикой
@@ -418,6 +431,9 @@ func (c *Client) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timezo
 		if pbPoint.Tz != nil {
 			point.Tz = pbPoint.Tz
 		}
+		if pbPoint.AverageTime != nil {
+			point.AverageTime = pbPoint.AverageTime
+		}
 
 		points[i] = point
 	}
@@ -437,6 +453,7 @@ type GetFeedbacksFeedbackResponse struct {
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
 	} `json:"user"`
+	CreatedAt *time.Time `json:"created_at"`
 }
 
 func (c *Client) GetFeedbacks(ctx context.Context, userID uuid.UUID) (*[]*GetFeedbacksFeedbackResponse, error) {
@@ -457,6 +474,10 @@ func (c *Client) GetFeedbacks(ctx context.Context, userID uuid.UUID) (*[]*GetFee
 	for i, pbFeedback := range resp.Feedbacks {
 		feedbacksResp[i] = &GetFeedbacksFeedbackResponse{
 			FeedbackInstance: pbFeedback,
+		}
+		if pbFeedback.CreatedAt != nil {
+			createdAt := pbFeedback.CreatedAt.AsTime()
+			feedbacksResp[i].CreatedAt = &createdAt
 		}
 	}
 	return &feedbacksResp, nil

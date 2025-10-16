@@ -70,7 +70,7 @@ func GetAllChatsHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
 
-		// Вызываем метод клиента chat-bot с nil userId для получения всех чатов
+		// Вызываем метод клиента search-bot с nil userId для получения всех чатов
 		chats, err := chatBotClient.Chat.GetChats(ctx, nil)
 		if err != nil {
 			log.Error("failed to get all chats", slog.String("error", err.Error()))

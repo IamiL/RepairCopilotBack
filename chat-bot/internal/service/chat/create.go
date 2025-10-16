@@ -12,13 +12,13 @@ import (
 )
 
 func (c *ChatService) CreateChat(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
-	op := "chat.CreateChat"
+	op := "search.CreateChat"
 	log := c.log.With(
 		slog.String("op", op),
 		slog.String("userID", userID.String()),
 	)
 
-	log.Info("creating chat")
+	log.Info("creating search")
 
 	messagesLeftForToday, err := c.usrProvider.GetUserConfirmAndLimitsInfo(ctx, userID)
 	if err != nil {
@@ -42,7 +42,7 @@ func (c *ChatService) CreateChat(ctx context.Context, userID uuid.UUID) (uuid.UU
 
 	err = c.chatSaver.CreateChat(ctx, newChatId, userID, false, false, 0, now, now)
 	if err != nil {
-		log.Error("Error in creating new chat", sl.Err(err))
+		log.Error("Error in creating new search", sl.Err(err))
 		return uuid.Nil, errors.New("internal server error")
 	}
 

@@ -165,23 +165,23 @@ func GetAdminDashboardHandler(
 		}()
 
 		// Запрос 3: GetVersionStatistics из tz-bot
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			log.Info("fetching statistics from tz-bot")
-
-			stats, err := tzBotClient.GetVersionStatistics(ctx)
-			if err != nil {
-				log.Error("failed to get statistics", slog.String("error", err.Error()))
-				addError(err)
-				return
-			}
-
-			mu.Lock()
-			statistics = stats
-			mu.Unlock()
-			log.Info("statistics fetched successfully", slog.Int64("total_versions", stats.TotalVersions))
-		}()
+		//wg.Add(1)
+		//go func() {
+		//	defer wg.Done()
+		//	log.Info("fetching statistics from tz-bot")
+		//
+		//	stats, err := tzBotClient.GetVersionStatistics(ctx)
+		//	if err != nil {
+		//		log.Error("failed to get statistics", slog.String("error", err.Error()))
+		//		addError(err)
+		//		return
+		//	}
+		//
+		//	mu.Lock()
+		//	statistics = stats
+		//	mu.Unlock()
+		//	log.Info("statistics fetched successfully", slog.Int64("total_versions", stats.TotalVersions))
+		//}()
 
 		// Запрос 4: GetAllActionLogs из action log repository
 		wg.Add(1)

@@ -411,3 +411,31 @@ func (c *UserClient) CheckInspectionLimit(ctx context.Context, userID string) (u
 
 	return resp.InspectionsLeft, nil
 }
+
+// ChangeUserRole меняет роль пользователя (admin или user)
+func (c *UserClient) ChangeUserRole(ctx context.Context, userID string, isAdmin bool) (*pb.ChangeUserRoleResponse, error) {
+	req := &pb.ChangeUserRoleRequest{
+		UserId:  userID,
+		IsAdmin: isAdmin,
+	}
+
+	resp, err := c.client.ChangeUserRole(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return nil, fmt.Errorf("invalid input: %s", st.Message())
+			case codes.NotFound:
+				return nil, fmt.Errorf("user not found")
+			case codes.Internal:
+				return nil, fmt.Errorf("internal server error")
+			default:
+				return nil, fmt.Errorf("failed to change user role: %s", st.Message())
+			}
+		}
+		return nil, err
+	}
+
+	return resp, nil
+}

@@ -308,6 +308,26 @@ func (s *Storage) UpdateInspectionsPerDay(ctx context.Context, userID string, in
 	return result.RowsAffected(), nil
 }
 
+func (s *Storage) UpdateInspectionsLeftForToday(ctx context.Context, userID string, inspectionsLeftForToday int) (int64, error) {
+	var query string
+	var args []interface{}
+
+	if userID == "" {
+		query = `UPDATE users SET inspections_left_for_today = $1`
+		args = []interface{}{inspectionsLeftForToday}
+	} else {
+		query = `UPDATE users SET inspections_left_for_today = $1 WHERE id = $2`
+		args = []interface{}{inspectionsLeftForToday, userID}
+	}
+
+	result, err := s.db.Exec(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("database error: %w", err)
+	}
+
+	return result.RowsAffected(), nil
+}
+
 func (s *Storage) GetFullNamesById(ctx context.Context, ids []string) (map[string]userservice.FullName, error) {
 	if len(ids) == 0 {
 		return make(map[string]userservice.FullName), nil
@@ -444,6 +464,21 @@ func (s *Storage) IncrementInspectionsLeftForToday(ctx context.Context, userID s
 	query := `UPDATE users SET inspections_left_for_today = inspections_left_for_today + 1 WHERE id = $1`
 
 	result, err := s.db.Exec(ctx, query, userID)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrUserNotFound
+	}
+
+	return nil
+}
+
+func (s *Storage) UpdateIsAdmin1(ctx context.Context, userID string, isAdmin bool) error {
+	query := `UPDATE users SET is_admin1 = $1 WHERE id = $2`
+
+	result, err := s.db.Exec(ctx, query, isAdmin, userID)
 	if err != nil {
 		return fmt.Errorf("database error: %w", err)
 	}

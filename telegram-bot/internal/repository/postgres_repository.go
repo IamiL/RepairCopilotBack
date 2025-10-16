@@ -123,6 +123,18 @@ func (r *PostgresRepository) UpdateLoginAttempt(ctx context.Context, tgUserID in
 	return nil
 }
 
+// ClearLoginAttempt очищает попытку входа
+func (r *PostgresRepository) ClearLoginAttempt(ctx context.Context, tgUserID int64) error {
+	query := `UPDATE user_states SET login_attempt = NULL, updated_at = NOW() WHERE tg_user_id = $1`
+
+	_, err := r.db.ExecContext(ctx, query, tgUserID)
+	if err != nil {
+		return fmt.Errorf("failed to clear login attempt: %w", err)
+	}
+
+	return nil
+}
+
 // UpdateCurrentChatID обновляет текущий chat_id пользователя
 func (r *PostgresRepository) UpdateCurrentChatID(ctx context.Context, tgUserID int64, chatID *uuid.UUID) error {
 	query := `UPDATE user_states SET current_chat_id = $1, updated_at = NOW() WHERE tg_user_id = $2`

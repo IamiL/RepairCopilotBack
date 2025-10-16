@@ -444,7 +444,10 @@ func (s *Storage) GetVersionStatistics(ctx context.Context) (*modelrepo.VersionS
 	if avgInspectionTime != nil {
 		// Среднее значение в наносекундах, преобразуем в time.Duration
 		duration := time.Duration(int64(*avgInspectionTime))
+		//fmt.Println("среднее время есть - ", duration.Seconds(), " секунд")
 		stats.AverageInspectionTime = &duration
+	} else {
+		//fmt.Println("среднего времени нет")
 	}
 
 	return &stats, nil
@@ -623,6 +626,29 @@ func (s *Storage) DeleteMissingErrorsByVersionID(ctx context.Context, versionID 
 
 // ErrorRepository implementation
 
+// sanitizeJSON removes invalid Unicode escape sequences from JSON data by re-encoding
+func sanitizeJSON(data []byte) []byte {
+	if len(data) == 0 {
+		return data
+	}
+
+	// Parse JSON into generic structure
+	var temp interface{}
+	if err := json.Unmarshal(data, &temp); err != nil {
+		// If unmarshal fails, return original data
+		return data
+	}
+
+	// Re-encode to clean JSON (this normalizes escape sequences)
+	cleaned, err := json.Marshal(temp)
+	if err != nil {
+		// If marshal fails, return original data
+		return data
+	}
+
+	return cleaned
+}
+
 // CreateErrors creates multiple errors for a version
 func (s *Storage) CreateErrors(ctx context.Context, req *modelrepo.CreateErrorsRequest) error {
 	if len(req.Errors) == 0 {
@@ -634,11 +660,14 @@ func (s *Storage) CreateErrors(ctx context.Context, req *modelrepo.CreateErrorsR
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`
 
 	for _, errorData := range req.Errors {
+		// Sanitize instances JSON before insertion
+		sanitizedInstances := sanitizeJSON(errorData.Instances)
+
 		_, err := s.db.Exec(ctx, query,
 			errorData.ID, req.VersionID, errorData.GroupID, errorData.ErrorCode, errorData.OrderNumber,
 			errorData.PreliminaryNotes, errorData.OverallCritique, errorData.Verdict,
 			errorData.ProcessAnalysis, errorData.ProcessCritique, errorData.ProcessVerification,
-			errorData.ProcessRetrieval, errorData.Instances, errorData.Name, errorData.Description, errorData.Detector)
+			errorData.ProcessRetrieval, sanitizedInstances, errorData.Name, errorData.Description, errorData.Detector)
 		if err != nil {
 			return fmt.Errorf("failed to create error: %w", err)
 		}
@@ -897,12 +926,13 @@ func (s *Storage) GetMissingInstancesByErrorID(ctx context.Context, errorID uuid
 
 // UpdateInvalidInstanceFeedback updates feedback for invalid instance
 func (s *Storage) UpdateInvalidInstanceFeedback(ctx context.Context, instanceID uuid.UUID, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error {
+	now := time.Now()
 	query := `
 		UPDATE invalid_instances 
-		SET feedback_exists = $2, feedback_mark = $3, feedback_comment = $4, feedback_user = $5
+		SET feedback_exists = $2, feedback_mark = $3, feedback_comment = $4, feedback_user = $5, feedback_created_at = $6
 		WHERE id = $1`
 
-	result, err := s.db.Exec(ctx, query, instanceID, true, feedbackMark, feedbackComment, userID)
+	result, err := s.db.Exec(ctx, query, instanceID, true, feedbackMark, feedbackComment, userID, now)
 	if err != nil {
 		return fmt.Errorf("failed to update invalid instance feedback: %w", err)
 	}
@@ -934,12 +964,13 @@ func (s *Storage) UpdateInvalidInstanceVerificationFeedback(ctx context.Context,
 
 // UpdateMissingInstanceFeedback updates feedback for missing instance
 func (s *Storage) UpdateMissingInstanceFeedback(ctx context.Context, instanceID uuid.UUID, feedbackMark *bool, feedbackComment *string, userID uuid.UUID) error {
+	now := time.Now()
 	query := `
 		UPDATE missing_instances 
-		SET feedback_exists = $2, feedback_mark = $3, feedback_comment = $4, feedback_user = $5
+		SET feedback_exists = $2, feedback_mark = $3, feedback_comment = $4, feedback_user = $5, feedback_created_at = $6
 		WHERE id = $1`
 
-	result, err := s.db.Exec(ctx, query, instanceID, true, feedbackMark, feedbackComment, userID)
+	result, err := s.db.Exec(ctx, query, instanceID, true, feedbackMark, feedbackComment, userID, now)
 	if err != nil {
 		return fmt.Errorf("failed to update missing instance feedback: %w", err)
 	}
@@ -1051,6 +1082,7 @@ func (s *Storage) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timez
 	includeConsumption := len(metrics) == 0 || contains(metrics, "consumption")
 	includeToPay := len(metrics) == 0 || contains(metrics, "toPay")
 	includeTz := len(metrics) == 0 || contains(metrics, "tz")
+	includeTime := len(metrics) == 0 || contains(metrics, "time")
 
 	// Строим SELECT часть запроса
 	selectParts := []string{"TO_CHAR(DATE(created_at"}
@@ -1067,6 +1099,10 @@ func (s *Storage) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timez
 	}
 	if includeTz {
 		selectParts = append(selectParts, "COUNT(*) as tz")
+	}
+	if includeTime {
+		// Среднее время в миллисекундах (inspection_time хранится как bigint в миллисекундах)
+		selectParts = append(selectParts, "COALESCE(AVG(inspection_time), 0)::bigint as average_time")
 	}
 
 	query := fmt.Sprintf(`
@@ -1097,25 +1133,44 @@ func (s *Storage) GetDailyAnalytics(ctx context.Context, fromDate, toDate, timez
 		values := make([]interface{}, 1) // дата всегда есть
 		values[0] = &point.Date
 
+		// Временные переменные для сканирования
+		var consumption int64
+		var toPay float64
+		var tz int32
+		var averageTimeFloat float64 // AVG возвращает numeric, сканируем в float64
+
 		if includeConsumption {
-			var consumption int64
-			point.Consumption = &consumption
 			values = append(values, &consumption)
 		}
 		if includeToPay {
-			var toPay float64
-			point.ToPay = &toPay
 			values = append(values, &toPay)
 		}
 		if includeTz {
-			var tz int32
-			point.Tz = &tz
 			values = append(values, &tz)
+		}
+		if includeTime {
+			values = append(values, &averageTimeFloat)
 		}
 
 		err := rows.Scan(values...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan daily analytics row: %w", err)
+		}
+
+		// Присваиваем отсканированные значения в point
+		if includeConsumption {
+			point.Consumption = &consumption
+		}
+		if includeToPay {
+			point.ToPay = &toPay
+		}
+		if includeTz {
+			point.Tz = &tz
+		}
+		if includeTime {
+			// Преобразуем float64 в int64 (округляем)
+			averageTimeInt := int64(averageTimeFloat)
+			point.AverageTime = &averageTimeInt
 		}
 
 		points = append(points, point)
@@ -1155,7 +1210,8 @@ func (s *Storage) GetFeedbacks(ctx context.Context, userID *string) ([]*tzservic
 				ii.feedback_mark,
 				ii.feedback_comment,
 				ii.feedback_user,
-				ii.error_id
+				ii.error_id,
+				ii.feedback_created_at
 			FROM invalid_instances ii
 			WHERE ii.feedback_exists = true
 			
@@ -1168,7 +1224,8 @@ func (s *Storage) GetFeedbacks(ctx context.Context, userID *string) ([]*tzservic
 				mi.feedback_mark,
 				mi.feedback_comment,
 				mi.feedback_user,
-				mi.error_id
+				mi.error_id,
+				mi.feedback_created_at
 			FROM missing_instances mi
 			WHERE mi.feedback_exists = true
 		)
@@ -1179,6 +1236,7 @@ func (s *Storage) GetFeedbacks(ctx context.Context, userID *string) ([]*tzservic
 			f.feedback_comment,
 			f.feedback_user,
 			f.error_id,
+			f.feedback_created_at,
 			e.error_code,
 			v.id as version_id,
 			ts.name as technical_specification_name
@@ -1214,6 +1272,7 @@ func (s *Storage) GetFeedbacks(ctx context.Context, userID *string) ([]*tzservic
 			&feedbackComment,
 			&feedback.FeedbackUser,
 			&feedback.ErrorID,
+			&feedback.CreatedAt,
 			&feedback.ErrorCode,
 			&feedback.VersionID,
 			&feedback.TechnicalSpecificationName,

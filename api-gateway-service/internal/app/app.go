@@ -11,6 +11,7 @@ import (
 	"repairCopilotBot/api-gateway-service/internal/repository/postgres"
 	postgresActionLog "repairCopilotBot/api-gateway-service/internal/repository/postgres/action_log"
 	chatBotClient "repairCopilotBot/chat-bot/pkg/client"
+	searchBotClient "repairCopilotBot/search-bot/pkg/client"
 	tzbotclient "repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
 	"time"
@@ -33,6 +34,7 @@ func New(
 	RedisConfig *repository.RedisConfig,
 	PostgresConfig *postgres.Config,
 	ChatBotClientConfig *chatBotClient.Config,
+	SearchBotClientConfig *searchBotClient.Config,
 	UserServiceAddr string,
 ) *App {
 	postgresConn, err := postgres.NewConnPool(PostgresConfig)
@@ -61,6 +63,8 @@ func New(
 
 	chatBotClient, err := chatBotClient.New(ChatBotClientConfig)
 
+	searchBotClient, err := searchBotClient.New(SearchBotClientConfig)
+
 	sessionRepo := repository.NewSessionRepository(RedisConfig.Address, RedisConfig.Password)
 
 	tgBot, err := tgClient.NewBot(TgConfig.Token)
@@ -70,7 +74,7 @@ func New(
 
 	tgClient.New(tgBot, TgConfig.ChatID)
 
-	httpApp := httpapp.New(log, httpConfig, tzBotClient, userServiceClient, chatBotClient, sessionRepo, actionLogRepo)
+	httpApp := httpapp.New(log, httpConfig, tzBotClient, userServiceClient, chatBotClient, searchBotClient, sessionRepo, actionLogRepo)
 
 	return &App{
 		HTTPServer: httpApp,

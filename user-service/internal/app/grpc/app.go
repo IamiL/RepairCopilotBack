@@ -377,6 +377,28 @@ func (s *serverAPI) CheckInspectionLimit(ctx context.Context, req *pb.CheckInspe
 	}, nil
 }
 
+func (s *serverAPI) ChangeUserRole(ctx context.Context, req *pb.ChangeUserRoleRequest) (*pb.ChangeUserRoleResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	err := s.userService.ChangeUserRole(ctx, req.UserId, req.IsAdmin)
+	if err != nil {
+		s.log.Error("failed to change user role", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to change user role")
+	}
+
+	roleStr := "user"
+	if req.IsAdmin {
+		roleStr = "admin"
+	}
+
+	return &pb.ChangeUserRoleResponse{
+		Success: true,
+		Message: fmt.Sprintf("Successfully changed role for user %s to %s", req.UserId, roleStr),
+	}, nil
+}
+
 //func (s *serverAPI) mustEmbedUnimplementedUserServiceServer() {
 //	s.log.Error("GetLoginById not implemented")
 //}
