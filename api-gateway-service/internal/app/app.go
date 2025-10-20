@@ -67,10 +67,10 @@ func New(
 
 	sessionRepo := repository.NewSessionRepository(RedisConfig.Address, RedisConfig.Password)
 
-	tgBot, err := tgClient.NewBot(TgConfig.Token)
-	if err != nil {
-		panic(err)
-	}
+	//tgBot, err := tgClient.NewBot(TgConfig.Token)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	tgClient.New(tgBot, TgConfig.ChatID)
 
