@@ -26,7 +26,6 @@ func main() {
 		&cfg.GRPC,
 		&cfg.Llm,
 		&cfg.WordParser,
-		&cfg.WordParser2,
 		&cfg.DocToDocXConverterClient,
 		&cfg.ReportGeneratorClient,
 		&cfg.MarkdownService,

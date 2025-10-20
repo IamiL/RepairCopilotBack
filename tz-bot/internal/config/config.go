@@ -9,7 +9,6 @@ import (
 	reportgeneratorclient "repairCopilotBot/tz-bot/internal/pkg/report-generator-client"
 	telegramclient "repairCopilotBot/tz-bot/internal/pkg/telegram-client"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
-	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 
@@ -17,12 +16,12 @@ import (
 )
 
 type Config struct {
-	Env                      string                          `env:"ENV" env-default:"local"`
-	GRPC                     grpcapp.Config                  `env-prefix:"GRPC_"`
-	Llm                      tz_llm_client.Config            `env-prefix:"LLM_"`
-	PromtBuilder             promt_builder.Config            `env-prefix:"PROMT_BUILDER_"`
-	WordParser               word_parser_client.Config       `env-prefix:"DOCX_PARSER_"`
-	WordParser2              word_parser2.Config             `env-prefix:"WORD_PARSER_"`
+	Env          string                    `env:"ENV" env-default:"local"`
+	GRPC         grpcapp.Config            `env-prefix:"GRPC_"`
+	Llm          tz_llm_client.Config      `env-prefix:"LLM_"`
+	PromtBuilder promt_builder.Config      `env-prefix:"PROMT_BUILDER_"`
+	WordParser   word_parser_client.Config `env-prefix:"DOCX_PARSER_"`
+	//WordParser2              word_parser2.Config             `env-prefix:"WORD_PARSER_"`
 	DocToDocXConverterClient doctodocxconverterclient.Config `env-prefix:"DOC_TO_DOCX_CONVERTER_"`
 	ReportGeneratorClient    reportgeneratorclient.Config    `env-prefix:"REPORT_GENERATOR_"`
 	MarkdownService          markdown_service_client.Config  `env-prefix:"MD_CONVERTER_"`

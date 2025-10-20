@@ -11,7 +11,6 @@ import (
 	telegramclient "repairCopilotBot/tz-bot/internal/pkg/telegram-client"
 	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
 	word_parser_client "repairCopilotBot/tz-bot/internal/pkg/word-parser"
-	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 	"sync"
 
@@ -21,7 +20,6 @@ import (
 type Tz struct {
 	log                      *slog.Logger
 	wordConverterClient      *word_parser_client.Client
-	wordConverterClient2     *word_parser2.WordConverterClient
 	docToDocXConverterClient *doctodocxconverterclient.Client
 	reportGeneratorClient    ReportGeneratorClient
 	markdownClient           *markdown_service_client.Client

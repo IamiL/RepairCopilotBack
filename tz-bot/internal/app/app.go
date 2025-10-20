@@ -7,7 +7,6 @@ import (
 	reportgeneratorclient "repairCopilotBot/tz-bot/internal/pkg/report-generator-client"
 	telegramclient "repairCopilotBot/tz-bot/internal/pkg/telegram-client"
 	user_service_client "repairCopilotBot/tz-bot/internal/pkg/user-service"
-	word_parser2 "repairCopilotBot/tz-bot/internal/pkg/word-parser2"
 	"repairCopilotBot/tz-bot/internal/repository/postgres"
 	"repairCopilotBot/tz-bot/internal/repository/s3minio"
 	"time"
@@ -36,7 +35,6 @@ func New(
 	grpcConfig *grpcapp.Config,
 	LlmConfig *tz_llm_client.Config,
 	WordParserConfig *word_parser_client.Config,
-	WordParser2Config *word_parser2.Config,
 	docToDocXConverterClientConfig *doctodocxconverterclient.Config,
 	reportGeneratorClientConfig *reportgeneratorclient.Config,
 	MarkdownServiceConfig *markdown_service_client.Config,
@@ -60,7 +58,7 @@ func New(
 
 	wordParserClient := word_parser_client.New(WordParserConfig.Url)
 
-	wordParserClient2 := word_parser2.NewWordConverterClient(WordParser2Config.Host, WordParser2Config.Port)
+	//wordParserClient2 := word_parser2.NewWordConverterClient(WordParser2Config.Host, WordParser2Config.Port)
 
 	docToDocXConverterClient := doctodocxconverterclient.NewClient(docToDocXConverterClientConfig.Host, docToDocXConverterClientConfig.Port)
 
@@ -93,7 +91,7 @@ func New(
 		telegramClient = nil
 	}
 
-	tzService := tzservice.New(log, wordParserClient, wordParserClient2, docToDocXConverterClient, reportGeneratorClient, markdownClient, llmClient, prompBuilderClient, userServiceClient, telegramClient, s3Client, postgres)
+	tzService := tzservice.New(log, wordParserClient, docToDocXConverterClient, reportGeneratorClient, markdownClient, llmClient, prompBuilderClient, userServiceClient, telegramClient, s3Client, postgres)
 
 	grpcApp := grpcapp.New(log, tzService, grpcConfig)
 

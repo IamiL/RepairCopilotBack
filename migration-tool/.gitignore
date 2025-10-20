@@ -1,0 +1,19 @@
+# Конфигурация с паролями
+config.json
+
+# Скомпилированные бинарники
+cmd/migrate
+cmd/migrate.exe
+
+# Go модули
+go.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Логи
+*.log
