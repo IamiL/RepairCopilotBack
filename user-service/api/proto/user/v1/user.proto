@@ -49,6 +49,9 @@ service UserService {
 
   // Смена роли пользователя
   rpc ChangeUserRole(ChangeUserRoleRequest) returns (ChangeUserRoleResponse);
+
+  // Recovery восстанавливает логин и пароль пользователя по email
+  rpc Recovery(RecoveryRequest) returns (RecoveryResponse);
 }
 
 // GetUserInfoRequest запрос для получения информации о пользователе по ID
@@ -251,6 +254,17 @@ message ChangeUserRoleRequest {
 
 // ChangeUserRoleResponse ответ на смену роли
 message ChangeUserRoleResponse {
+  bool success = 1;    // Статус успешности операции
+  string message = 2;  // Сообщение о результате
+}
+
+// RecoveryRequest запрос для восстановления логина и пароля
+message RecoveryRequest {
+  string email = 1;  // Email пользователя
+}
+
+// RecoveryResponse ответ на восстановление
+message RecoveryResponse {
   bool success = 1;    // Статус успешности операции
   string message = 2;  // Сообщение о результате
 }

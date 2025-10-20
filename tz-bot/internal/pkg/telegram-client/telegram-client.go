@@ -12,8 +12,8 @@ import (
 
 // Config содержит настройки для Telegram клиента
 type Config struct {
-	BotToken string `yaml:"bot_token"`
-	ChatID   string `yaml:"chat_id"`
+	BotToken string `env:"TOKEN" env-required:"true"`
+	ChatID   string `env:"CHAT_ID" env-required:"true"`
 }
 
 // Client представляет клиент для работы с Telegram Bot API

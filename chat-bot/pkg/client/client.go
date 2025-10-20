@@ -9,8 +9,8 @@ import (
 )
 
 type Config struct {
-	Address string        `yaml:"address" env-default:"localhost:50053"`
-	Timeout time.Duration `yaml:"timeout" env-default:"1000s"`
+	Address string        `env:"LOCATION" env-default:"localhost:50053"`
+	Timeout time.Duration `env:"TIMEOUT" env-default:"1000s"`
 }
 
 type ChatBotClient struct {

@@ -25,7 +25,7 @@ type App struct {
 }
 
 type Config struct {
-	Port string `yaml:"port" env-default:":50051"`
+	Port string `env:"PORT" env-default:":50051"`
 }
 
 type serverAPI struct {

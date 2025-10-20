@@ -11,8 +11,8 @@ import (
 )
 
 type Config struct {
-	Url1 string `yaml:"url1"`
-	Url2 string `yaml:"url2"`
+	Url1 string `env:"URL1" env-required:"true"`
+	Url2 string `env:"URL2" env-required:"true"`
 }
 
 type Client struct {

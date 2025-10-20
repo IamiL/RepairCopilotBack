@@ -1,0 +1,106 @@
+networks:
+  common:
+    external: true
+    name: common
+
+services:
+  postgres:
+    image: postgres:15 # Образ Postgres версии 15
+    container_name: tz-service-postgres # Имя контейнера базы данных
+#    env_file:
+#      - ../../.env # Загружаем переменные из .env в корне проекта
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=50"
+      - "-c"
+      - "shared_buffers=128MB"
+      - "-c"
+      - "effective_cache_size=4GB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=512MB"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "temp_file_limit=10GB"
+      - "-c"
+      - "log_min_duration_statement=200ms"
+      - "-c"
+      - "idle_in_transaction_session_timeout=10s"
+      - "-c"
+      - "lock_timeout=1s"
+      - "-c"
+      - "statement_timeout=60s"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "pg_stat_statements.max=10000"
+      - "-c"
+      - "pg_stat_statements.track=all"
+    environment:
+      POSTGRES_DB: ${TZ_SERVICE_POSTGRES_DB_NAME}
+      POSTGRES_USER: ${TZ_SERVICE_POSTGRES_USER} # Пользователь базы данных из .env
+      POSTGRES_PASSWORD: ${TZ_SERVICE_POSTGRES_PASS} # Пароль базы данных из .env
+    ports:
+      - "${TZ_SERVICE_POSTGRES_PORT}:5432" # Пробрасываем порт: внешний из .env, внутренний фиксированный
+    volumes:
+      - tz-service-pg-volume:/var/lib/postgresql/data # Volume для сохранности данных базы
+    healthcheck: # Проверяем "здоровье" контейнера базы
+      test: [ "CMD-SHELL", "pg_isready -U ${TZ_SERVICE_POSTGRES_USER} -d ${TZ_SERVICE_POSTGRES_DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped # Автоматический перезапуск контейнера, кроме ручной остановки
+    networks:
+      - common
+
+  app:
+    build:
+      context: ../.. # Контекст сборки приложения — корень проекта (где go.mod)
+      dockerfile: tz-bot/deployment/Dockerfile # Путь к Dockerfile от корня проекта
+    container_name: tz-service # Имя контейнера приложения
+#    env_file:
+#      - ../../.env # Загружаем переменные из .env в корне проекта
+    ports:
+      - "${TZ_SERVICE_PORT}:8080" # Внешний порт из .env, внутренний фиксированный 8080
+    environment:
+      GRPC_PORT: ":8080" # Порт gRPC сервера внутри контейнера (фиксированный)
+      MIGRATIONS_DIR: "${TZ_SERVICE_MIGRATIONS_DIR}" # Директория миграций
+      POSTGRES_HOST: "tz-service-postgres"
+      POSTGRES_PORT: "5432" # Внутренний порт Postgres в Docker сети (фиксированный)
+      POSTGRES_DB_NAME: "${TZ_SERVICE_POSTGRES_DB_NAME}"
+      POSTGRES_USER: "${TZ_SERVICE_POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${TZ_SERVICE_POSTGRES_PASS}"
+      POSTGRES_MAX_CONNS: "10"
+      LLM_URL: "http://llm-requester-service:8000"
+      LLM_MODEL: "qwen3-235b-a22b-fp8/latest"
+      PROMT_BUILDER_URL1: "http://prompt-builder-service:8000/step1"
+      PROMT_BUILDER_URL2: "http://prompt-builder-service:8000/step2"
+      DOC_TO_DOCX_CONVERTER_HOST: "doc-to-docx-converter-service"
+      DOC_TO_DOCX_CONVERTER_PORT: "8000"
+      DOCX_PARSER_HOSTNAME: "http://docx-converter-service:8000"
+      MD_CONVERTER_HOSTNAME: "http://md-converter-service:8000"
+      REPORT_GENERATOR_HOST: "report-generator-service"
+      REPORT_GENERATOR_PORT: "8000"
+      S3_MINIO_HOST: "s3-minio"
+      S3_MINIO_PORT: "9000"
+      S3_MINIO_ACCESS_KEY: "${S3_MINIO_ROOT_USER}"
+      S3_MINIO_SECRET_KEY: "${S3_MINIO_ROOT_PASSWORD}"
+      TELEGRAM_BOT_TOKEN: "${TZ_SERVICE_TELEGRAM_BOT_TOKEN}"
+      TELEGRAM_BOT_CHAT_ID: "${TZ_SERVICE_TELEGRAM_BOT_CHAT_ID}"
+      TELEGRAM_BOT_USE_WEBHOOKS: "false"
+      TELEGRAM_CLIENT_TOKEN: "${TZ_SERVICE_TELEGRAM_CLIENT_TOKEN}"
+      TELEGRAM_CLIENT_CHAT_ID: "${TZ_SERVICE_TELEGRAM_CLIENT_CHAT_ID}"
+    depends_on:
+      postgres:
+        condition: service_healthy # Ждём, пока база станет "здоровой", прежде чем стартовать приложение
+    restart: unless-stopped # Автоматический перезапуск приложения
+    # Сеть можно оставить для расширяемости проекта
+    networks:
+      - common
+
+volumes:
+  tz-service-pg-volume: # Volume для данных базы, Docker создаст его автоматически

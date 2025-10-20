@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Url string `yaml:"url"`
+	Url string `env:"HOSTNAME" env-required:"true"`
 }
 
 type Client struct {

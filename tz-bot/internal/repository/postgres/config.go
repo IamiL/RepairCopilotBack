@@ -1,10 +1,10 @@
 package postgres
 
 type Config struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	DBName   string `yaml:"database_name"`
-	User     string `yaml:"username"`
-	Pass     string `yaml:"password"`
-	MaxConns int    `yaml:"max_connections" default:"10"`
+	Host     string `env:"HOST" env-default:"localhost"`
+	Port     string `env:"PORT" env-default:"5432"`
+	DBName   string `env:"DB_NAME" env-required:"true"`
+	User     string `env:"USER" env-required:"true"`
+	Pass     string `env:"PASSWORD" env-required:"true"`
+	MaxConns int    `env:"MAX_CONNS" env-default:"10"`
 }

@@ -1,0 +1,58 @@
+# Пример интеграции llm-requester в основной docker-compose.yml проекта
+# Этот файл показывает, как добавить сервис в ../docker-compose.yml
+
+# Добавьте следующие строки в файл ../docker-compose.yml:
+
+services:
+  # ... существующие сервисы (minio, nginx, grafana и т.д.) ...
+
+  llm-requester:
+    build:
+      context: ./llm-requester
+      dockerfile: Dockerfile
+    container_name: llm-requester
+    hostname: llm-requester
+    ports:
+      - "8020:8020"
+    environment:
+      # Required settings from root .env file
+      YC_API_KEY: ${YC_API_KEY}
+      YC_FOLDER_ID: ${YC_FOLDER_ID}
+      YC_BASE_URL: ${YC_BASE_URL:-https://llm.api.cloud.yandex.net/v1}
+
+      # Optional settings with defaults
+      MAX_CONCURRENT: ${MAX_CONCURRENT:-10}
+      HTTP_TIMEOUT: ${HTTP_TIMEOUT:-600}
+      MAX_RETRY_PROVIDER: ${MAX_RETRY_PROVIDER:-2}
+      MAX_RETRY_JSON: ${MAX_RETRY_JSON:-2}
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-qwen3-235b-a22b-fp8/latest}
+
+      # Logging settings
+      LOG_LEVEL: ${LLM_LOG_LEVEL:-INFO}
+      REQUEST_LOG: ${LLM_REQUEST_LOG:-true}
+      REQUEST_ID_HEADER: ${LLM_REQUEST_ID_HEADER:-X-Request-ID}
+    networks:
+      - common
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8020/docs').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=llm-requester"
+    labels:
+      - "com.example.service=llm-requester"
+      - "com.example.description=LLM API Requester Service"
+
+# Также добавьте в корневой .env файл (../env):
+# YC_API_KEY=your_yandex_cloud_api_key_here
+# YC_FOLDER_ID=your_yandex_cloud_folder_id_here
+# YC_BASE_URL=https://llm.api.cloud.yandex.net/v1
+# MAX_CONCURRENT=10
+# LLM_LOG_LEVEL=INFO

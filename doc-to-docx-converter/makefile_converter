@@ -1,0 +1,113 @@
+# Makefile для управления сервисом конвертации DOC в DOCX
+
+.PHONY: help build up down restart logs shell test clean health convert
+
+# Переменные
+DOCKER_COMPOSE = docker-compose
+SERVICE_NAME = word-converter
+PORT = 8000
+
+# Цвета для вывода
+GREEN = \033[0;32m
+YELLOW = \033[0;33m
+RED = \033[0;31m
+NC = \033[0m # No Color
+
+help: ## Показать эту справку
+	@echo "$(GREEN)Доступные команды:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-15s$(NC) %s\n", $$1, $$2}'
+
+build: ## Собрать Docker образ
+	@echo "$(GREEN)Сборка Docker образа...$(NC)"
+	$(DOCKER_COMPOSE) build
+
+up: ## Запустить сервис
+	@echo "$(GREEN)Запуск сервиса...$(NC)"
+	$(DOCKER_COMPOSE) up -d
+	@echo "$(GREEN)Сервис запущен на http://localhost:$(PORT)$(NC)"
+	@echo "$(YELLOW)Документация API: http://localhost:$(PORT)/docs$(NC)"
+
+down: ## Остановить сервис
+	@echo "$(YELLOW)Остановка сервиса...$(NC)"
+	$(DOCKER_COMPOSE) down
+
+restart: down up ## Перезапустить сервис
+
+logs: ## Показать логи
+	$(DOCKER_COMPOSE) logs -f $(SERVICE_NAME)
+
+shell: ## Открыть shell в контейнере
+	@echo "$(GREEN)Открытие shell в контейнере...$(NC)"
+	docker exec -it $(SERVICE_NAME)-service /bin/bash
+
+test: ## Запустить тесты
+	@echo "$(GREEN)Запуск тестов...$(NC)"
+	@python3 test_converter.py
+
+health: ## Проверить состояние сервиса
+	@echo "$(GREEN)Проверка состояния сервиса...$(NC)"
+	@curl -s http://localhost:$(PORT)/health | python3 -m json.tool || echo "$(RED)Сервис недоступен$(NC)"
+
+convert: ## Конвертировать файл (использование: make convert FILE=document.doc)
+	@if [ -z "$(FILE)" ]; then \
+		echo "$(RED)Ошибка: укажите файл для конвертации$(NC)"; \
+		echo "$(YELLOW)Использование: make convert FILE=document.doc$(NC)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(FILE)" ]; then \
+		echo "$(RED)Ошибка: файл '$(FILE)' не найден$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)Конвертация файла $(FILE)...$(NC)"
+	@OUTPUT=$$(echo $(FILE) | sed 's/\.doc$$/.docx/'); \
+	curl -s -X POST http://localhost:$(PORT)/convert \
+		-F "file=@$(FILE)" \
+		--output $$OUTPUT && \
+	echo "$(GREEN)✅ Файл сконвертирован: $$OUTPUT$(NC)" || \
+	echo "$(RED)❌ Ошибка конвертации$(NC)"
+
+clean: ## Очистить временные файлы и Docker ресурсы
+	@echo "$(YELLOW)Очистка временных файлов...$(NC)"
+	rm -rf uploads/* outputs/* *.docx
+	@echo "$(YELLOW)Очистка Docker ресурсов...$(NC)"
+	$(DOCKER_COMPOSE) down -v
+	docker system prune -f
+
+install-deps: ## Установить зависимости для тестирования
+	@echo "$(GREEN)Установка Python зависимостей для тестирования...$(NC)"
+	pip install requests
+
+dev: ## Запустить в режиме разработки с монтированием кода
+	@echo "$(GREEN)Запуск в режиме разработки...$(NC)"
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.dev.yml up
+
+prod: ## Запустить в production режиме с nginx
+	@echo "$(GREEN)Запуск в production режиме...$(NC)"
+	$(DOCKER_COMPOSE) --profile production up -d
+	@echo "$(GREEN)Сервис запущен на http://localhost$(NC)"
+
+stats: ## Показать статистику использования ресурсов
+	@echo "$(GREEN)Статистика контейнеров:$(NC)"
+	docker stats --no-stream $(SERVICE_NAME)-service
+
+bench: ## Запустить нагрузочное тестирование (требует Apache Bench)
+	@echo "$(GREEN)Запуск нагрузочного тестирования...$(NC)"
+	@echo "$(YELLOW)10 запросов, 2 параллельных соединения$(NC)"
+	ab -n 10 -c 2 http://localhost:$(PORT)/health
+
+version: ## Показать версии компонентов
+	@echo "$(GREEN)Версии компонентов:$(NC)"
+	@docker exec $(SERVICE_NAME)-service python --version
+	@docker exec $(SERVICE_NAME)-service libreoffice --version | head -n 1
+	@echo "FastAPI версия:"
+	@docker exec $(SERVICE_NAME)-service pip show fastapi | grep Version
+
+backup: ## Создать резервную копию конвертированных файлов
+	@echo "$(GREEN)Создание резервной копии...$(NC)"
+	@BACKUP_NAME="backup_$$(date +%Y%m%d_%H%M%S).tar.gz"; \
+	tar -czf $$BACKUP_NAME outputs/ && \
+	echo "$(GREEN)✅ Резервная копия создана: $$BACKUP_NAME$(NC)"
+
+monitor: ## Мониторинг в реальном времени
+	@echo "$(GREEN)Запуск мониторинга (Ctrl+C для выхода)...$(NC)"
+	@watch -n 2 'docker ps | grep word-converter && echo "" && docker stats --no-stream word-converter-service'

@@ -32,7 +32,7 @@ type serverAPI struct {
 }
 
 type Config struct {
-	Port string `yaml:"port" env-default:":50052"`
+	Port string `env:"PORT" env-default:":50052"`
 }
 
 // UserGRPCServer реализует UserServiceServer
@@ -396,6 +396,23 @@ func (s *serverAPI) ChangeUserRole(ctx context.Context, req *pb.ChangeUserRoleRe
 	return &pb.ChangeUserRoleResponse{
 		Success: true,
 		Message: fmt.Sprintf("Successfully changed role for user %s to %s", req.UserId, roleStr),
+	}, nil
+}
+
+func (s *serverAPI) Recovery(ctx context.Context, req *pb.RecoveryRequest) (*pb.RecoveryResponse, error) {
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email is required")
+	}
+
+	err := s.userService.Recovery(ctx, req.Email)
+	if err != nil {
+		s.log.Error("failed to recover account", slog.String("error", err.Error()))
+		return nil, status.Error(codes.Internal, "failed to recover account")
+	}
+
+	return &pb.RecoveryResponse{
+		Success: true,
+		Message: "Recovery email sent successfully. Please check your email for new credentials.",
 	}, nil
 }
 

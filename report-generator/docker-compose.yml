@@ -1,0 +1,14 @@
+networks:
+  common:
+    external: true
+    name: common
+
+services:
+  app:
+    container_name: report-generator-service
+    build: .
+#    ports:
+#      - "8050:8000"
+    restart: unless-stopped
+    networks:
+      - common

@@ -1,8 +1,6 @@
 package config
 
 import (
-	"flag"
-	"os"
 	"repairCopilotBot/api-gateway-service/internal/app"
 	httpapp "repairCopilotBot/api-gateway-service/internal/app/http"
 	"repairCopilotBot/api-gateway-service/internal/pkg/tg"
@@ -11,63 +9,31 @@ import (
 	chatBotServiceClient "repairCopilotBot/chat-bot/pkg/client"
 	searchBotServiceClient "repairCopilotBot/search-bot/pkg/client"
 	"repairCopilotBot/tz-bot/client"
+	userserviceclient "repairCopilotBot/user-service/client"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env              string                        `yaml:"env" env-default:"local"`
-	App              app.Config                    `yaml:"app"`
-	HTTP             httpapp.Config                `yaml:"http_server"`
-	Tg               tg_client.Config              `yaml:"tg_client"`
-	TzBotService     client.Config                 `yaml:"tz_bot_service"`
-	ChatBotService   chatBotServiceClient.Config   `yaml:"chat_bot_service"`
-	SearchBotService searchBotServiceClient.Config `yaml:"search_bot_service"`
-	Redis            repository.RedisConfig        `yaml:"redis"`
-	Postgres         postgres.Config               `yaml:"postgres"`
-	UserService      UserServiceConfig             `yaml:"user_service"`
+	Env              string                        `env:"ENV" env-default:"local"`
+	App              app.Config                    `env-prefix:"APP_"`
+	HTTP             httpapp.Config                `env-prefix:"HTTP_"`
+	Tg               tg_client.Config              `env-prefix:"TG_"`
+	TzBotService     client.Config                 `env-prefix:"TZ_SERVICE_"`
+	ChatBotService   chatBotServiceClient.Config   `env-prefix:"CHAT_POCHEMU_SERVICE_"`
+	SearchBotService searchBotServiceClient.Config `env-prefix:"CHAT_SEARCH_SERVICE_"`
+	Redis            repository.RedisConfig        `env-prefix:"REDIS_"`
+	Postgres         postgres.Config               `env-prefix:"POSTGRES_"`
+	UserService      userserviceclient.Config      `env-prefix:"USER_SERVICE_"`
 }
 
-type UserServiceConfig struct {
-	Address string `yaml:"address" env-default:"localhost:50051"`
-}
-
+// MustLoad читает конфигурацию из переменных окружения
 func MustLoad() *Config {
-	configPath := fetchConfigPath()
-	if configPath == "" {
-		panic("config path is empty")
-	}
-
-	return MustLoadPath(configPath)
-}
-
-func MustLoadPath(configPath string) *Config {
-	// check if file exists
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		panic("config file does not exist: " + configPath)
-	}
-
 	var cfg Config
 
-	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		panic("cannot read config: " + err.Error())
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
+		panic("cannot read config from environment: " + err.Error())
 	}
 
 	return &cfg
-}
-
-// fetchConfigPath fetches config path from command line flag or environment variable.
-// Priority: flag > env > default.
-// Default value is empty string.
-func fetchConfigPath() string {
-	var res string
-
-	flag.StringVar(&res, "config", "api-gateway-service/config/config.yaml", "path to config file")
-	flag.Parse()
-
-	if res == "" {
-		res = os.Getenv("CONFIG_PATH")
-	}
-
-	return res
 }

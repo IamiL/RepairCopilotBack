@@ -19,6 +19,10 @@ type UserClient struct {
 	conn   *grpc.ClientConn
 }
 
+type Config struct {
+	Address string `env:"LOCATION" env-default:"localhost:50051"`
+}
+
 // NewUserClient создает новый клиент для user-service
 func NewUserClient(address string) (*UserClient, error) {
 	conn, err := grpc.Dial(address,
@@ -432,6 +436,33 @@ func (c *UserClient) ChangeUserRole(ctx context.Context, userID string, isAdmin 
 				return nil, fmt.Errorf("internal server error")
 			default:
 				return nil, fmt.Errorf("failed to change user role: %s", st.Message())
+			}
+		}
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// Recovery восстанавливает логин и пароль пользователя по email
+func (c *UserClient) Recovery(ctx context.Context, email string) (*pb.RecoveryResponse, error) {
+	req := &pb.RecoveryRequest{
+		Email: email,
+	}
+
+	resp, err := c.client.Recovery(ctx, req)
+	if err != nil {
+		// Обработка gRPC статусов
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				return nil, fmt.Errorf("invalid email: %s", st.Message())
+			case codes.NotFound:
+				return nil, fmt.Errorf("user not found")
+			case codes.Internal:
+				return nil, fmt.Errorf("internal server error")
+			default:
+				return nil, fmt.Errorf("failed to recover account: %s", st.Message())
 			}
 		}
 		return nil, err

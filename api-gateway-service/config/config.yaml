@@ -1,27 +1,26 @@
 env: "local"
-app:
-  token_ttl: 300h
+#app:
+#  token_ttl: 300h
 http_server:
-  port: 9086
 #  port: 8080
-  timeout: 4s
+#  timeout: 4s
 tg_client:
-  token: 7071475834:AAE3-DmHqbFa1nkXRlhCCry4Dm2EvQJq1Kk
+#  token: 7071475834:AAE3-DmHqbFa1nkXRlhCCry4Dm2EvQJq1Kk
 #  token: 7550143505:AAFsjHU8x90K8KbTAIPhpMZzF0HUGIGEX3g
-  chat_id: -1002870769486
+#  chat_id: -1002870769486
 tz_bot_service:
-  addr: localhost:8081
+#  addr: localhost:8081
 redis:
-  address: localhost:6379
+#  address: localhost:6379
 #  address: localhost:9380
-  password: r8VwP2mQe7Jx1Tz9Hb4Kc6Nf3Lg5Yd8
+#  password: r8VwP2mQe7Jx1Tz9Hb4Kc6Nf3Lg5Yd8
 postgres:
-  host: localhost
-  port: "8030"
+#  host: localhost
+#  port: "8030"
 #  port: "9030"
   database_name: logs
-  username: aAKSHDVasvd
-  password: dbsaLSAGVDvadaj
+#  username: aAKSHDVasvd
+#  password: dbsaLSAGVDvadaj
   max_connections: 10
 user_service:
 #  address: localhost:8001

@@ -489,3 +489,38 @@ func (s *Storage) UpdateIsAdmin1(ctx context.Context, userID string, isAdmin boo
 
 	return nil
 }
+
+func (s *Storage) GetUserIDByEmail(ctx context.Context, email string) (uuid.UUID, error) {
+	query := `SELECT id FROM users WHERE email = $1`
+
+	var userID string
+	err := s.db.QueryRow(ctx, query, email).Scan(&userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return uuid.Nil, repo.ErrUserNotFound
+		}
+		return uuid.Nil, fmt.Errorf("database error: %w", err)
+	}
+
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid UUID format: %w", err)
+	}
+
+	return uid, nil
+}
+
+func (s *Storage) UpdateLoginAndPassword(ctx context.Context, userID uuid.UUID, login string, passHash []byte) error {
+	query := `UPDATE users SET login = $1, pass_hash = $2, updated_at = NOW() WHERE id = $3`
+
+	result, err := s.db.Exec(ctx, query, login, passHash, userID.String())
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return repo.ErrUserNotFound
+	}
+
+	return nil
+}

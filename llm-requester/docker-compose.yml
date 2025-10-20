@@ -1,0 +1,46 @@
+networks:
+  common:
+    external: true
+    name: common
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-requester-service
+    hostname: llm-requester
+    ports:
+      - "8020:8000"
+    environment:
+      # Required settings (must be set via .env file or here)
+      YC_API_KEY: ${LLM_REQUESTER_YC_API_KEY}
+      YC_FOLDER_ID: ${LLM_REQUESTER_YC_FOLDER_ID}
+      YC_BASE_URL: ${LLM_REQUESTER_YC_BASE_URL:-https://llm.api.cloud.yandex.net/v1}
+
+      # Optional settings with defaults
+      MAX_CONCURRENT: ${LLM_REQUESTER_MAX_CONCURRENT:-30}
+      HTTP_TIMEOUT: ${LLM_REQUESTER_HTTP_TIMEOUT:-600}
+      MAX_RETRY_PROVIDER: ${LLM_REQUESTER_MAX_RETRY_PROVIDER:-2}
+      MAX_RETRY_JSON: ${LLM_REQUESTER_MAX_RETRY_JSON:-2}
+      DEFAULT_MODEL: ${LLM_REQUESTER_DEFAULT_MODEL:-qwen3-235b-a22b-fp8/latest}
+
+      # Logging settings
+      LOG_LEVEL: ${LLM_REQUESTER_LOG_LEVEL:-INFO}
+      REQUEST_LOG: ${LLM_REQUESTER_REQUEST_LOG:-true}
+      REQUEST_ID_HEADER: ${LLM_REQUESTER_REQUEST_ID_HEADER:-X-Request-ID}
+    networks:
+      - common
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8020/docs').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "service=llm-requester"

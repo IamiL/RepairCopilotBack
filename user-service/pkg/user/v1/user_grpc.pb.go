@@ -34,6 +34,7 @@ const (
 	UserService_DecrementInspectionsForTodayByUserId_FullMethodName = "/user.v1.UserService/DecrementInspectionsForTodayByUserId"
 	UserService_CheckInspectionLimit_FullMethodName                 = "/user.v1.UserService/CheckInspectionLimit"
 	UserService_ChangeUserRole_FullMethodName                       = "/user.v1.UserService/ChangeUserRole"
+	UserService_Recovery_FullMethodName                             = "/user.v1.UserService/Recovery"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -69,6 +70,8 @@ type UserServiceClient interface {
 	CheckInspectionLimit(ctx context.Context, in *CheckInspectionLimitRequest, opts ...grpc.CallOption) (*CheckInspectionLimitResponse, error)
 	// Смена роли пользователя
 	ChangeUserRole(ctx context.Context, in *ChangeUserRoleRequest, opts ...grpc.CallOption) (*ChangeUserRoleResponse, error)
+	// Recovery восстанавливает логин и пароль пользователя по email
+	Recovery(ctx context.Context, in *RecoveryRequest, opts ...grpc.CallOption) (*RecoveryResponse, error)
 }
 
 type userServiceClient struct {
@@ -229,6 +232,16 @@ func (c *userServiceClient) ChangeUserRole(ctx context.Context, in *ChangeUserRo
 	return out, nil
 }
 
+func (c *userServiceClient) Recovery(ctx context.Context, in *RecoveryRequest, opts ...grpc.CallOption) (*RecoveryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecoveryResponse)
+	err := c.cc.Invoke(ctx, UserService_Recovery_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -262,6 +275,8 @@ type UserServiceServer interface {
 	CheckInspectionLimit(context.Context, *CheckInspectionLimitRequest) (*CheckInspectionLimitResponse, error)
 	// Смена роли пользователя
 	ChangeUserRole(context.Context, *ChangeUserRoleRequest) (*ChangeUserRoleResponse, error)
+	// Recovery восстанавливает логин и пароль пользователя по email
+	Recovery(context.Context, *RecoveryRequest) (*RecoveryResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -316,6 +331,9 @@ func (UnimplementedUserServiceServer) CheckInspectionLimit(context.Context, *Che
 }
 func (UnimplementedUserServiceServer) ChangeUserRole(context.Context, *ChangeUserRoleRequest) (*ChangeUserRoleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeUserRole not implemented")
+}
+func (UnimplementedUserServiceServer) Recovery(context.Context, *RecoveryRequest) (*RecoveryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Recovery not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -608,6 +626,24 @@ func _UserService_ChangeUserRole_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_Recovery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecoveryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Recovery(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Recovery_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Recovery(ctx, req.(*RecoveryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -674,6 +710,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ChangeUserRole",
 			Handler:    _UserService_ChangeUserRole_Handler,
+		},
+		{
+			MethodName: "Recovery",
+			Handler:    _UserService_Recovery_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

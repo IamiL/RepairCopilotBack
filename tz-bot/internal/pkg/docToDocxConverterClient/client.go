@@ -12,8 +12,8 @@ import (
 )
 
 type Config struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string `env:"HOST" env-required:"true"`
+	Port int    `env:"PORT" env-required:"true"`
 }
 
 // Client представляет клиент для сервиса конвертации DOC в DOCX

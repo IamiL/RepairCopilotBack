@@ -1,0 +1,51 @@
+networks:
+  common:
+    external: true
+    name: common
+
+services:
+  app:
+    build: .
+    container_name: doc-to-docx-converter-service
+#    ports:
+#      - "${DOC_TO_DOCX_CONVERTER_PORT}:8000"
+    volumes:
+      # Монтирование локальных директорий для сохранения конвертированных файлов
+      - ./uploads:/tmp/uploads
+      - ./outputs:/tmp/outputs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HOME=/tmp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - common
+    
+    # Ограничение ресурсов (опционально)
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '2'
+#          memory: 2G
+#        reservations:
+#          cpus: '0.5'
+#          memory: 512M
+
+#  # Опциональный nginx для production
+#  nginx:
+#    image: nginx:alpine
+#    container_name: word-converter-nginx
+#    ports:
+#      - "80:80"
+#    volumes:
+#      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#    depends_on:
+#      - word-converter
+#    restart: unless-stopped
+#    profiles:
+#      - production

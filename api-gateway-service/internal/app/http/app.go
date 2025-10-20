@@ -18,8 +18,8 @@ import (
 )
 
 type Config struct {
-	Port    int           `yaml:"port" default:"8080"`
-	Timeout time.Duration `yaml:"timeout"`
+	Port    int           `env:"PORT" env-default:"8080"`
+	Timeout time.Duration `env:"TIMEOUT" env-default:"1000s"`
 }
 
 type App struct {
@@ -61,6 +61,9 @@ func New(
 
 	router.HandleFunc("POST /api/confirm",
 		handler.ConfirmEmail(log, userServiceClient, sessionRepo, chatBotClient))
+
+	router.HandleFunc("POST /api/users/recovery",
+		handler.RecoveryHandler(log, userServiceClient))
 
 	router.HandleFunc(
 		"GET /api/logout",

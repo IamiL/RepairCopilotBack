@@ -12,8 +12,8 @@ import (
 )
 
 type Config struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string `env:"HOST" env-required:"true"`
+	Port int    `env:"PORT" env-required:"true"`
 }
 
 // Ошибка API с кодом и телом ответа (часто сервер присылает JSON с описанием ошибки).

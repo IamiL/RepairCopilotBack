@@ -19,7 +19,7 @@ type Client struct {
 }
 
 type Config struct {
-	Addr string `yaml:"addr" env-default:"localhost:9090"`
+	Addr string `env:"LOCATION" env-default:"localhost:9090"`
 }
 
 type OutInvalidError struct {

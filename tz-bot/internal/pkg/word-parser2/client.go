@@ -13,8 +13,7 @@ import (
 )
 
 type Config struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Hostname string `env:"HOSTNAME" env-required:"true"`
 }
 
 // WordConverterClient represents a client for the word converter service

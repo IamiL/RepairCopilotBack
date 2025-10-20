@@ -27,8 +27,8 @@ type LLMCacheRepository interface {
 	SaveCachedResponse(ctx context.Context, req *modelrepo.CreateLLMCacheRequest) (*modelrepo.LLMCache, error)
 }
 type Config struct {
-	Url   string `yaml:"url"`
-	Model string `yaml:"model"`
+	Url   string `env:"URL" env-required:"true"`
+	Model string `env:"MODEL" env-required:"true"`
 }
 
 type Client struct {

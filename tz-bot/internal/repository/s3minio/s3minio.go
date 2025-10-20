@@ -11,10 +11,10 @@ import (
 )
 
 type Config struct {
-	Host      string `yaml:"host"`
-	Port      string `yaml:"port"`
-	AccessKey string `yaml:"accessKey"`
-	SecretKey string `yaml:"secretKey"`
+	Host      string `env:"HOST" env-default:"localhost"`
+	Port      string `env:"PORT" env-default:"9000"`
+	AccessKey string `env:"ACCESS_KEY" env-required:"true"`
+	SecretKey string `env:"SECRET_KEY" env-required:"true"`
 }
 
 func (c *Config) Endpoint() string {

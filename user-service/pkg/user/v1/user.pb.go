@@ -1895,6 +1895,104 @@ func (x *ChangeUserRoleResponse) GetMessage() string {
 	return ""
 }
 
+// RecoveryRequest запрос для восстановления логина и пароля
+type RecoveryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"` // Email пользователя
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecoveryRequest) Reset() {
+	*x = RecoveryRequest{}
+	mi := &file_user_v1_user_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecoveryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecoveryRequest) ProtoMessage() {}
+
+func (x *RecoveryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecoveryRequest.ProtoReflect.Descriptor instead.
+func (*RecoveryRequest) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *RecoveryRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+// RecoveryResponse ответ на восстановление
+type RecoveryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // Статус успешности операции
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`  // Сообщение о результате
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecoveryResponse) Reset() {
+	*x = RecoveryResponse{}
+	mi := &file_user_v1_user_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecoveryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecoveryResponse) ProtoMessage() {}
+
+func (x *RecoveryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_user_v1_user_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecoveryResponse.ProtoReflect.Descriptor instead.
+func (*RecoveryResponse) Descriptor() ([]byte, []int) {
+	return file_user_v1_user_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *RecoveryResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RecoveryResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
@@ -2031,8 +2129,12 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"\bis_admin\x18\x02 \x01(\bR\aisAdmin\"L\n" +
 	"\x16ChangeUserRoleResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xed\n" +
-	"\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"'\n" +
+	"\x0fRecoveryRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"F\n" +
+	"\x10RecoveryResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\xae\v\n" +
 	"\vUserService\x12H\n" +
 	"\vGetUserInfo\x12\x1b.user.v1.GetUserInfoRequest\x1a\x1c.user.v1.GetUserInfoResponse\x12K\n" +
 	"\fRegisterUser\x12\x1c.user.v1.RegisterUserRequest\x1a\x1d.user.v1.RegisterUserResponse\x12K\n" +
@@ -2048,7 +2150,8 @@ const file_user_v1_user_proto_rawDesc = "" +
 	"$IncrementInspectionsForTodayByUserId\x124.user.v1.IncrementInspectionsForTodayByUserIdRequest\x1a5.user.v1.IncrementInspectionsForTodayByUserIdResponse\x12\x93\x01\n" +
 	"$DecrementInspectionsForTodayByUserId\x124.user.v1.DecrementInspectionsForTodayByUserIdRequest\x1a5.user.v1.DecrementInspectionsForTodayByUserIdResponse\x12c\n" +
 	"\x14CheckInspectionLimit\x12$.user.v1.CheckInspectionLimitRequest\x1a%.user.v1.CheckInspectionLimitResponse\x12Q\n" +
-	"\x0eChangeUserRole\x12\x1e.user.v1.ChangeUserRoleRequest\x1a\x1f.user.v1.ChangeUserRoleResponseB\tZ\auser/v1b\x06proto3"
+	"\x0eChangeUserRole\x12\x1e.user.v1.ChangeUserRoleRequest\x1a\x1f.user.v1.ChangeUserRoleResponse\x12?\n" +
+	"\bRecovery\x12\x18.user.v1.RecoveryRequest\x1a\x19.user.v1.RecoveryResponseB\tZ\auser/v1b\x06proto3"
 
 var (
 	file_user_v1_user_proto_rawDescOnce sync.Once
@@ -2062,7 +2165,7 @@ func file_user_v1_user_proto_rawDescGZIP() []byte {
 	return file_user_v1_user_proto_rawDescData
 }
 
-var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
+var file_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_user_v1_user_proto_goTypes = []any{
 	(*GetUserInfoRequest)(nil),                           // 0: user.v1.GetUserInfoRequest
 	(*GetUserInfoResponse)(nil),                          // 1: user.v1.GetUserInfoResponse
@@ -2097,18 +2200,20 @@ var file_user_v1_user_proto_goTypes = []any{
 	(*CheckInspectionLimitResponse)(nil),                 // 30: user.v1.CheckInspectionLimitResponse
 	(*ChangeUserRoleRequest)(nil),                        // 31: user.v1.ChangeUserRoleRequest
 	(*ChangeUserRoleResponse)(nil),                       // 32: user.v1.ChangeUserRoleResponse
-	nil,                                                  // 33: user.v1.GetFullNamesByIdRequest.IdsEntry
-	nil,                                                  // 34: user.v1.GetFullNamesByIdResponse.UsersEntry
-	(*timestamppb.Timestamp)(nil),                        // 35: google.protobuf.Timestamp
+	(*RecoveryRequest)(nil),                              // 33: user.v1.RecoveryRequest
+	(*RecoveryResponse)(nil),                             // 34: user.v1.RecoveryResponse
+	nil,                                                  // 35: user.v1.GetFullNamesByIdRequest.IdsEntry
+	nil,                                                  // 36: user.v1.GetFullNamesByIdResponse.UsersEntry
+	(*timestamppb.Timestamp)(nil),                        // 37: google.protobuf.Timestamp
 }
 var file_user_v1_user_proto_depIdxs = []int32{
-	35, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
-	35, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
-	35, // 2: user.v1.LoginResponse.registered_at:type_name -> google.protobuf.Timestamp
-	35, // 3: user.v1.LoginResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	37, // 0: user.v1.GetUserInfoResponse.registered_at:type_name -> google.protobuf.Timestamp
+	37, // 1: user.v1.GetUserInfoResponse.last_visit_at:type_name -> google.protobuf.Timestamp
+	37, // 2: user.v1.LoginResponse.registered_at:type_name -> google.protobuf.Timestamp
+	37, // 3: user.v1.LoginResponse.last_visit_at:type_name -> google.protobuf.Timestamp
 	11, // 4: user.v1.GetAllUsersResponse.users:type_name -> user.v1.UserInfo
-	33, // 5: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
-	34, // 6: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
+	35, // 5: user.v1.GetFullNamesByIdRequest.ids:type_name -> user.v1.GetFullNamesByIdRequest.IdsEntry
+	36, // 6: user.v1.GetFullNamesByIdResponse.users:type_name -> user.v1.GetFullNamesByIdResponse.UsersEntry
 	18, // 7: user.v1.GetFullNamesByIdRequest.IdsEntry.value:type_name -> user.v1.Empty
 	20, // 8: user.v1.GetFullNamesByIdResponse.UsersEntry.value:type_name -> user.v1.FullName
 	0,  // 9: user.v1.UserService.GetUserInfo:input_type -> user.v1.GetUserInfoRequest
@@ -2126,23 +2231,25 @@ var file_user_v1_user_proto_depIdxs = []int32{
 	27, // 21: user.v1.UserService.DecrementInspectionsForTodayByUserId:input_type -> user.v1.DecrementInspectionsForTodayByUserIdRequest
 	29, // 22: user.v1.UserService.CheckInspectionLimit:input_type -> user.v1.CheckInspectionLimitRequest
 	31, // 23: user.v1.UserService.ChangeUserRole:input_type -> user.v1.ChangeUserRoleRequest
-	1,  // 24: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
-	3,  // 25: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
-	24, // 26: user.v1.UserService.ConfirmEmail:output_type -> user.v1.ConfirmEmailResponse
-	5,  // 27: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
-	7,  // 28: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
-	9,  // 29: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
-	12, // 30: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
-	14, // 31: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
-	16, // 32: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
-	19, // 33: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
-	22, // 34: user.v1.UserService.RegisterVisit:output_type -> user.v1.RegisterVisitResponse
-	26, // 35: user.v1.UserService.IncrementInspectionsForTodayByUserId:output_type -> user.v1.IncrementInspectionsForTodayByUserIdResponse
-	28, // 36: user.v1.UserService.DecrementInspectionsForTodayByUserId:output_type -> user.v1.DecrementInspectionsForTodayByUserIdResponse
-	30, // 37: user.v1.UserService.CheckInspectionLimit:output_type -> user.v1.CheckInspectionLimitResponse
-	32, // 38: user.v1.UserService.ChangeUserRole:output_type -> user.v1.ChangeUserRoleResponse
-	24, // [24:39] is the sub-list for method output_type
-	9,  // [9:24] is the sub-list for method input_type
+	33, // 24: user.v1.UserService.Recovery:input_type -> user.v1.RecoveryRequest
+	1,  // 25: user.v1.UserService.GetUserInfo:output_type -> user.v1.GetUserInfoResponse
+	3,  // 26: user.v1.UserService.RegisterUser:output_type -> user.v1.RegisterUserResponse
+	24, // 27: user.v1.UserService.ConfirmEmail:output_type -> user.v1.ConfirmEmailResponse
+	5,  // 28: user.v1.UserService.Login:output_type -> user.v1.LoginResponse
+	7,  // 29: user.v1.UserService.GetLoginById:output_type -> user.v1.GetLoginByIdResponse
+	9,  // 30: user.v1.UserService.GetUserByLogin:output_type -> user.v1.GetUserByLoginResponse
+	12, // 31: user.v1.UserService.GetAllUsers:output_type -> user.v1.GetAllUsersResponse
+	14, // 32: user.v1.UserService.GetUserDetailsById:output_type -> user.v1.GetUserDetailsByIdResponse
+	16, // 33: user.v1.UserService.UpdateInspectionsPerDay:output_type -> user.v1.UpdateInspectionsPerDayResponse
+	19, // 34: user.v1.UserService.GetFullNamesById:output_type -> user.v1.GetFullNamesByIdResponse
+	22, // 35: user.v1.UserService.RegisterVisit:output_type -> user.v1.RegisterVisitResponse
+	26, // 36: user.v1.UserService.IncrementInspectionsForTodayByUserId:output_type -> user.v1.IncrementInspectionsForTodayByUserIdResponse
+	28, // 37: user.v1.UserService.DecrementInspectionsForTodayByUserId:output_type -> user.v1.DecrementInspectionsForTodayByUserIdResponse
+	30, // 38: user.v1.UserService.CheckInspectionLimit:output_type -> user.v1.CheckInspectionLimitResponse
+	32, // 39: user.v1.UserService.ChangeUserRole:output_type -> user.v1.ChangeUserRoleResponse
+	34, // 40: user.v1.UserService.Recovery:output_type -> user.v1.RecoveryResponse
+	25, // [25:41] is the sub-list for method output_type
+	9,  // [9:25] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -2159,7 +2266,7 @@ func file_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_v1_user_proto_rawDesc), len(file_user_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   35,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -1,0 +1,24 @@
+networks:
+  common:
+    external: true
+    name: common
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docx-converter-service
+#    ports:
+#      - "8082:8082"
+    volumes:
+      # Монтируем логи для доступа с хоста
+      - ./logs:/app/logs
+      # Для разработки - монтируем код (раскомментируйте при необходимости)
+      # - ./app:/app/app
+      # - ./main.py:/app/main.py
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - common
