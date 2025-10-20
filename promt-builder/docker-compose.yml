@@ -34,9 +34,9 @@ services:
       PB_LOG_JSON: ${PB_LOG_JSON:-false}
     ports:
       - "${PROMPT_BUILDER_HTTP_PORT:-8000}:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
     networks:
       - common
     restart: unless-stopped
