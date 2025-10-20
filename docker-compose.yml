@@ -78,10 +78,14 @@ services:
     networks:
       - common
     depends_on: # не запускай nginx пока не запустится весь кластер minio
-      - minio1
-      - minio2
-      - minio3
-      - minio4
+      minio1:
+        condition: service_healthy
+      minio2:
+        condition: service_healthy
+      minio3:
+        condition: service_healthy
+      minio4:
+        condition: service_healthy
 
   grafana:
     image: grafana/grafana:latest
