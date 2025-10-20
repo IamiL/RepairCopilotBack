@@ -1,4 +1,5 @@
 up:
+	docker compose -f docker-compose.yml --project-name common up -d
 	docker compose -f user-service/deployment/docker-compose.yml --env-file .env --project-name user-service up -d --build
 	docker compose -f llm-requester/docker-compose.yml --env-file .env  --project-name llm-requester up -d --build
 	docker compose -f promt-builder/docker-compose.yml --env-file .env --project-name prompt-builder up -d --build
