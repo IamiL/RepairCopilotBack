@@ -7,6 +7,9 @@ services:
   postgres:
     image: postgres:15 # Образ Postgres версии 15
     container_name: tz-service-postgres # Имя контейнера базы данных
+    labels:
+      logging: "promtail"
+      logging.jobname: "tz-postgres"
 #    env_file:
 #      - ../../.env # Загружаем переменные из .env в корне проекта
     command:
@@ -62,6 +65,9 @@ services:
       context: ../.. # Контекст сборки приложения — корень проекта (где go.mod)
       dockerfile: tz-bot/deployment/Dockerfile # Путь к Dockerfile от корня проекта
     container_name: tz-service # Имя контейнера приложения
+    labels:
+      logging: "promtail"
+      logging.jobname: "tz-service"
 #    env_file:
 #      - ../../.env # Загружаем переменные из .env в корне проекта
     ports:
