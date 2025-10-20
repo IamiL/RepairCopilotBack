@@ -67,7 +67,7 @@ services:
   nginx: # наш еще один сервис в подсети docker будет nginx
     container_name: s3-minio
     image: nginx:1.19.2-alpine # исходники сервиса взять отсюда
-    hostname: nginx # hostname внутри подсети docker будет nginx
+    hostname: s3-minio # hostname внутри подсети docker будет s3-minio
     volumes:
       # куда физически переадресовать* память(в какие разделы) из виртуальной(в докере) на вашу машину. по сути это работает как хард линк на файл/папку.
       # доступ даем на ro (read only)
