@@ -1,4 +1,4 @@
-.PHONY: up rebuild status stop down restart logs logs-user logs-api logs-tz help
+.PHONY: up rebuild status stop down restart logs logs-user logs-api logs-tz logs-s3 help
 
 .DEFAULT_GOAL := help
 
@@ -6,6 +6,7 @@
 up:
 	@echo "Starting all services..."
 	@docker compose -f docker-compose.yml --project-name common up -d
+	@docker compose -f s3-minio/docker-compose.yaml --env-file .env --project-name s3-minio up -d
 	@docker compose -f user-service/deployment/docker-compose.yml --env-file .env --project-name user-service up -d
 	@docker compose -f llm-requester/docker-compose.yml --env-file .env  --project-name llm-requester up -d
 	@docker compose -f promt-builder/docker-compose.yml --env-file .env --project-name prompt-builder up -d
@@ -21,6 +22,7 @@ up:
 rebuild:
 	@echo "Rebuilding all services..."
 	@docker compose -f docker-compose.yml --project-name common up -d
+	@docker compose -f s3-minio/docker-compose.yaml --env-file .env --project-name s3-minio up -d
 	@docker compose -f user-service/deployment/docker-compose.yml --env-file .env --project-name user-service up -d --build
 	@docker compose -f llm-requester/docker-compose.yml --env-file .env  --project-name llm-requester up -d --build
 	@docker compose -f promt-builder/docker-compose.yml --env-file .env --project-name prompt-builder up -d --build
@@ -36,6 +38,8 @@ rebuild:
 status:
 	@echo "=== Common ==="
 	@docker compose -f docker-compose.yml --project-name common ps
+	@echo "\n=== S3 MinIO ==="
+	@docker compose -f s3-minio/docker-compose.yaml --project-name s3-minio ps
 	@echo "\n=== User Service ==="
 	@docker compose -f user-service/deployment/docker-compose.yml --project-name user-service ps
 	@echo "\n=== LLM Requester ==="
@@ -59,6 +63,7 @@ status:
 stop:
 	@echo "Stopping all services..."
 	@docker compose -f docker-compose.yml --project-name common stop
+	@docker compose -f s3-minio/docker-compose.yaml --project-name s3-minio stop
 	@docker compose -f user-service/deployment/docker-compose.yml --project-name user-service stop
 	@docker compose -f llm-requester/docker-compose.yml --project-name llm-requester stop
 	@docker compose -f promt-builder/docker-compose.yml --project-name prompt-builder stop
@@ -74,6 +79,7 @@ stop:
 down:
 	@echo "Removing all containers..."
 	@docker compose -f docker-compose.yml --project-name common down
+	@docker compose -f s3-minio/docker-compose.yaml --project-name s3-minio down
 	@docker compose -f user-service/deployment/docker-compose.yml --project-name user-service down
 	@docker compose -f llm-requester/docker-compose.yml --project-name llm-requester down
 	@docker compose -f promt-builder/docker-compose.yml --project-name prompt-builder down
@@ -102,6 +108,9 @@ logs-api:
 logs-tz:
 	@docker compose -f tz-bot/deployment/docker-compose.yml --project-name tz-service logs -f
 
+logs-s3:
+	@docker compose -f s3-minio/docker-compose.yaml --project-name s3-minio logs -f
+
 # Помощь
 help:
 	@echo "Available commands:"
@@ -115,3 +124,4 @@ help:
 	@echo "  make logs-user   - Show logs from user-service"
 	@echo "  make logs-api    - Show logs from api-gateway"
 	@echo "  make logs-tz     - Show logs from tz-bot"
+	@echo "  make logs-s3     - Show logs from s3-minio"
