@@ -72,7 +72,7 @@ func New(
 	//	panic(err)
 	//}
 
-	tgClient.New(tgBot, TgConfig.ChatID)
+	//tgClient.New(tgBot, TgConfig.ChatID)
 
 	httpApp := httpapp.New(log, httpConfig, tzBotClient, userServiceClient, chatBotClient, searchBotClient, sessionRepo, actionLogRepo)
 
