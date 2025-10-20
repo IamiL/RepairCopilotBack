@@ -88,6 +88,8 @@ services:
       DOC_TO_DOCX_CONVERTER_HOST: "doc-to-docx-converter-service"
       DOC_TO_DOCX_CONVERTER_PORT: "8000"
       DOCX_PARSER_HOSTNAME: "http://docx-converter-service:8000"
+      WORD_PARSER_HOST: "docx-converter-service"
+      WORD_PARSER_PORT: "8000"
       MD_CONVERTER_HOSTNAME: "http://md-converter-service:8000"
       REPORT_GENERATOR_HOST: "report-generator-service"
       REPORT_GENERATOR_PORT: "8000"
