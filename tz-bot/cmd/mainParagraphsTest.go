@@ -39,7 +39,7 @@ func runTestScenario(html, scenarioName string) {
 	fmt.Println("\n" + strings.Repeat("=", 60))
 }
 
-func main() {
+func main2() {
 	if len(os.Args) < 2 {
 		showUsage()
 		return
