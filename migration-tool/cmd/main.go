@@ -39,7 +39,7 @@ func main() {
 	log.Printf("Время начала: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 
 	// Загрузка конфигурации
-	config, err := loadConfig("config.json")
+	config, err := loadConfig("migration-tool/config.json")
 	if err != nil {
 		log.Fatalf("Ошибка загрузки конфигурации: %v", err)
 	}

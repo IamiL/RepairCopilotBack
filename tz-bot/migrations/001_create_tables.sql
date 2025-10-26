@@ -49,90 +49,11 @@ CREATE TABLE IF NOT EXISTS versions
     original_file_size BIGINT,
     number_of_errors BIGINT,
     status TEXT,
+    progress INTEGER,
     all_rubs DOUBLE PRECISION,
     all_tokens BIGINT,
     inspection_time BIGINT
     );
-
--- Create InvalidErrors table
-CREATE TABLE IF NOT EXISTS invalid_errors
-(
-    id
-    UUID
-    PRIMARY
-    KEY,
-    version_id
-    UUID
-    NOT
-    NULL
-    REFERENCES
-    versions
-(
-    id
-) ON DELETE CASCADE,
-    error_id INTEGER NOT NULL,
-    error_id_str VARCHAR
-(
-    255
-) NOT NULL,
-    group_id VARCHAR
-(
-    255
-) NOT NULL,
-    error_code VARCHAR
-(
-    255
-) NOT NULL,
-    quote TEXT NOT NULL,
-    analysis TEXT NOT NULL,
-    critique TEXT NOT NULL,
-    verification TEXT NOT NULL,
-    suggested_fix TEXT NOT NULL,
-    rationale TEXT NOT NULL,
-    created_at TIMESTAMP,
-  WITH TIME ZONE NOT NULL,
-      order_number INTEGER NOT NULL DEFAULT 0,
-      retrieval TEXT[];
-      );
-
--- Create MissingErrors table
-CREATE TABLE IF NOT EXISTS missing_errors
-(
-    id
-    UUID
-    PRIMARY
-    KEY,
-    version_id
-    UUID
-    NOT
-    NULL
-    REFERENCES
-    versions
-(
-    id
-) ON DELETE CASCADE,
-    error_id INTEGER NOT NULL,
-    error_id_str VARCHAR
-(
-    255
-) NOT NULL,
-    group_id VARCHAR
-(
-    255
-) NOT NULL,
-    error_code VARCHAR
-(
-    255
-) NOT NULL,
-    analysis TEXT NOT NULL,
-    critique TEXT NOT NULL,
-    verification TEXT NOT NULL,
-    suggested_fix TEXT NOT NULL,
-    rationale TEXT NOT NULL,
-    created_at TIMESTAMP,
-    retrieval TEXT[],
-  WITH TIME ZONE NOT NULL
-      );
 
 CREATE TABLE IF NOT EXISTS llm_cache (
                                          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -180,11 +101,11 @@ CREATE TABLE IF NOT EXISTS invalid_instances (
                                                  feedback_mark BOOLEAN,
                                                  feedback_comment TEXT,
                                                  feedback_user UUID,
+                                                 feedback_created_at TIMESTAMP,
                                                  feedback_verification_exists BOOLEAN,
                                                  feedback_verification_mark BOOLEAN,
                                                  feedback_verification_comment TEXT,
-                                                 feedback_verification_user UUID,
-                                                feedback_created_at TIMESTAMP
+                                                 feedback_verification_user UUID
 );
 
 CREATE TABLE IF NOT EXISTS missing_instances (
@@ -197,6 +118,7 @@ CREATE TABLE IF NOT EXISTS missing_instances (
                                                  feedback_mark BOOLEAN,
                                                  feedback_comment TEXT,
                                                  feedback_user UUID,
+                                                 feedback_created_at TIMESTAMP,
                                                  feedback_verification_exists BOOLEAN,
                                                  feedback_verification_mark BOOLEAN,
                                                  feedback_verification_comment TEXT,

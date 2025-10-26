@@ -1,7 +1,9 @@
 package app
 
 import (
+	"fmt"
 	"log/slog"
+	"repairCopilotBot/tz-bot/internal/migrator"
 	doctodocxconverterclient "repairCopilotBot/tz-bot/internal/pkg/docToDocxConverterClient"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
 	reportgeneratorclient "repairCopilotBot/tz-bot/internal/pkg/report-generator-client"
@@ -18,6 +20,8 @@ import (
 	"repairCopilotBot/tz-bot/internal/pkg/markdown-service"
 	"repairCopilotBot/tz-bot/internal/pkg/word-parser"
 	tzservice "repairCopilotBot/tz-bot/internal/service/tz"
+
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 type Config struct {
@@ -52,6 +56,14 @@ func New(
 	postgres, err := postgres.New(postgresConn)
 	if err != nil {
 		panic(err)
+	}
+
+	migratorRunner := migrator.NewMigrator(stdlib.OpenDB(*postgresConn.Config().ConnConfig.Copy()), postgresConfig.MigrationsDir)
+
+	err = migratorRunner.Up()
+	if err != nil {
+		log.Error("Ошибка миграции базы данных: %v\n", err)
+		panic(fmt.Errorf("cannot run migrator - %w", err).Error())
 	}
 
 	llmClient := tz_llm_client.NewWithCache(LlmConfig.Url, LlmConfig.Model, postgres)

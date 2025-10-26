@@ -110,12 +110,12 @@ services:
     environment:
       HTTP_PORT: "8080" # Порт приложения внутри контейнера (фиксированный)
       HTTP_TIMEOUT: "1000s"
-      MIGRATIONS_DIR: "${API_GATEWAY_SERVICE_MIGRATIONS_DIR}" # Директория миграций
       POSTGRES_HOST: "api-gateway-service-postgres"
       POSTGRES_PORT: "5432" # Внутренний порт Postgres в Docker сети (фиксированный)
       POSTGRES_DB_NAME: "${API_GATEWAY_SERVICE_POSTGRES_DB_NAME}"
       POSTGRES_USER: "${API_GATEWAY_SERVICE_POSTGRES_USER}"
       POSTGRES_PASSWORD: "${API_GATEWAY_SERVICE_POSTGRES_PASS}"
+      POSTGRES_MIGRATIONS_DIR: "api-gateway-service/migrations" # Директория миграций
       REDIS_ADDR: "api-gateway-service-redis:6379" # Внутренний порт Redis в Docker сети (фиксированный)
       REDIS_PASS: "${API_GATEWAY_SERVICE_REDIS_PASS}"
       USER_SERVICE_LOCATION: "user-service:${USER_SERVICE_PORT}"

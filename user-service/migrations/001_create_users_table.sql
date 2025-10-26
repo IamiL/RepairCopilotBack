@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
     confirmation_code TEXT,
     inspections_per_day INTEGER,
     inspections_for_today INTEGER,
-    inspections_left_for_today INTEGER
+    inspections_left_for_today INTEGER,
+    inspections_count INTEGER
     );
 
 -- Create index on login for faster lookups

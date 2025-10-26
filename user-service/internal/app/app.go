@@ -1,11 +1,15 @@
 package app
 
 import (
+	"fmt"
 	"log/slog"
 	grpcapp "repairCopilotBot/user-service/internal/app/grpc"
+	"repairCopilotBot/user-service/internal/migrator"
 	"repairCopilotBot/user-service/internal/repository/postgres"
 	postgresUser "repairCopilotBot/user-service/internal/repository/postgres/user"
 	userservice "repairCopilotBot/user-service/internal/service/user"
+
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 //type Config struct {
@@ -30,6 +34,14 @@ func New(
 	postgres, err := postgresUser.New(postgresConn)
 	if err != nil {
 		panic(err)
+	}
+
+	migratorRunner := migrator.NewMigrator(stdlib.OpenDB(*postgresConn.Config().ConnConfig.Copy()), postgresConfig.MigrationsDir)
+
+	err = migratorRunner.Up()
+	if err != nil {
+		log.Error("Ошибка миграции базы данных: %v\n", err)
+		panic(fmt.Errorf("cannot run migrator - %w", err).Error())
 	}
 
 	usrService := userservice.New(log, postgres, postgres)

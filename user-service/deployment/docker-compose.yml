@@ -68,12 +68,12 @@ services:
       - "${USER_SERVICE_PORT}:8080" # Внешний порт из .env, внутренний фиксированный 8080
     environment:
       GRPC_PORT: ":8080" # Порт gRPC сервера внутри контейнера (фиксированный)
-      MIGRATIONS_DIR: "${USER_SERVICE_MIGRATIONS_DIR}" # Директория миграций
       POSTGRES_HOST: "user-service-postgres"
       POSTGRES_PORT: "5432" # Внутренний порт Postgres в Docker сети (фиксированный)
       POSTGRES_DB_NAME: "${USER_SERVICE_POSTGRES_DB_NAME}"
       POSTGRES_USER: "${USER_SERVICE_POSTGRES_USER}"
       POSTGRES_PASSWORD: "${USER_SERVICE_POSTGRES_PASS}"
+      POSTGRES_MIGRATIONS_DIR: "user-service/migrations" # Директория миграций
     depends_on:
       postgres:
         condition: service_healthy # Ждём, пока база станет "здоровой", прежде чем стартовать приложение

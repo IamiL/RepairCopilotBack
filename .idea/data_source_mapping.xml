@@ -4,7 +4,10 @@
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/05bcd7f6-d548-4007-8075-1db8e9b8ade1/console.sql" value="05bcd7f6-d548-4007-8075-1db8e9b8ade1" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/43ccea42-9649-41fd-95d5-e45e8935d39d/console.sql" value="43ccea42-9649-41fd-95d5-e45e8935d39d" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/6777b002-5750-4938-891d-91c62bd57ca1/console_1.sql" value="6777b002-5750-4938-891d-91c62bd57ca1" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/72cd9d76-da4d-4afe-8f40-4ec6bd2e84d0/console.sql" value="72cd9d76-da4d-4afe-8f40-4ec6bd2e84d0" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/80a097b5-9b07-43cc-8a76-c7518d01f199/console_1.sql" value="80a097b5-9b07-43cc-8a76-c7518d01f199" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/98da9877-6861-4074-9c1b-026f683e193d/console.sql" value="98da9877-6861-4074-9c1b-026f683e193d" />
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/a1a42519-cf43-467b-9a1c-12652f7ae4f9/console.sql" value="a1a42519-cf43-467b-9a1c-12652f7ae4f9" />
     <file url="file://$PROJECT_DIR$/tz-bot/internal/repository/postgres/postgres.go" value="0c9c90e7-aa74-4d5e-b9d5-6535cf212045" />
   </component>
 </project>

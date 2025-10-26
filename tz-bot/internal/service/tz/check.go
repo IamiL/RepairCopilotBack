@@ -752,6 +752,7 @@ func (tz *Tz) updateVersionWithError(ctx context.Context, versionID uuid.UUID, s
 		NumberOfErrors: 0,
 		Status:         status,
 	}
+
 	err := tz.repo.UpdateVersion(ctx, updateReq)
 	if err != nil {
 		tz.log.Error("failed to update version with error status", slog.String("versionID", versionID.String()), slog.Any("error", err))

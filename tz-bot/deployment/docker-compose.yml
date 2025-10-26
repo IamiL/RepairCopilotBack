@@ -74,13 +74,13 @@ services:
       - "${TZ_SERVICE_PORT}:8080" # Внешний порт из .env, внутренний фиксированный 8080
     environment:
       GRPC_PORT: ":8080" # Порт gRPC сервера внутри контейнера (фиксированный)
-      MIGRATIONS_DIR: "${TZ_SERVICE_MIGRATIONS_DIR}" # Директория миграций
       POSTGRES_HOST: "tz-service-postgres"
       POSTGRES_PORT: "5432" # Внутренний порт Postgres в Docker сети (фиксированный)
       POSTGRES_DB_NAME: "${TZ_SERVICE_POSTGRES_DB_NAME}"
       POSTGRES_USER: "${TZ_SERVICE_POSTGRES_USER}"
       POSTGRES_PASSWORD: "${TZ_SERVICE_POSTGRES_PASS}"
       POSTGRES_MAX_CONNS: "10"
+      POSTGRES_MIGRATIONS_DIR: "tz-bot/migrations" # Директория миграций
       LLM_URL: "http://llm-requester-service:8000"
       LLM_MODEL: "qwen3-235b-a22b-fp8/latest"
       PROMT_BUILDER_URL1: "http://prompt-builder-service:8000/step1"

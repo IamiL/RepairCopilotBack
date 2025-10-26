@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	httpapp "repairCopilotBot/api-gateway-service/internal/app/http"
+	"repairCopilotBot/api-gateway-service/internal/migrator"
 	tgClient "repairCopilotBot/api-gateway-service/internal/pkg/tg"
 	"repairCopilotBot/api-gateway-service/internal/repository"
 	"repairCopilotBot/api-gateway-service/internal/repository/postgres"
@@ -15,6 +16,8 @@ import (
 	tzbotclient "repairCopilotBot/tz-bot/client"
 	userserviceclient "repairCopilotBot/user-service/client"
 	"time"
+
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 type Config struct {
@@ -41,6 +44,14 @@ func New(
 	if err != nil {
 		log.Error(fmt.Sprintf("error connect to postgres - %w", err))
 		os.Exit(1)
+	}
+
+	migratorRunner := migrator.NewMigrator(stdlib.OpenDB(*postgresConn.Config().ConnConfig.Copy()), PostgresConfig.MigrationsDir)
+
+	err = migratorRunner.Up()
+	if err != nil {
+		log.Error("Ошибка миграции базы данных: %v\n", err)
+		panic(fmt.Errorf("cannot run migrator - %w", err).Error())
 	}
 
 	actionLogRepo, err := postgresActionLog.New(postgresConn)
