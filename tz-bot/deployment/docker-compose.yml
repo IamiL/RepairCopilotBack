@@ -80,7 +80,7 @@ services:
       POSTGRES_USER: "${TZ_SERVICE_POSTGRES_USER}"
       POSTGRES_PASSWORD: "${TZ_SERVICE_POSTGRES_PASS}"
       POSTGRES_MAX_CONNS: "10"
-      POSTGRES_MIGRATIONS_DIR: "tz-bot/migrations" # Директория миграций
+      POSTGRES_MIGRATIONS_DIR: "migrations" # Директория миграций
       LLM_URL: "http://llm-requester-service:8000"
       LLM_MODEL: "qwen3-235b-a22b-fp8/latest"
       PROMT_BUILDER_URL1: "http://prompt-builder-service:8000/step1"

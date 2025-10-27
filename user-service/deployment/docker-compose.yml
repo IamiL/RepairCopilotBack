@@ -73,7 +73,7 @@ services:
       POSTGRES_DB_NAME: "${USER_SERVICE_POSTGRES_DB_NAME}"
       POSTGRES_USER: "${USER_SERVICE_POSTGRES_USER}"
       POSTGRES_PASSWORD: "${USER_SERVICE_POSTGRES_PASS}"
-      POSTGRES_MIGRATIONS_DIR: "user-service/migrations" # Директория миграций
+      POSTGRES_MIGRATIONS_DIR: "migrations" # Директория миграций
     depends_on:
       postgres:
         condition: service_healthy # Ждём, пока база станет "здоровой", прежде чем стартовать приложение
