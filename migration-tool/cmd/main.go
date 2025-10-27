@@ -218,19 +218,30 @@ func migrateTable(ctx context.Context, source, target *pgxpool.Pool, tableName s
 		log.Println("  ✓ Структура таблицы создана")
 	}
 
-	// Получение данных из источника
-	query := fmt.Sprintf("SELECT * FROM %s", pgx.Identifier{tableName}.Sanitize())
-	rows, err := source.Query(ctx, query)
+	// Получаем список колонок один раз
+	var columnNames []string
+	columnsQuery := `
+		SELECT column_name
+		FROM information_schema.columns
+		WHERE table_schema = 'public' AND table_name = $1
+		ORDER BY ordinal_position
+	`
+	colRows, err := source.Query(ctx, columnsQuery, tableName)
 	if err != nil {
-		return fmt.Errorf("не удалось выполнить SELECT: %w", err)
+		return fmt.Errorf("не удалось получить список колонок: %w", err)
 	}
-	defer rows.Close()
+	for colRows.Next() {
+		var colName string
+		if err := colRows.Scan(&colName); err != nil {
+			colRows.Close()
+			return fmt.Errorf("не удалось прочитать имя колонки: %w", err)
+		}
+		columnNames = append(columnNames, colName)
+	}
+	colRows.Close()
 
-	// Получение описания колонок
-	fieldDescriptions := rows.FieldDescriptions()
-	columnNames := make([]string, len(fieldDescriptions))
-	for i, fd := range fieldDescriptions {
-		columnNames[i] = string(fd.Name)
+	if len(columnNames) == 0 {
+		return fmt.Errorf("таблица %s не имеет колонок", tableName)
 	}
 
 	// Подготовка INSERT запроса
@@ -246,54 +257,73 @@ func migrateTable(ctx context.Context, source, target *pgxpool.Pool, tableName s
 		strings.Join(placeholders, ", "),
 	)
 
-	// Копирование данных
-	var insertedCount int64
-	batch := &pgx.Batch{}
+	// Миграция данных батчами для избежания таймаутов
+	//const batchSize = 5 // Размер батча для чтения (для больших таблиц используем меньший размер)
+	batchSize := int64(100)
+	if tableName == "versions" {
+		batchSize = 2
+	}
+	var totalInserted int64
 
-	for rows.Next() {
-		values, err := rows.Values()
+	for offset := int64(0); offset < sourceCount; offset += batchSize {
+		// Получение данных порциями с LIMIT/OFFSET
+		query := fmt.Sprintf(
+			"SELECT * FROM %s ORDER BY ctid LIMIT %d OFFSET %d",
+			pgx.Identifier{tableName}.Sanitize(),
+			batchSize,
+			offset,
+		)
+
+		rows, err := source.Query(ctx, query)
 		if err != nil {
-			return fmt.Errorf("не удалось получить значения строки: %w", err)
+			return fmt.Errorf("не удалось выполнить SELECT (offset %d): %w", offset, err)
 		}
 
-		batch.Queue(insertQuery, values...)
+		// Копирование данных из текущего батча
+		batch := &pgx.Batch{}
+		rowCount := 0
 
-		// Выполняем батч каждые 1000 строк
-		if batch.Len() >= 1000 {
+		for rows.Next() {
+			values, err := rows.Values()
+			if err != nil {
+				rows.Close()
+				return fmt.Errorf("не удалось получить значения строки (offset %d): %w", offset, err)
+			}
+
+			batch.Queue(insertQuery, values...)
+			rowCount++
+		}
+
+		rows.Close()
+
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("ошибка при чтении строк (offset %d): %w", offset, err)
+		}
+
+		// Выполняем вставку батча
+		if batch.Len() > 0 {
 			results := target.SendBatch(ctx, batch)
 			for i := 0; i < batch.Len(); i++ {
 				_, err := results.Exec()
 				if err != nil {
 					results.Close()
-					return fmt.Errorf("не удалось выполнить INSERT: %w", err)
+					return fmt.Errorf("не удалось выполнить INSERT (offset %d): %w", offset, err)
 				}
 			}
 			results.Close()
-			insertedCount += int64(batch.Len())
-			log.Printf("  ⏳ Обработано: %d/%d строк", insertedCount, sourceCount)
-			batch = &pgx.Batch{}
+			totalInserted += int64(batch.Len())
+		}
+
+		log.Printf("  ⏳ Обработано: %d/%d строк (%.1f%%)",
+			totalInserted, sourceCount, float64(totalInserted)/float64(sourceCount)*100)
+
+		// Если получили меньше строк, чем ожидали - достигли конца таблицы
+		if rowCount < int(batchSize) {
+			break
 		}
 	}
 
-	// Выполняем оставшиеся запросы
-	if batch.Len() > 0 {
-		results := target.SendBatch(ctx, batch)
-		for i := 0; i < batch.Len(); i++ {
-			_, err := results.Exec()
-			if err != nil {
-				results.Close()
-				return fmt.Errorf("не удалось выполнить INSERT: %w", err)
-			}
-		}
-		results.Close()
-		insertedCount += int64(batch.Len())
-	}
-
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("ошибка при чтении строк: %w", err)
-	}
-
-	log.Printf("  ✓ Вставлено строк: %d", insertedCount)
+	log.Printf("  ✓ Вставлено строк: %d", totalInserted)
 
 	// Проверка количества строк в целевой БД
 	var targetCount int64
