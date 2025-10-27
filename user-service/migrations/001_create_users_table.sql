@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
     inspections_per_day INTEGER,
     inspections_for_today INTEGER,
     inspections_left_for_today INTEGER,
-    inspections_count INTEGER
+    inspections_count INTEGER,
+    error_feedbacks_count INTEGER
     );
 
 -- Create index on login for faster lookups
