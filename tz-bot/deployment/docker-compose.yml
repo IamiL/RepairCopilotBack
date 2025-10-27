@@ -83,8 +83,8 @@ services:
       POSTGRES_MIGRATIONS_DIR: "migrations" # Директория миграций
       LLM_URL: "http://llm-requester-service:8000"
       LLM_MODEL: "qwen3-235b-a22b-fp8/latest"
-      PROMT_BUILDER_URL1: "http://prompt-builder-service:8000/step1"
-      PROMT_BUILDER_URL2: "http://prompt-builder-service:8000/step2"
+      PROMT_BUILDER_URL1: "http://prompt-builder-service:8000/v1/prompt-builder/step1/build"
+      PROMT_BUILDER_URL2: "http://prompt-builder-service:8000/v1/prompt-builder/step2/build"
       DOC_TO_DOCX_CONVERTER_HOST: "doc-to-docx-converter-service"
       DOC_TO_DOCX_CONVERTER_PORT: "8000"
       DOCX_PARSER_HOSTNAME: "http://docx-converter-service:8000"
