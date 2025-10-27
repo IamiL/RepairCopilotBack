@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
-	"net/smtp"
 	"repairCopilotBot/user-service/internal/domain/models"
 	"repairCopilotBot/user-service/internal/pkg/logger/sl"
 	"repairCopilotBot/user-service/internal/repository"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/gomail.v2"
 )
 
 type User struct {
@@ -206,20 +206,24 @@ func (u *User) Login(ctx context.Context, login string, password string) (*model
 func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
 	// Конфигурация SMTP для Gmail
 	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
-	auth := smtp.PlainAuth("", "ivan2011avatar@gmail.com", "tsep nuqs bmvy dcbr", smtpHost)
-
-	// Адрес отправителя
+	smtpPort := 465 // Используем SSL порт вместо TLS 587
 	from := "ivan2011avatar@gmail.com"
+	password := "tsep nuqs bmvy dcbr"
 
-	// Тело письма
-	subject := "Код подтверждения регистрации"
+	// Создаем письмо
+	m := gomail.NewMessage()
+	m.SetHeader("From", from)
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Код подтверждения регистрации")
+
 	body := fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации.", confirmationCode)
-	message := []byte(fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s\r\n", email, subject, body))
+	m.SetBody("text/plain", body)
 
-	// Отправка письма через Gmail
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{email}, message)
-	if err != nil {
+	// Настраиваем SMTP диалер с SSL (порт 465)
+	d := gomail.NewDialer(smtpHost, smtpPort, from, password)
+
+	// Отправка письма
+	if err := d.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
@@ -676,20 +680,24 @@ func generateRandomPassword() string {
 func (u *User) sendRecoveryEmail(email, login, password string) error {
 	// Конфигурация SMTP для Gmail
 	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
-	auth := smtp.PlainAuth("", "ivan2011avatar@gmail.com", "tsep nuqs bmvy dcbr", smtpHost)
-
-	// Адрес отправителя
+	smtpPort := 465 // Используем SSL порт вместо TLS 587
 	from := "ivan2011avatar@gmail.com"
+	emailPassword := "tsep nuqs bmvy dcbr"
 
-	// Тело письма
-	subject := "Восстановление данных для входа"
+	// Создаем письмо
+	m := gomail.NewMessage()
+	m.SetHeader("From", from)
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Восстановление данных для входа")
+
 	body := fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password)
-	message := []byte(fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s\r\n", email, subject, body))
+	m.SetBody("text/plain", body)
 
-	// Отправка письма через Gmail
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, []string{email}, message)
-	if err != nil {
+	// Настраиваем SMTP диалер с SSL (порт 465)
+	d := gomail.NewDialer(smtpHost, smtpPort, from, emailPassword)
+
+	// Отправка письма
+	if err := d.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 
