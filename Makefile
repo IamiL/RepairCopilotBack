@@ -92,7 +92,7 @@ down:
 	@echo "All containers removed!"
 
 # Удаление всех контейнеров с данными
-down:
+downv:
 	@echo "Removing all containers..."
 	@docker compose -f docker-compose.yml --project-name common down
 	@docker compose -f s3-minio/docker-compose.yaml --project-name s3-minio down
