@@ -91,6 +91,22 @@ down:
 	@docker compose -f md-converter/deployment/docker-compose.yml --project-name html-to-markdown-converter down
 	@echo "All containers removed!"
 
+# Удаление всех контейнеров с данными
+down:
+	@echo "Removing all containers..."
+	@docker compose -f docker-compose.yml --project-name common down
+	@docker compose -f s3-minio/docker-compose.yaml --project-name s3-minio down
+	@docker compose -f user-service/deployment/docker-compose.yml --project-name user-service down -v
+	@docker compose -f llm-requester/docker-compose.yml --project-name llm-requester down
+	@docker compose -f promt-builder/docker-compose.yml --project-name prompt-builder down
+	@docker compose -f tz-bot/deployment/docker-compose.yml --project-name tz-service down -v
+	@docker compose -f api-gateway-service/deployment/docker-compose.yml --project-name api-gateway down -v
+	@docker compose -f doc-to-docx-converter/docker-compose.yml --project-name doc-to-docx-converter down
+	@docker compose -f docx-converter/docker-compose.yml --project-name docx-parser down
+	@docker compose -f report-generator/docker-compose.yml --project-name report-generator down
+	@docker compose -f md-converter/deployment/docker-compose.yml --project-name html-to-markdown-converter down
+	@echo "All containers removed!"
+
 # Перезапуск всех сервисов
 restart: stop up
 
