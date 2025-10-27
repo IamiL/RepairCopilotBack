@@ -119,7 +119,7 @@ services:
       REDIS_ADDR: "api-gateway-service-redis:6379" # Внутренний порт Redis в Docker сети (фиксированный)
       REDIS_PASS: "${API_GATEWAY_SERVICE_REDIS_PASS}"
       USER_SERVICE_LOCATION: "user-service:8080"
-      TZ_SERVICE_LOCATION: "tz-service:${TZ_SERVICE_PORT}"
+      TZ_SERVICE_LOCATION: "tz-service:8080"
       CHAT_POCHEMU_SERVICE_LOCATION: "chat-pochemu-service:${CHAT_POCHEMU_SERVICE_PORT}"
       CHAT_SEARCH_SERVICE_LOCATION: "chat-search-service:${CHAT_SEARCH_SERVICE_PORT}"
     depends_on:
