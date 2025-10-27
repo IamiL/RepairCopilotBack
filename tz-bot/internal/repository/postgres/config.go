@@ -7,5 +7,5 @@ type Config struct {
 	User          string `env:"USER" env-required:"true"`
 	Pass          string `env:"PASSWORD" env-required:"true"`
 	MaxConns      int    `env:"MAX_CONNS" env-default:"10"`
-	MigrationsDir string `env:"MIGRATIONS_DIR" env-default:"tz-bot/migrations"`
+	MigrationsDir string `env:"MIGRATIONS_DIR" env-default:"migrations"`
 }
