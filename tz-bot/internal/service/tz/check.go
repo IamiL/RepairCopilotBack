@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -612,21 +613,29 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 				continue
 			}
 
+			// Санитизируем все строковые поля перед сохранением в БД
+			sanitizedGroupID := sanitizeString(err.GroupID)
+			sanitizedErrorCode := sanitizeString(err.ErrorCode)
+			sanitizedName := sanitizeString(err.Name)
+			sanitizedDescription := sanitizeString(err.Description)
+			sanitizedDetector := sanitizeString(err.Detector)
+			sanitizedVerdict := sanitizeString(err.Verdict)
+
 			errorData = append(errorData, modelrepo.ErrorData{
 				ID:                  err.ID,
-				GroupID:             &err.GroupID,
-				ErrorCode:           &err.ErrorCode,
+				GroupID:             &sanitizedGroupID,
+				ErrorCode:           &sanitizedErrorCode,
 				OrderNumber:         &err.OrderNumber,
-				Name:                &err.Name,
-				Description:         &err.Description,
-				Detector:            &err.Detector,
-				PreliminaryNotes:    err.PreliminaryNotes,
-				OverallCritique:     err.OverallCritique,
-				Verdict:             &err.Verdict,
-				ProcessAnalysis:     err.ProcessAnalysis,
-				ProcessCritique:     err.ProcessCritique,
-				ProcessVerification: err.ProcessVerification,
-				ProcessRetrieval:    err.ProcessRetrieval,
+				Name:                &sanitizedName,
+				Description:         &sanitizedDescription,
+				Detector:            &sanitizedDetector,
+				PreliminaryNotes:    sanitizeStringPointer(err.PreliminaryNotes),
+				OverallCritique:     sanitizeStringPointer(err.OverallCritique),
+				Verdict:             &sanitizedVerdict,
+				ProcessAnalysis:     sanitizeStringPointer(err.ProcessAnalysis),
+				ProcessCritique:     sanitizeStringPointer(err.ProcessCritique),
+				ProcessVerification: sanitizeStringPointer(err.ProcessVerification),
+				ProcessRetrieval:    sanitizeStringSlice(err.ProcessRetrieval),
 				Instances:           instancesJSON,
 			})
 		}
@@ -673,10 +682,11 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	inspectionTime := time.Since(now)
 
 	// Обновляем версию с результатами обработки
+	// Санитизируем строковые поля перед сохранением в БД
 	updateReq := &modelrepo.UpdateVersionRequest{
 		ID:                              versionID,
 		UpdatedAt:                       time.Now(),
-		OutHTML:                         outHtml,
+		OutHTML:                         sanitizeString(outHtml),
 		CSS:                             "",
 		CheckedFileID:                   reportFilename,
 		AllRubs:                         allRubs,
@@ -684,16 +694,16 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		InspectionTime:                  inspectionTime,
 		NumberOfErrors:                  len(*outMissingErrors) + len(*outInvalidErrors),
 		Status:                          "completed",
-		HtmlFromWordParser:              html,
-		HtmlWithPlacrholder:             htmlWithPlaceholder,
-		HtmlParagraphs:                  *paragraphs,
-		MarkdownFromMarkdownService:     markdownResponse.Markdown,
-		HtmlWithIdsFromMarkdownService:  markdownResponse.HtmlWithIds,
+		HtmlFromWordParser:              sanitizeString(html),
+		HtmlWithPlacrholder:             sanitizeString(htmlWithPlaceholder),
+		HtmlParagraphs:                  sanitizeString(*paragraphs),
+		MarkdownFromMarkdownService:     sanitizeString(markdownResponse.Markdown),
+		HtmlWithIdsFromMarkdownService:  sanitizeString(markdownResponse.HtmlWithIds),
 		MappingsFromMarkdownService:     mappingsFromMarkdownServiceJSON,
 		PromtsFromPromtBuilder:          promtsFromPromtBuilderJSON,
 		GroupReportsFromLlm:             groupReportsFromLlmJSON,
-		HtmlParagraphsWithWrappesErrors: htmlParagrapsWithWrappedErrors,
-		LlmReport:                       string(llmFinalReport),
+		HtmlParagraphsWithWrappesErrors: sanitizeString(htmlParagrapsWithWrappedErrors),
+		LlmReport:                       sanitizeString(string(llmFinalReport)),
 	}
 	err = tz.repo.UpdateVersion(ctx, updateReq)
 	if err != nil {
@@ -932,4 +942,60 @@ func RemoveBase64Images(markdown string) string {
 	}
 
 	return strings.Join(resultLines, "\n")
+}
+
+// sanitizeString очищает строку от недопустимых символов для PostgreSQL UTF-8
+// Удаляет нулевые байты и другие управляющие символы, которые PostgreSQL не принимает
+func sanitizeString(s string) string {
+	if s == "" {
+		return s
+	}
+
+	// Удаляем нулевые байты и другие недопустимые управляющие символы
+	s = strings.Map(func(r rune) rune {
+		// Удаляем нулевой байт
+		if r == 0 {
+			return -1
+		}
+		// Удаляем другие проблемные управляющие символы (U+0001 - U+0008, U+000B, U+000C, U+000E - U+001F)
+		if r < 32 && r != '\t' && r != '\n' && r != '\r' {
+			return -1
+		}
+		return r
+	}, s)
+
+	// Проверяем, что строка является валидной UTF-8
+	if !utf8.ValidString(s) {
+		// Если нет, то пересоздаём строку, пропуская невалидные символы
+		v := make([]rune, 0, len(s))
+		for _, r := range s {
+			if r != utf8.RuneError {
+				v = append(v, r)
+			}
+		}
+		s = string(v)
+	}
+
+	return s
+}
+
+// sanitizeStringPointer применяет sanitizeString к указателю на строку
+func sanitizeStringPointer(s *string) *string {
+	if s == nil {
+		return nil
+	}
+	sanitized := sanitizeString(*s)
+	return &sanitized
+}
+
+// sanitizeStringSlice применяет sanitizeString к каждому элементу среза строк
+func sanitizeStringSlice(slice *[]string) *[]string {
+	if slice == nil {
+		return nil
+	}
+	result := make([]string, len(*slice))
+	for i, s := range *slice {
+		result[i] = sanitizeString(s)
+	}
+	return &result
 }
