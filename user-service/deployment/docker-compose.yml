@@ -67,6 +67,7 @@ services:
     ports:
       - "${USER_SERVICE_PORT}:8080" # Внешний порт из .env, внутренний фиксированный 8080
     environment:
+      env: "${ENV}"
       GRPC_PORT: ":8080" # Порт gRPC сервера внутри контейнера (фиксированный)
       POSTGRES_HOST: "user-service-postgres"
       POSTGRES_PORT: "5432" # Внутренний порт Postgres в Docker сети (фиксированный)
