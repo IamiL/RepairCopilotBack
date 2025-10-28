@@ -382,7 +382,7 @@ func (tz *Tz) GetFeedbacks(ctx context.Context, userID *string) ([]*FeedbackInst
 			return true
 		}
 		// Оба поля не nil - сравниваем даты (сортировка по возрастанию)
-		return feedbacks[i].CreatedAt.Before(*feedbacks[j].CreatedAt)
+		return feedbacks[i].CreatedAt.After(*feedbacks[j].CreatedAt)
 	})
 
 	log.Info("feedbacks retrieved successfully",
