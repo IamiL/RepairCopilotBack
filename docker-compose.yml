@@ -9,10 +9,21 @@ services:
       - "3001:3000"
     volumes:
       - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./config/grafana.ini:/etc/grafana/grafana.ini
+      - ./config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./config/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
     environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      # Безопасность: включаем авторизацию
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+
+      # Упрощаем интерфейс - скрываем лишнее
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/logs-dashboard.json
     networks:
       - common
     container_name: grafana
@@ -37,30 +48,5 @@ services:
     networks:
       - common
 
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    restart: unless-stopped
-    volumes:
-      - ./config/prometheus:/etc/prometheus
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "9090:9090"
-    networks:
-      - common
-  jaeger:
-    image: jaegertracing/all-in-one:1.51
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-    ports:
-      - "16686:16686"
-      - "14268:14268"
-    container_name: jaeger
-    networks:
-      - common
-#    logging:
-#      driver: none
-## По умолчанию в этой конфигурации используется локальный драйвер docker по умолчанию,
-## Для пользовательских томов замените на конфигурацию драйвера тома.
+volumes:
+  grafana-data:
