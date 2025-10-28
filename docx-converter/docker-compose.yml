@@ -9,8 +9,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: docx-converter-service
-#    ports:
-#      - "8082:8082"
+    labels:
+      logging: promtail
+      prometheus-job: true
     volumes:
       # Монтируем логи для доступа с хоста
       - ./logs:/app/logs

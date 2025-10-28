@@ -28,6 +28,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: prompt-builder-service
+    labels:
+      logging: promtail
+      prometheus-job: true
     environment:
       PB_DATABASE_URL: postgresql://${PROMPT_BUILDER_POSTGRES_USER:-postgres}:${PROMPT_BUILDER_POSTGRES_PASSWORD:-postgres}@94.241.142.172:8083/${PROMPT_BUILDER_POSTGRES_DB:-llm}
       PB_LOG_LEVEL: ${PB_LOG_LEVEL:-INFO}

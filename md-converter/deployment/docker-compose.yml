@@ -8,8 +8,9 @@ services:
     build:
       context: ..
       dockerfile: deployment/Dockerfile
-#    ports:
-#      - "8089:8089"
+    labels:
+      logging: promtail
+      prometheus-job: true
     container_name: md-converter-service
     restart: unless-stopped
     environment:

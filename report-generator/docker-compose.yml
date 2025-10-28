@@ -7,8 +7,9 @@ services:
   app:
     container_name: report-generator-service
     build: .
-#    ports:
-#      - "8050:8000"
+    labels:
+      logging: promtail
+      prometheus-job: true
     restart: unless-stopped
     networks:
       - common

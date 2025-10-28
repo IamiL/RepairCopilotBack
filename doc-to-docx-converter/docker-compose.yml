@@ -7,8 +7,9 @@ services:
   app:
     build: .
     container_name: doc-to-docx-converter-service
-#    ports:
-#      - "${DOC_TO_DOCX_CONVERTER_PORT}:8000"
+    labels:
+      logging: promtail
+      prometheus-job: true
     volumes:
       # Монтирование локальных директорий для сохранения конвертированных файлов
       - ./uploads:/tmp/uploads

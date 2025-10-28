@@ -10,6 +10,9 @@ services:
       dockerfile: Dockerfile
     container_name: llm-requester-service
     hostname: llm-requester
+    labels:
+      logging: promtail
+      prometheus-job: true
     ports:
       - "8020:8000"
     environment:

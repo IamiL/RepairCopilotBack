@@ -66,10 +66,8 @@ services:
       dockerfile: tz-bot/deployment/Dockerfile # Путь к Dockerfile от корня проекта
     container_name: tz-service # Имя контейнера приложения
     labels:
-      logging: "promtail"
-      logging.jobname: "tz-service"
-#    env_file:
-#      - ../../.env # Загружаем переменные из .env в корне проекта
+      logging: promtail
+      prometheus-job: true
     ports:
       - "${TZ_SERVICE_PORT}:8080" # Внешний порт из .env, внутренний фиксированный 8080
     environment:
