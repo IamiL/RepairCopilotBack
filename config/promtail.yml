@@ -9,18 +9,40 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: flog_scrape
+  # Собираем логи ВСЕХ Docker контейнеров
+  - job_name: docker_logs
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
-        filters:
-          - name: label
-            values: ["logging=promtail"]
     relabel_configs:
+      # Извлекаем имя контейнера
       - source_labels: ['__meta_docker_container_name']
         regex: '/(.*)'
         target_label: 'container'
+
+      # Добавляем ID контейнера
+      - source_labels: ['__meta_docker_container_id']
+        target_label: 'container_id'
+
+      # Добавляем образ контейнера
+      - source_labels: ['__meta_docker_container_image']
+        target_label: 'image'
+
+      # Добавляем поток логов (stdout/stderr)
       - source_labels: ['__meta_docker_container_log_stream']
-        target_label: 'logstream'
+        target_label: 'stream'
+
+      # Добавляем все labels контейнера как метки
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+
+      # Job name из label контейнера (если есть)
       - source_labels: ['__meta_docker_container_label_logging_jobname']
         target_label: 'job'
+        regex: '(.+)'
+
+      # Если job не задан, используем имя контейнера
+      - source_labels: ['container']
+        target_label: 'job'
+        regex: '(.*)'
+        replacement: '${1}'
