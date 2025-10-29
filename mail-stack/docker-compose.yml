@@ -45,7 +45,7 @@ services:
       - SMTP_PORT=587
       - SMTP_USER=noreply@intbis.ru
       - SMTP_PASS=123
-      - SMTP_FROM="ИнтБис <noreply@intbis.ru>"
+      - SMTP_FROM=ИнтБис <noreply@intbis.ru>
     depends_on:
       - maddy
 #    ports:
