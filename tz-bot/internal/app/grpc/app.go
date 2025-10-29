@@ -356,7 +356,7 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 		return nil, status.Error(codes.InvalidArgument, "invalid version ID format")
 	}
 
-	statusTz, createdAt, allRubs, allTokens, inspectionDuration, htmlText, css, docId, errorsTz, invalidInstances, fileId, originalFileSize, numberOfErrors, llmReport, progress, err := s.tzService.GetVersion(ctx, versionID)
+	statusTz, createdAt, allRubs, allTokens, inspectionDuration, _, css, docId, errorsTz, invalidInstances, fileId, originalFileSize, numberOfErrors, llmReport, progress, err := s.tzService.GetVersion(ctx, versionID)
 	if err != nil {
 		log.Error("failed to get version", slog.String("error", err.Error()))
 		return nil, status.Error(codes.Internal, "failed to get version")
@@ -422,11 +422,11 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 	numberOfErrrorsInt32 := int32(numberOfErrors)
 
 	reportLink := "https://docs.timuroid.ru/reports/" + docId + ".docx"
-
+	htmlEmptyTest := ".."
 	resp := &tzv1.GetVersionResponse{
 		InvalidInstances:                 convertInvalidInstances(invalidInstances, nil),
 		Errors:                           errorsResp,
-		HtmlText:                         &htmlText,
+		HtmlText:                         &htmlEmptyTest,
 		Css:                              &css,
 		DocId:                            &reportLink,
 		FileId:                           &fileId,
