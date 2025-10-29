@@ -27,6 +27,8 @@ services:
       - maddy_data:/data                      # ИМЕНОВАННЫЙ VOLUME ← важно
       - /etc/letsencrypt/live/intbis.ru/fullchain.pem:/data/tls/fullchain.pem:ro
       - /etc/letsencrypt/live/intbis.ru/privkey.pem:/data/tls/privkey.pem:ro
+      - /etc/letsencrypt/live/mail.intbis.ru/fullchain.pem:/data/tls/fullchain.pem:ro
+      - /etc/letsencrypt/live/mail.intbis.ru/privkey.pem:/data/tls/privkey.pem:ro
 
   mailer:
     build: ./mailer
