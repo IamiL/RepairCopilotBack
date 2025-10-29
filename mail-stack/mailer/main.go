@@ -40,8 +40,15 @@ func main() {
 			from = q.From
 		}
 
+		name := os.Getenv("SMTP_FROM_NAME")
+		addr := os.Getenv("SMTP_FROM_ADDR")
+		if addr == "" {
+			addr = os.Getenv("SMTP_USER") // запасной вариант
+		}
+
 		m := gomail.NewMessage()
-		m.SetHeader("From", from)
+		m.SetAddressHeader("From", addr, name)
+		//m.SetHeader("From", from)
 		m.SetHeader("To", q.To)
 		m.SetHeader("Subject", q.Subject)
 		if q.HTML != "" {
