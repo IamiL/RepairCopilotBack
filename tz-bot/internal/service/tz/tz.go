@@ -256,7 +256,7 @@ func (tz *Tz) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*VersionMe
 		}
 
 		if versions[i].OriginalFileID != "" {
-			versions[i].OriginalFileLink = "/docx/" + versions[i].OriginalFileID + ".docx"
+			versions[i].OriginalFileLink = "/docs/" + versions[i].OriginalFileID + ".docx"
 		}
 	}
 
@@ -298,7 +298,7 @@ func (tz *Tz) GetAllVersionsAdminDashboard(ctx context.Context, userID uuid.UUID
 	}
 
 	for i := range versions {
-		versions[i].OriginalFileLink = "/docx/" + versions[i].OriginalFileId + ".docx"
+		versions[i].OriginalFileLink = "/docs/" + versions[i].OriginalFileId + ".docx"
 		versions[i].ReportFileLink = "/reports/" + versions[i].ReportFileId + ".docx"
 	}
 
