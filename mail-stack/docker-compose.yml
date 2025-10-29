@@ -10,7 +10,9 @@ services:
     restart: unless-stopped
     hostname: mail.intbis.ru
     networks:
-      - common
+      common:
+        aliases:
+          - mail.intbis.ru        # <— алиас в сети common
     labels:
       logging: promtail
       prometheus-job: true
@@ -24,9 +26,8 @@ services:
       - "587:587"
       - "993:993"
     volumes:
-      - maddy_data:/data                      # ИМЕНОВАННЫЙ VOLUME ← важно
-      - /etc/letsencrypt/live/intbis.ru/fullchain.pem:/data/tls/fullchain.pem:ro
-      - /etc/letsencrypt/live/intbis.ru/privkey.pem:/data/tls/privkey.pem:ro
+      - maddy_data:/data
+      # оставляем ТОЛЬКО сертификат для mail.intbis.ru
       - /etc/letsencrypt/live/mail.intbis.ru/fullchain.pem:/data/tls/fullchain.pem:ro
       - /etc/letsencrypt/live/mail.intbis.ru/privkey.pem:/data/tls/privkey.pem:ro
 
@@ -40,7 +41,7 @@ services:
       logging: promtail
       prometheus-job: true
     environment:
-      - SMTP_HOST=maddy
+      - SMTP_HOST=mail.intbis.ru   # <— теперь совпадает с CN/SAN сертификата
       - SMTP_PORT=587
       - SMTP_USER=noreply@intbis.ru
       - SMTP_PASS=123
