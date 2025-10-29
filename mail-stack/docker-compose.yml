@@ -1,0 +1,46 @@
+networks:
+  common:
+    external: true
+    name: common
+
+services:
+  maddy:
+    image: foxcpp/maddy:latest
+    container_name: maddy
+    restart: unless-stopped
+    hostname: mail.intbis.ru
+    labels:
+      logging: promtail
+      prometheus-job: true
+    environment:
+      - TZ=Europe/Amsterdam
+    networks:
+      - common
+    ports:
+      - "25:25"      # SMTP
+      - "465:465"    # SMTPS
+      - "587:587"    # Submission STARTTLS
+      - "993:993"    # IMAPS
+    volumes:
+      - ./maddy/maddy.conf:/etc/maddy/maddy.conf:ro
+      - ./maddy/data:/var/lib/maddy
+      # Подключаем ваши действующие сертификаты LE из nginx (ro):
+      - /etc/letsencrypt/live/intbis.ru/fullchain.pem:/certs/fullchain.pem:ro
+      - /etc/letsencrypt/live/intbis.ru/privkey.pem:/certs/privkey.pem:ro
+
+  mailer:
+    build: ./mailer
+    container_name: mailer-service
+    restart: unless-stopped
+    networks:
+      - common
+    environment:
+      - SMTP_HOST=maddy
+      - SMTP_PORT=587
+      - SMTP_USER=noreply@intbis.ru
+      - SMTP_PASS=ЗАДАЙТЕ_ПОСЛЕ_СОЗДАНИЯ_ПОЛЬЗОВАТЕЛЯ
+      - SMTP_FROM="ИнтБис <noreply@intbis.ru>"
+    depends_on:
+      - maddy
+#    ports:
+#      - "8085:8080"   # HTTP API вашего сервиса для отправки
