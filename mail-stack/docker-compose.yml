@@ -25,8 +25,8 @@ services:
       - ./maddy/maddy.conf:/etc/maddy/maddy.conf:ro
       - ./maddy/data:/var/lib/maddy
       # Подключаем ваши действующие сертификаты LE из nginx (ro):
-      - /etc/letsencrypt/live/intbis.ru/fullchain.pem:/certs/fullchain.pem:ro
-      - /etc/letsencrypt/live/intbis.ru/privkey.pem:/certs/privkey.pem:ro
+      - /etc/letsencrypt/live/intbis.ru/fullchain.pem:/data/tls/fullchain.pem:ro
+      - /etc/letsencrypt/live/intbis.ru/privkey.pem:/data/tls/privkey.pem:ro
 
   mailer:
     build: ./mailer
