@@ -36,9 +36,9 @@ func main() {
 		user := os.Getenv("SMTP_USER")
 		pass := os.Getenv("SMTP_PASS")
 		//from := os.Getenv("SMTP_FROM")
-		if q.From != "" {
-			from = q.From
-		}
+		//if q.From != "" {
+		//	from = q.From
+		//}
 
 		name := os.Getenv("SMTP_FROM_NAME")
 		addr := os.Getenv("SMTP_FROM_ADDR")
