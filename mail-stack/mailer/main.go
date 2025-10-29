@@ -35,7 +35,7 @@ func main() {
 		port, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
 		user := os.Getenv("SMTP_USER")
 		pass := os.Getenv("SMTP_PASS")
-		from := os.Getenv("SMTP_FROM")
+		//from := os.Getenv("SMTP_FROM")
 		if q.From != "" {
 			from = q.From
 		}
