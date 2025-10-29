@@ -251,12 +251,12 @@ func (tz *Tz) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*VersionMe
 
 	for i := range versions {
 		if versions[i].ReportFileID != nil && *versions[i].ReportFileID != "" {
-			reportFileLink := "https://s3.timuroid.ru/reports/" + *versions[i].ReportFileID + ".docx"
+			reportFileLink := "/reports/" + *versions[i].ReportFileID + ".docx"
 			versions[i].ReportFileLink = &reportFileLink
 		}
 
 		if versions[i].OriginalFileID != "" {
-			versions[i].OriginalFileLink = "https://s3.timuroid.ru/docx/" + versions[i].OriginalFileID + ".docx"
+			versions[i].OriginalFileLink = "/docx/" + versions[i].OriginalFileID + ".docx"
 		}
 	}
 
@@ -298,8 +298,8 @@ func (tz *Tz) GetAllVersionsAdminDashboard(ctx context.Context, userID uuid.UUID
 	}
 
 	for i := range versions {
-		versions[i].OriginalFileLink = "https://s3.timuroid.ru/docx/" + versions[i].OriginalFileId + ".docx"
-		versions[i].ReportFileLink = "https://s3.timuroid.ru/reports/" + versions[i].ReportFileId + ".docx"
+		versions[i].OriginalFileLink = "/docx/" + versions[i].OriginalFileId + ".docx"
+		versions[i].ReportFileLink = "/reports/" + versions[i].ReportFileId + ".docx"
 	}
 
 	log.Info("all versions retrieved successfully", slog.Int("count", len(versions)))
