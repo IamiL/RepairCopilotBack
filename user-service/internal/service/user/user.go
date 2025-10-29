@@ -8,13 +8,13 @@ import (
 	"math/rand"
 	"repairCopilotBot/user-service/internal/domain/models"
 	"repairCopilotBot/user-service/internal/pkg/logger/sl"
+	mailerclient "repairCopilotBot/user-service/internal/pkg/mailer-client"
 	"repairCopilotBot/user-service/internal/repository"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"gopkg.in/gomail.v2"
 )
 
 type User struct {
@@ -204,30 +204,35 @@ func (u *User) Login(ctx context.Context, login string, password string) (*model
 }
 
 func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
-	// Конфигурация SMTP для Gmail
-	smtpHost := "smtp.gmail.com"
-	smtpPort := 465 // Используем SSL порт вместо TLS 587
-	from := "ivan2011avatar@gmail.com"
-	password := "tsep nuqs bmvy dcbr"
-
-	// Создаем письмо
-	m := gomail.NewMessage()
-	m.SetHeader("From", from)
-	m.SetHeader("To", email)
-	m.SetHeader("Subject", "Код подтверждения регистрации")
-
-	body := fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации.", confirmationCode)
-	m.SetBody("text/plain", body)
-
-	// Настраиваем SMTP диалер с SSL (порт 465)
-	d := gomail.NewDialer(smtpHost, smtpPort, from, password)
-
-	// Отправка письма
-	if err := d.DialAndSend(m); err != nil {
+	err := mailerclient.SendMailViaMailer(context.Background(), email, fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации.", confirmationCode))
+	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-
 	return nil
+	//// Конфигурация SMTP для Gmail
+	//smtpHost := "smtp.gmail.com"
+	//smtpPort := 465 // Используем SSL порт вместо TLS 587
+	//from := "ivan2011avatar@gmail.com"
+	//password := "tsep nuqs bmvy dcbr"
+	//
+	//// Создаем письмо
+	//m := gomail.NewMessage()
+	//m.SetHeader("From", from)
+	//m.SetHeader("To", email)
+	//m.SetHeader("Subject", "Код подтверждения регистрации")
+	//
+	//body := fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации.", confirmationCode)
+	//m.SetBody("text/plain", body)
+	//
+	//// Настраиваем SMTP диалер с SSL (порт 465)
+	//d := gomail.NewDialer(smtpHost, smtpPort, from, password)
+	//
+	//// Отправка письма
+	//if err := d.DialAndSend(m); err != nil {
+	//	return fmt.Errorf("failed to send email: %w", err)
+	//}
+	//
+	//return nil
 }
 
 func (u *User) GetLoginById(ctx context.Context, userId string) (string, error) {
@@ -678,30 +683,35 @@ func generateRandomPassword() string {
 
 // sendRecoveryEmail отправляет письмо с новыми данными для входа
 func (u *User) sendRecoveryEmail(email, login, password string) error {
-	// Конфигурация SMTP для Gmail
-	smtpHost := "smtp.gmail.com"
-	smtpPort := 465 // Используем SSL порт вместо TLS 587
-	from := "ivan2011avatar@gmail.com"
-	emailPassword := "tsep nuqs bmvy dcbr"
-
-	// Создаем письмо
-	m := gomail.NewMessage()
-	m.SetHeader("From", from)
-	m.SetHeader("To", email)
-	m.SetHeader("Subject", "Восстановление данных для входа")
-
-	body := fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password)
-	m.SetBody("text/plain", body)
-
-	// Настраиваем SMTP диалер с SSL (порт 465)
-	d := gomail.NewDialer(smtpHost, smtpPort, from, emailPassword)
-
-	// Отправка письма
-	if err := d.DialAndSend(m); err != nil {
+	err := mailerclient.SendMailViaMailer(context.Background(), email, fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password))
+	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-
 	return nil
+	//// Конфигурация SMTP для Gmail
+	//smtpHost := "smtp.gmail.com"
+	//smtpPort := 465 // Используем SSL порт вместо TLS 587
+	//from := "ivan2011avatar@gmail.com"
+	//emailPassword := "tsep nuqs bmvy dcbr"
+	//
+	//// Создаем письмо
+	//m := gomail.NewMessage()
+	//m.SetHeader("From", from)
+	//m.SetHeader("To", email)
+	//m.SetHeader("Subject", "Восстановление данных для входа")
+	//
+	//body := fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password)
+	//m.SetBody("text/plain", body)
+	//
+	//// Настраиваем SMTP диалер с SSL (порт 465)
+	//d := gomail.NewDialer(smtpHost, smtpPort, from, emailPassword)
+	//
+	//// Отправка письма
+	//if err := d.DialAndSend(m); err != nil {
+	//	return fmt.Errorf("failed to send email: %w", err)
+	//}
+	//
+	//return nil
 }
 
 // Recovery восстанавливает логин и пароль пользователя по email
