@@ -53,7 +53,9 @@ func main() {
 		}
 
 		d := gomail.NewDialer(host, port, user, pass)
-		d.TLSConfig = nil // используем STARTTLS по умолчанию
+		d.TLSConfig = &tls.Config{
+			ServerName: "mail.intbis.ru",
+		}
 
 		if err := d.DialAndSend(m); err != nil {
 			http.Error(w, "send failed: "+err.Error(), http.StatusBadGateway)
