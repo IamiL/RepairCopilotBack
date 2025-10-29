@@ -421,7 +421,7 @@ func (s *serverAPI) GetVersion(ctx context.Context, req *tzv1.GetVersionRequest)
 
 	numberOfErrrorsInt32 := int32(numberOfErrors)
 
-	reportLink := "https://docs.timuroid.ru/reports/" + docId + ".docx"
+	reportLink := "/reports/" + docId + ".docx"
 	htmlEmptyTest := ".."
 	resp := &tzv1.GetVersionResponse{
 		InvalidInstances:                 convertInvalidInstances(invalidInstances, nil),
