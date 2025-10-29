@@ -9,18 +9,22 @@ services:
     container_name: maddy
     restart: unless-stopped
     hostname: mail.intbis.ru
+    networks:
+      - common
+    labels:
+      logging: promtail
+      prometheus-job: true
     environment:
       - TZ=Europe/Amsterdam
-      - MADDY_HOSTNAME=mail.intbis.ru     # имя MX
-      - MADDY_DOMAIN=intbis.ru            # основной домен
+      - MADDY_HOSTNAME=mail.intbis.ru
+      - MADDY_DOMAIN=intbis.ru
     ports:
       - "25:25"
       - "465:465"
       - "587:587"
       - "993:993"
     volumes:
-      - ./maddy/data:/data
-      # Сертификаты Let's Encrypt — в пути, которые ожидает образ:
+      - maddy_data:/data                      # ИМЕНОВАННЫЙ VOLUME ← важно
       - /etc/letsencrypt/live/intbis.ru/fullchain.pem:/data/tls/fullchain.pem:ro
       - /etc/letsencrypt/live/intbis.ru/privkey.pem:/data/tls/privkey.pem:ro
 
@@ -30,6 +34,9 @@ services:
     restart: unless-stopped
     networks:
       - common
+    labels:
+      logging: promtail
+      prometheus-job: true
     environment:
       - SMTP_HOST=maddy
       - SMTP_PORT=587
@@ -40,3 +47,5 @@ services:
       - maddy
 #    ports:
 #      - "8085:8080"   # HTTP API вашего сервиса для отправки
+volumes:
+  maddy_data:
