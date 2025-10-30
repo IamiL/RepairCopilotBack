@@ -10,24 +10,24 @@ func InjectInvalidErrorsToHtmlBlocks(invalidErrors *[]OutInvalidError, htmlBlock
 	for i := range *invalidErrors {
 		if (*invalidErrors)[i].StartLineNumber != nil && (*invalidErrors)[i].EndLineNumber != nil {
 			if *(*invalidErrors)[i].StartLineNumber == *(*invalidErrors)[i].EndLineNumber {
-				err := injectIntoHTMLBlockByLineNumber((*invalidErrors)[i].Quote, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, *(*invalidErrors)[i].StartLineNumber)
-				if err != nil {
-					errors = append(errors, err)
-				}
+				//err := injectIntoHTMLBlockByLineNumber((*invalidErrors)[i].Quote, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, *(*invalidErrors)[i].StartLineNumber)
+				//if err != nil {
+				//	errors = append(errors, err)
+				//}
 			} else {
 				for line := *(*invalidErrors)[i].StartLineNumber; line <= *(*invalidErrors)[i].EndLineNumber; line++ {
 					if (*invalidErrors)[i].QuoteLines != nil {
-						for _, quoteLine := range *(*invalidErrors)[i].QuoteLines {
-							err := injectIntoHTMLBlockByLineNumber(quoteLine, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, line)
-							if err != nil {
-								errors = append(errors, err)
-							}
-						}
+						//for _, quoteLine := range *(*invalidErrors)[i].QuoteLines {
+						//err := injectIntoHTMLBlockByLineNumber(quoteLine, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, line)
+						//if err != nil {
+						//	errors = append(errors, err)
+						//}
+						//}
 					} else {
-						err := injectIntoHTMLBlockByLineNumber((*invalidErrors)[i].Quote, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, line)
-						if err != nil {
-							errors = append(errors, err)
-						}
+						//err := injectIntoHTMLBlockByLineNumber((*invalidErrors)[i].Quote, (*invalidErrors)[i].HtmlIDStr, htmlBlocks, line)
+						//if err != nil {
+						//	errors = append(errors, err)
+						//}
 					}
 				}
 			}

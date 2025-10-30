@@ -110,7 +110,7 @@ services:
       TELEGRAM_CLIENT_TOKEN: "${TZ_SERVICE_TELEGRAM_CLIENT_TOKEN}"
       TELEGRAM_CLIENT_CHAT_ID: "${TZ_SERVICE_TELEGRAM_CLIENT_CHAT_ID}"
       # Go runtime оптимизации
-      GOMEMLIMIT: "1536MiB" # Мягкий лимит памяти для Go runtime (75% от лимита контейнера)
+#      GOMEMLIMIT: "1536MiB" # Мягкий лимит памяти для Go runtime (75% от лимита контейнера)
       GOGC: "75" # Более частая сборка мусора для контроля памяти
       GODEBUG: "gctrace=0" # Отключаем трейсинг GC (можно включить для диагностики: gctrace=1)
     depends_on:

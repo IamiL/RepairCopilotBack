@@ -7,8 +7,6 @@ import (
 	"log/slog"
 	"regexp"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
-	"repairCopilotBot/tz-bot/internal/pkg/word-parser2/paragraphs"
-
 	//docxToDocx2007clientclient "repairCopilotBot/tz-bot/internal/pkg/docxToDocx2007client"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
@@ -196,7 +194,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		file = newFile
 	}
 
-	oldVersion := false
+	//oldVersion := false
 
 	var paragraphs *string
 
@@ -219,7 +217,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	//if err != nil {
 	//log.Error("ошибка при обращении к wordParserClient2: ", sl.Err(err))
 	log.Info("пробуем старый word_parser")
-	oldVersion = true
+	//oldVersion = true
 	paragraphsFromWordConverterClient, _, wordConverterClientErr := tz.wordConverterClient.Convert(file, RemoveDocExtension(filename)+".docx")
 	if wordConverterClientErr != nil {
 		tz.handleProcessingError(ctx, versionID, userID, "ошибка при обращении к wordParserClient: "+wordConverterClientErr.Error(), log)
@@ -516,16 +514,16 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		errorsInTz[i].OrderNumber = i
 	}
 
-	outInvalidErrors, outMissingErrors, htmlParagrapsWithWrappedErrors := HandleErrors(&groupReports, &markdownResponse.Mappings)
+	outInvalidErrors, outMissingErrors, _ := HandleErrors(&groupReports, &markdownResponse.Mappings)
+	htmlParagrapsWithWrappedErrors := "......................................."
+	outHtml := "....................................................."
 
-	var outHtml string
-
-	if oldVersion {
-		outHtml = htmlParagrapsWithWrappedErrors
-	} else {
-		//outHtml = word_parser2.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
-		outHtml = paragraphsproc.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
-	}
+	//if oldVersion {
+	//	outHtml = htmlParagrapsWithWrappedErrors
+	//} else {
+	//	//outHtml = word_parser2.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
+	//	outHtml = paragraphsproc.InsertParagraphs(htmlWithPlaceholder, htmlParagrapsWithWrappedErrors)
+	//}
 
 	for i := range *outInvalidErrors {
 		(*outInvalidErrors)[i].OrderNumber = i
