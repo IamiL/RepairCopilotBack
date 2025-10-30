@@ -210,7 +210,7 @@ func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
 	client := resend.NewClient(apiKey)
 
 	params := &resend.SendEmailRequest{
-		From:    "onboarding@resend.dev",
+		From:    "intbis@mail.iamil.ru",
 		To:      []string{email},
 		Subject: "Восстановление данных для входа",
 		Html:    "<p>" + fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации на intbis.ru.", confirmationCode) + "</p>",
@@ -701,7 +701,7 @@ func (u *User) sendRecoveryEmail(email, login, password string) error {
 	client := resend.NewClient(apiKey)
 
 	params := &resend.SendEmailRequest{
-		From:    "onboarding@resend.dev",
+		From:    "intbis@mail.iamil.ru",
 		To:      []string{email},
 		Subject: "Восстановление данных для входа",
 		Html:    "<p>" + fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password) + "</p>",
