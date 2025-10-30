@@ -26,6 +26,7 @@ func New(
 	grpcConfig *grpcapp.Config,
 	postgresConfig *postgres.Config,
 	mailToken string,
+	mailDomen string,
 ) *App {
 	postgresConn, err := postgres.NewConnPool(postgresConfig)
 	if err != nil {
@@ -45,7 +46,7 @@ func New(
 		panic(fmt.Errorf("cannot run migrator - %w", err).Error())
 	}
 
-	usrService := userservice.New(log, postgres, postgres, mailToken)
+	usrService := userservice.New(log, postgres, postgres, mailToken, mailDomen)
 
 	grpcApp := grpcapp.NewUserGRPCServer(log, usrService, grpcConfig)
 

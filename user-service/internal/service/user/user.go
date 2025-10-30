@@ -22,6 +22,7 @@ type User struct {
 	usrSaver    UserSaver
 	usrProvider UserProvider
 	mailToken   string
+	mailDomen   string
 }
 
 var (
@@ -82,11 +83,13 @@ func New(
 	userSaver UserSaver,
 	userProvider UserProvider,
 	mailToken string,
+	mailDomen string,
 ) *User {
 	return &User{
 		usrSaver:    userSaver,
 		usrProvider: userProvider,
 		mailToken:   mailToken,
+		mailDomen:   mailDomen,
 		log:         log,
 	}
 }
@@ -213,10 +216,15 @@ func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
 		apiKey = "re_bSW5sxCn_2wqChs3bGbexf7FM69Updray"
 	}
 
+	mailDomen := u.mailDomen
+	if u.mailDomen == "" {
+		mailDomen = "mail.iamil.ru"
+	}
+
 	client := resend.NewClient(apiKey)
 
 	params := &resend.SendEmailRequest{
-		From:    "intbis@mail.iamil.ru",
+		From:    "intbis@" + mailDomen,
 		To:      []string{email},
 		Subject: "Код подтверждения регистрации",
 		Html:    "<p>" + fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации на intbis.ru.", confirmationCode) + "</p>",
@@ -707,10 +715,15 @@ func (u *User) sendRecoveryEmail(email, login, password string) error {
 		apiKey = "re_bSW5sxCn_2wqChs3bGbexf7FM69Updray"
 	}
 
+	mailDomen := u.mailDomen
+	if u.mailDomen == "" {
+		mailDomen = "mail.iamil.ru"
+	}
+
 	client := resend.NewClient(apiKey)
 
 	params := &resend.SendEmailRequest{
-		From:    "intbis@mail.iamil.ru",
+		From:    "intbis@" + mailDomen,
 		To:      []string{email},
 		Subject: "Восстановление данных для входа",
 		Html:    "<p>" + fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password) + "</p>",

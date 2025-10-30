@@ -26,6 +26,7 @@ func main() {
 		&cfg.GRPC,
 		&cfg.Postgres,
 		cfg.MailToken,
+		cfg.MailDomen,
 	)
 
 	application.GRPCServer.MustRun()

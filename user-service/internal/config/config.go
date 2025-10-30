@@ -12,6 +12,7 @@ type Config struct {
 	GRPC      grpcapp.Config  `env-prefix:"GRPC_"`
 	Postgres  postgres.Config `env-prefix:"POSTGRES_"`
 	MailToken string          `env:"MAIL_TOKEN" env-default:""`
+	MailDomen string          `env:"MAIL_DOMEN" env-default:""`
 }
 
 // MustLoad читает конфигурацию из переменных окружения
