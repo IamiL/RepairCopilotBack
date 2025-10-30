@@ -212,7 +212,7 @@ func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
 	params := &resend.SendEmailRequest{
 		From:    "intbis@mail.iamil.ru",
 		To:      []string{email},
-		Subject: "Восстановление данных для входа",
+		Subject: "Код подтверждения регистрации",
 		Html:    "<p>" + fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации на intbis.ru.", confirmationCode) + "</p>",
 	}
 
@@ -778,6 +778,14 @@ func (u *User) Recovery(ctx context.Context, email string) error {
 	if err != nil {
 		log.Error("failed to update login and password", sl.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = u.usrProvider.UpdateConfirmStatusByUserId(ctx, userID, true)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found", sl.Err(err))
+		}
+		u.log.Error("failed to update user confirmation", sl.Err(err))
 	}
 
 	// Отправляем письмо с новыми данными
