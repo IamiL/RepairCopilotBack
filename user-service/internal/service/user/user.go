@@ -8,12 +8,12 @@ import (
 	"math/rand"
 	"repairCopilotBot/user-service/internal/domain/models"
 	"repairCopilotBot/user-service/internal/pkg/logger/sl"
-	mailerclient "repairCopilotBot/user-service/internal/pkg/mailer-client"
 	"repairCopilotBot/user-service/internal/repository"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/resend/resend-go/v2"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -204,7 +204,19 @@ func (u *User) Login(ctx context.Context, login string, password string) (*model
 }
 
 func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
-	err := mailerclient.SendMailViaMailer(context.Background(), email, fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации.", confirmationCode))
+	//err := mailerclient.SendMailViaMailer(context.Background(), email, fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации.", confirmationCode))
+	apiKey := "re_bSW5sxCn_2wqChs3bGbexf7FM69Updray"
+
+	client := resend.NewClient(apiKey)
+
+	params := &resend.SendEmailRequest{
+		From:    "onboarding@resend.dev",
+		To:      []string{email},
+		Subject: "Восстановление данных для входа",
+		Html:    "<p>" + fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации на intbis.ru.", confirmationCode) + "</p>",
+	}
+
+	_, err := client.Emails.Send(params)
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
@@ -683,7 +695,19 @@ func generateRandomPassword() string {
 
 // sendRecoveryEmail отправляет письмо с новыми данными для входа
 func (u *User) sendRecoveryEmail(email, login, password string) error {
-	err := mailerclient.SendMailViaMailer(context.Background(), email, fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password))
+	//err := mailerclient.SendMailViaMailer(context.Background(), email, fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password))
+	apiKey := "re_bSW5sxCn_2wqChs3bGbexf7FM69Updray"
+
+	client := resend.NewClient(apiKey)
+
+	params := &resend.SendEmailRequest{
+		From:    "onboarding@resend.dev",
+		To:      []string{email},
+		Subject: "Восстановление данных для входа",
+		Html:    "<p>" + fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password) + "</p>",
+	}
+
+	_, err := client.Emails.Send(params)
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
