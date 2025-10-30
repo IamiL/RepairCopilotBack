@@ -6,7 +6,6 @@
 up:
 	@echo "Starting all services..."
 	@docker compose -f docker-compose.yml --project-name common up -d
-	@docker compose -f mail-stack/docker-compose.yml --project-name mailer up -d
 	@docker compose -f s3-minio/docker-compose.yaml --env-file .env --project-name s3-minio up -d
 	@docker compose -f user-service/deployment/docker-compose.yml --env-file .env --project-name user-service up -d
 	@docker compose -f llm-requester/docker-compose.yml --env-file .env  --project-name llm-requester up -d

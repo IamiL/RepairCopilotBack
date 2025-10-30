@@ -21,6 +21,7 @@ type User struct {
 	log         *slog.Logger
 	usrSaver    UserSaver
 	usrProvider UserProvider
+	mailToken   string
 }
 
 var (
@@ -80,10 +81,12 @@ func New(
 	log *slog.Logger,
 	userSaver UserSaver,
 	userProvider UserProvider,
+	mailToken string,
 ) *User {
 	return &User{
 		usrSaver:    userSaver,
 		usrProvider: userProvider,
+		mailToken:   mailToken,
 		log:         log,
 	}
 }
@@ -205,7 +208,10 @@ func (u *User) Login(ctx context.Context, login string, password string) (*model
 
 func (u *User) sendConfirmationEmail(email, confirmationCode string) error {
 	//err := mailerclient.SendMailViaMailer(context.Background(), email, fmt.Sprintf("Ваш код подтверждения: %s\n\nИспользуйте этот код для завершения регистрации.", confirmationCode))
-	apiKey := "re_bSW5sxCn_2wqChs3bGbexf7FM69Updray"
+	apiKey := u.mailToken
+	if u.mailToken == "" {
+		apiKey = "re_bSW5sxCn_2wqChs3bGbexf7FM69Updray"
+	}
 
 	client := resend.NewClient(apiKey)
 
@@ -696,7 +702,10 @@ func generateRandomPassword() string {
 // sendRecoveryEmail отправляет письмо с новыми данными для входа
 func (u *User) sendRecoveryEmail(email, login, password string) error {
 	//err := mailerclient.SendMailViaMailer(context.Background(), email, fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password))
-	apiKey := "re_bSW5sxCn_2wqChs3bGbexf7FM69Updray"
+	apiKey := u.mailToken
+	if u.mailToken == "" {
+		apiKey = "re_bSW5sxCn_2wqChs3bGbexf7FM69Updray"
+	}
 
 	client := resend.NewClient(apiKey)
 

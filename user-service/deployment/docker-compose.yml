@@ -74,6 +74,7 @@ services:
       POSTGRES_USER: "${USER_SERVICE_POSTGRES_USER}"
       POSTGRES_PASSWORD: "${USER_SERVICE_POSTGRES_PASS}"
       POSTGRES_MIGRATIONS_DIR: "migrations" # Директория миграций
+      MAIL_TOKEN: "${RESEND_MAIL_TOKEN}"
     depends_on:
       postgres:
         condition: service_healthy # Ждём, пока база станет "здоровой", прежде чем стартовать приложение

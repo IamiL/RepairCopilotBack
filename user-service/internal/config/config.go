@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Env      string          `env:"ENV" env-default:"local"`
-	GRPC     grpcapp.Config  `env-prefix:"GRPC_"`
-	Postgres postgres.Config `env-prefix:"POSTGRES_"`
+	Env       string          `env:"ENV" env-default:"local"`
+	GRPC      grpcapp.Config  `env-prefix:"GRPC_"`
+	Postgres  postgres.Config `env-prefix:"POSTGRES_"`
+	MailToken string          `env:"MAIL_TOKEN" env-default:""`
 }
 
 // MustLoad читает конфигурацию из переменных окружения

@@ -25,6 +25,7 @@ func main() {
 		log,
 		&cfg.GRPC,
 		&cfg.Postgres,
+		cfg.MailToken,
 	)
 
 	application.GRPCServer.MustRun()
