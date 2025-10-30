@@ -674,26 +674,6 @@ func (u *User) ChangeUserRole(ctx context.Context, userID string, isAdmin bool) 
 	return nil
 }
 
-// generateRandomLogin генерирует случайный логин из предопределенного списка английских слов длиной 7-15 символов
-func generateRandomLogin() string {
-	// Список английских слов длиной 7-15 символов
-	words := []string{
-		"sunrise", "mountain", "butterfly", "thunder", "harmony",
-		"journey", "freedom", "crystal", "shadow", "rainbow",
-		"whisper", "diamond", "phoenix", "galaxy", "horizon",
-		"lightning", "paradise", "universe", "victory", "warrior",
-		"champion", "explorer", "guardian", "treasure", "adventure",
-		"courage", "destiny", "fortress", "kingdom", "mystery",
-		"power", "silver", "storm", "twilight", "wisdom",
-		"wonder", "dragon", "eagle", "falcon", "panther",
-		"tiger", "wolf", "knight", "legend", "magic",
-		"noble", "prince", "queen", "royal", "spirit",
-	}
-
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return words[r.Intn(len(words))]
-}
-
 // generateRandomPassword генерирует случайный пароль из английских букв и цифр длиной 10 символов
 func generateRandomPassword() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -726,7 +706,7 @@ func (u *User) sendRecoveryEmail(email, login, password string) error {
 		From:    "intbis@" + mailDomen,
 		To:      []string{email},
 		Subject: "Восстановление данных для входа",
-		Html:    "<p>" + fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s.", login, password) + "</p>",
+		Html:    "<p>" + fmt.Sprintf("Здравствуйте. Система сгенерировала Вам следующие данные для входа: логин - %s, пароль - %s", login, password) + "</p>",
 	}
 
 	_, err := client.Emails.Send(params)
@@ -782,11 +762,19 @@ func (u *User) Recovery(ctx context.Context, email string) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Генерируем новый логин и пароль
-	newLogin := generateRandomLogin()
-	newPassword := generateRandomPassword()
+	// Получаем логин пользователя по id
+	login, err := u.usrProvider.LoginById(ctx, userID.String())
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			u.log.Warn("user not found by email", sl.Err(err))
+			return fmt.Errorf("%s: user not found", op)
+		}
+		u.log.Error("failed to get login by userID", sl.Err(err))
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
-	log.Info("generated new credentials", slog.String("newLogin", newLogin))
+	// Генерируем новый пароль
+	newPassword := generateRandomPassword()
 
 	// Хешируем новый пароль
 	passHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
@@ -796,7 +784,7 @@ func (u *User) Recovery(ctx context.Context, email string) error {
 	}
 
 	// Обновляем логин и пароль в базе данных
-	err = u.usrProvider.UpdateLoginAndPassword(ctx, userID, newLogin, passHash)
+	err = u.usrProvider.UpdateLoginAndPassword(ctx, userID, login, passHash)
 	if err != nil {
 		log.Error("failed to update login and password", sl.Err(err))
 		return fmt.Errorf("%s: %w", op, err)
@@ -811,7 +799,7 @@ func (u *User) Recovery(ctx context.Context, email string) error {
 	}
 
 	// Отправляем письмо с новыми данными
-	err = u.sendRecoveryEmail(email, newLogin, newPassword)
+	err = u.sendRecoveryEmail(email, login, newPassword)
 	if err != nil {
 		log.Error("failed to send recovery email", sl.Err(err))
 		// Не возвращаем ошибку, так как данные уже обновлены в базе
