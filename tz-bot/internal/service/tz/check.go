@@ -657,6 +657,16 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 
 	// ОПТИМИЗИРОВАНО: убрали бессмысленное выделение 1 байта, json.Marshal сам выделит нужный размер
 	// После каждого тяжелого маршалинга принудительно вызываем GC для освобождения памяти
+
+	// ДИАГНОСТИКА: логируем размеры и память перед критическими операциями
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	log.Info("MEMORY BEFORE MARSHALLING",
+		slog.Int("mappings_count", len(markdownResponse.Mappings)),
+		slog.Uint64("alloc_mb", m.Alloc/1024/1024),
+		slog.Uint64("heap_mb", m.HeapAlloc/1024/1024),
+	)
+
 	var mappingsFromMarkdownServiceJSON []byte
 	mappingsFromMarkdownServiceJSON, mappingsFromMarkdownServiceJSONErr := json.Marshal(markdownResponse.Mappings)
 	if mappingsFromMarkdownServiceJSONErr != nil {
@@ -664,7 +674,15 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации mappingsFromMarkdownService: "+mappingsFromMarkdownServiceJSONErr.Error(), log)
 		return
 	}
+	log.Info("mappings marshalled", slog.Int("json_size_mb", len(mappingsFromMarkdownServiceJSON)/1024/1024))
 	runtime.GC() // Принудительная сборка мусора после тяжелой операции
+
+	runtime.ReadMemStats(&m)
+	log.Info("MEMORY BEFORE PROMTS MARSHALLING",
+		slog.Int("promts_count", len(*promts)),
+		slog.Uint64("alloc_mb", m.Alloc/1024/1024),
+		slog.Uint64("heap_mb", m.HeapAlloc/1024/1024),
+	)
 
 	var promtsFromPromtBuilderJSON []byte
 	promtsFromPromtBuilderJSON, promtsFromPromtBuilderJSONErr := json.Marshal(promts)
@@ -673,7 +691,15 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации promtsFromPromtBuilder: "+promtsFromPromtBuilderJSONErr.Error(), log)
 		return
 	}
+	log.Info("promts marshalled", slog.Int("json_size_mb", len(promtsFromPromtBuilderJSON)/1024/1024))
 	runtime.GC() // Принудительная сборка мусора после тяжелой операции
+
+	runtime.ReadMemStats(&m)
+	log.Info("MEMORY BEFORE GROUP REPORTS MARSHALLING",
+		slog.Int("reports_count", len(groupReports)),
+		slog.Uint64("alloc_mb", m.Alloc/1024/1024),
+		slog.Uint64("heap_mb", m.HeapAlloc/1024/1024),
+	)
 
 	var groupReportsFromLlmJSON []byte
 	groupReportsFromLlmJSON, groupReportsFromLlmJSONErr := json.Marshal(groupReports)
@@ -682,6 +708,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации groupReportsFromLlm: "+groupReportsFromLlmJSONErr.Error(), log)
 		return
 	}
+	log.Info("group reports marshalled", slog.Int("json_size_mb", len(groupReportsFromLlmJSON)/1024/1024))
 	runtime.GC() // Принудительная сборка мусора после тяжелой операции
 
 	inspectionTime := time.Since(now)
