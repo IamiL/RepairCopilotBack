@@ -653,7 +653,8 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		}
 	}
 
-	mappingsFromMarkdownServiceJSON := make([]byte, 1)
+	// ОПТИМИЗИРОВАНО: убрали бессмысленное выделение 1 байта, json.Marshal сам выделит нужный размер
+	var mappingsFromMarkdownServiceJSON []byte
 	mappingsFromMarkdownServiceJSON, mappingsFromMarkdownServiceJSONErr := json.Marshal(markdownResponse.Mappings)
 	if mappingsFromMarkdownServiceJSONErr != nil {
 		log.Error("ошибка сериализации mappingsFromMarkdownService: ", sl.Err(mappingsFromMarkdownServiceJSONErr))
@@ -661,7 +662,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		return
 	}
 
-	promtsFromPromtBuilderJSON := make([]byte, 1)
+	var promtsFromPromtBuilderJSON []byte
 	promtsFromPromtBuilderJSON, promtsFromPromtBuilderJSONErr := json.Marshal(promts)
 	if promtsFromPromtBuilderJSONErr != nil {
 		log.Error("ошибка сериализации promtsFromPromtBuilder: ", sl.Err(promtsFromPromtBuilderJSONErr))
@@ -669,7 +670,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		return
 	}
 
-	groupReportsFromLlmJSON := make([]byte, 1)
+	var groupReportsFromLlmJSON []byte
 	groupReportsFromLlmJSON, groupReportsFromLlmJSONErr := json.Marshal(groupReports)
 	if groupReportsFromLlmJSONErr != nil {
 		log.Error("ошибка сериализации groupReportsFromLlm: ", sl.Err(groupReportsFromLlmJSONErr))
@@ -944,37 +945,39 @@ func RemoveBase64Images(markdown string) string {
 
 // sanitizeString очищает строку от недопустимых символов для PostgreSQL UTF-8
 // Удаляет нулевые байты и другие управляющие символы, которые PostgreSQL не принимает
+// ОПТИМИЗИРОВАНО: сначала проверяет нужна ли санитизация, чтобы избежать лишних аллокаций памяти
 func sanitizeString(s string) string {
 	if s == "" {
 		return s
 	}
 
-	// Удаляем нулевые байты и другие недопустимые управляющие символы
-	s = strings.Map(func(r rune) rune {
-		// Удаляем нулевой байт
-		if r == 0 {
-			return -1
+	// Быстрая проверка: нужна ли санитизация (БЕЗ аллокаций памяти)
+	needsSanitization := false
+	for _, r := range s {
+		if r == 0 || (r < 32 && r != '\t' && r != '\n' && r != '\r') || r == utf8.RuneError {
+			needsSanitization = true
+			break
 		}
-		// Удаляем другие проблемные управляющие символы (U+0001 - U+0008, U+000B, U+000C, U+000E - U+001F)
-		if r < 32 && r != '\t' && r != '\n' && r != '\r' {
-			return -1
-		}
-		return r
-	}, s)
-
-	// Проверяем, что строка является валидной UTF-8
-	if !utf8.ValidString(s) {
-		// Если нет, то пересоздаём строку, пропуская невалидные символы
-		v := make([]rune, 0, len(s))
-		for _, r := range s {
-			if r != utf8.RuneError {
-				v = append(v, r)
-			}
-		}
-		s = string(v)
 	}
 
-	return s
+	// Если санитизация не нужна и строка валидна - возвращаем как есть (БЕЗ копирования!)
+	if !needsSanitization && utf8.ValidString(s) {
+		return s
+	}
+
+	// Санитизация нужна - используем strings.Builder для эффективного построения
+	var builder strings.Builder
+	builder.Grow(len(s)) // Предварительно резервируем память
+
+	for _, r := range s {
+		// Пропускаем недопустимые символы
+		if r == 0 || (r < 32 && r != '\t' && r != '\n' && r != '\r') || r == utf8.RuneError {
+			continue
+		}
+		builder.WriteRune(r)
+	}
+
+	return builder.String()
 }
 
 // sanitizeStringPointer применяет sanitizeString к указателю на строку
