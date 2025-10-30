@@ -241,7 +241,7 @@ func (tz *Tz) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*VersionMe
 		slog.String("userID", userID.String()),
 	)
 
-	log.Info("getting technical specification versions")
+	//log.Info("getting technical specification versions")
 
 	versions, err := tz.repo.GetVersionsMeByUserID(ctx, userID)
 	if err != nil {
@@ -260,7 +260,7 @@ func (tz *Tz) GetVersionsMe(ctx context.Context, userID uuid.UUID) ([]*VersionMe
 		}
 	}
 
-	log.Info("technical specification versions retrieved successfully", slog.Int("count", len(versions)))
+	//log.Info("technical specification versions retrieved successfully", slog.Int("count", len(versions)))
 	return versions, nil
 }
 

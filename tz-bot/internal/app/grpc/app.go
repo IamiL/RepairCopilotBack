@@ -215,7 +215,7 @@ func (s *serverAPI) GetVersionsMe(ctx context.Context, req *tzv1.GetVersionsMeRe
 		slog.String("user_id", req.UserId),
 	)
 
-	log.Info("processing GetTechnicalSpecificationVersions request")
+	//log.Info("processing GetTechnicalSpecificationVersions request")
 
 	userID, err := uuid.Parse(req.UserId)
 	if err != nil {
@@ -244,7 +244,7 @@ func (s *serverAPI) GetVersionsMe(ctx context.Context, req *tzv1.GetVersionsMeRe
 		}
 	}
 
-	log.Info("GetTechnicalSpecificationVersions request processed successfully", slog.Int("versions_count", len(versions)))
+	//log.Info("GetTechnicalSpecificationVersions request processed successfully", slog.Int("versions_count", len(versions)))
 
 	return &tzv1.GetVersionsMeResponse{
 		Versions: grpcVersions,
