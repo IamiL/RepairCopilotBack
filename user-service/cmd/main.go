@@ -29,6 +29,12 @@ func main() {
 		cfg.MailDomen,
 	)
 
+	// Запускаем планировщик крон-джоб
+	if err := application.Scheduler.Start(); err != nil {
+		log.Error("failed to start cron scheduler", "error", err)
+		panic(err)
+	}
+
 	application.GRPCServer.MustRun()
 
 	stop := make(chan os.Signal, 1)
@@ -36,6 +42,9 @@ func main() {
 
 	<-stop
 	log.Info("stopping server")
+
+	// Останавливаем планировщик крон-джоб
+	application.Scheduler.Stop()
 
 	application.GRPCServer.Stop()
 

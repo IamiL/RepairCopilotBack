@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	grpcapp "repairCopilotBot/user-service/internal/app/grpc"
+	"repairCopilotBot/user-service/internal/cron"
 	"repairCopilotBot/user-service/internal/migrator"
 	"repairCopilotBot/user-service/internal/repository/postgres"
 	postgresUser "repairCopilotBot/user-service/internal/repository/postgres/user"
@@ -19,6 +20,7 @@ import (
 
 type App struct {
 	GRPCServer *grpcapp.UserGRPCServer
+	Scheduler  *cron.Scheduler
 }
 
 func New(
@@ -50,7 +52,11 @@ func New(
 
 	grpcApp := grpcapp.NewUserGRPCServer(log, usrService, grpcConfig)
 
+	// Создаём планировщик крон-джоб
+	scheduler := cron.New(log, postgres)
+
 	return &App{
 		GRPCServer: grpcApp,
+		Scheduler:  scheduler,
 	}
 }

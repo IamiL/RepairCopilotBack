@@ -524,3 +524,22 @@ func (s *Storage) UpdateLoginAndPassword(ctx context.Context, userID uuid.UUID, 
 
 	return nil
 }
+
+// ResetDailyInspectionsForAllUsers сбрасывает счётчики проверок для всех пользователей
+func (s *Storage) ResetDailyInspectionsForAllUsers(ctx context.Context) error {
+	query := `UPDATE users
+	          SET inspections_for_today = 0,
+	              inspections_left_for_today = inspections_per_day`
+
+	result, err := s.db.Exec(ctx, query)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return fmt.Errorf("no users found to reset")
+	}
+
+	return nil
+}
