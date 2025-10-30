@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"regexp"
 	promt_builder "repairCopilotBot/tz-bot/internal/pkg/promt-builder"
+	"runtime"
+
 	//docxToDocx2007clientclient "repairCopilotBot/tz-bot/internal/pkg/docxToDocx2007client"
 	tz_llm_client "repairCopilotBot/tz-bot/internal/pkg/llm"
 	"repairCopilotBot/tz-bot/internal/pkg/logger/sl"
@@ -654,6 +656,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 	}
 
 	// ОПТИМИЗИРОВАНО: убрали бессмысленное выделение 1 байта, json.Marshal сам выделит нужный размер
+	// После каждого тяжелого маршалинга принудительно вызываем GC для освобождения памяти
 	var mappingsFromMarkdownServiceJSON []byte
 	mappingsFromMarkdownServiceJSON, mappingsFromMarkdownServiceJSONErr := json.Marshal(markdownResponse.Mappings)
 	if mappingsFromMarkdownServiceJSONErr != nil {
@@ -661,6 +664,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации mappingsFromMarkdownService: "+mappingsFromMarkdownServiceJSONErr.Error(), log)
 		return
 	}
+	runtime.GC() // Принудительная сборка мусора после тяжелой операции
 
 	var promtsFromPromtBuilderJSON []byte
 	promtsFromPromtBuilderJSON, promtsFromPromtBuilderJSONErr := json.Marshal(promts)
@@ -669,6 +673,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации promtsFromPromtBuilder: "+promtsFromPromtBuilderJSONErr.Error(), log)
 		return
 	}
+	runtime.GC() // Принудительная сборка мусора после тяжелой операции
 
 	var groupReportsFromLlmJSON []byte
 	groupReportsFromLlmJSON, groupReportsFromLlmJSONErr := json.Marshal(groupReports)
@@ -677,6 +682,7 @@ func (tz *Tz) ProcessTzAsync(file []byte, filename string, versionID uuid.UUID, 
 		tz.handleProcessingError(ctx, versionID, userID, "ошибка сериализации groupReportsFromLlm: "+groupReportsFromLlmJSONErr.Error(), log)
 		return
 	}
+	runtime.GC() // Принудительная сборка мусора после тяжелой операции
 
 	inspectionTime := time.Since(now)
 

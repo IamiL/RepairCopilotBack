@@ -110,7 +110,7 @@ services:
       TELEGRAM_CLIENT_TOKEN: "${TZ_SERVICE_TELEGRAM_CLIENT_TOKEN}"
       TELEGRAM_CLIENT_CHAT_ID: "${TZ_SERVICE_TELEGRAM_CLIENT_CHAT_ID}"
       # Go runtime оптимизации
-#      GOMEMLIMIT: "1536MiB" # Мягкий лимит памяти для Go runtime (75% от лимита контейнера)
+      GOMEMLIMIT: "3072MiB" # Мягкий лимит памяти для Go runtime (75% от лимита контейнера 4GB)
       GOGC: "75" # Более частая сборка мусора для контроля памяти
       GODEBUG: "gctrace=0" # Отключаем трейсинг GC (можно включить для диагностики: gctrace=1)
     depends_on:
@@ -122,7 +122,7 @@ services:
       resources:
         limits:
           cpus: '2.0' # Максимум 2 CPU
-          memory: 2048M # Максимум 2GB памяти
+          memory: 4096M # Максимум 4GB памяти (увеличено для обработки больших документов)
         reservations:
           cpus: '0.5' # Минимум 0.5 CPU
           memory: 512M # Минимум 512MB памяти
